@@ -1,0 +1,40 @@
+<html>
+	<head>
+		<style>
+			html,body{
+				margin: 0;
+				padding: 0;
+			}
+			mark{
+				position: absolute;
+				bottom: 10px;
+				left:10px;
+			}
+			</style>
+	</head>
+<body>
+	<mark id="freq">0</mark>
+	<canvas id="gl" style="border: red" width="360" height="240"></canvas>
+    <script src="bundle.js"></script>
+	<script>
+
+
+	
+		
+		window.addEventListener("resize", function(evt){
+					resize();
+		});
+
+		function resize(){
+			var el = document.querySelector("#gl");
+				el.setAttribute("height",window.innerHeight);
+				el.setAttribute("width",window.innerWidth);
+		}
+
+			resize();
+		
+		</script>
+   
+</body>
+
+</html>
