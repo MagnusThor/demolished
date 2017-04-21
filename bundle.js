@@ -122,7 +122,6 @@ var Demolished;
             this.cacheUniformLocation(this.currentProgram, 'time');
             this.cacheUniformLocation(this.currentProgram, 'mouse');
             this.cacheUniformLocation(this.currentProgram, 'resolution');
-            this.cacheUniformLocation(this.currentProgram, 'backbuffer');
             this.cacheUniformLocation(this.currentProgram, 'surfaceSize');
             this.positionAttribute = gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
             gl.enableVertexAttribArray(this.positionAttribute);
@@ -208,14 +207,17 @@ var Demolished;
             });
         }
         doAudioThingy() {
+            let meterNum = 32;
+            let arr = new Array(meterNum);
             if (!this.dataArray)
                 return 0;
             this.audioAnalyser.getFloatFrequencyData(this.dataArray);
-            let r = (this.dataArray.reduce((p, c) => p + c, 0) / this.dataArray.byteLength);
-            if (document.querySelector("#freq")) {
-                document.querySelector("#freq").textContent = r.toString();
+            var step = Math.round(this.dataArray.length / meterNum);
+            for (var i = 0; i < meterNum; i++) {
+                var value = this.dataArray[i * step];
+                arr.push(value);
             }
-            return r;
+            return arr.reduce((p, c) => p + c, 0) / arr.length;
         }
         addEventListeners() {
             document.addEventListener("mousemove", (evt) => {
@@ -294,7 +296,6 @@ var Demolished;
             gl.uniform1f(currentProgram.uniformsCache['time'], this.parameters.time / 1000);
             gl.uniform2f(currentProgram.uniformsCache['mouse'], this.parameters.mouseX, this.parameters.mouseY);
             gl.uniform2f(currentProgram.uniformsCache['resolution'], this.parameters.screenWidth, this.parameters.screenHeight);
-            gl.uniform1i(currentProgram.uniformsCache['backbuffer'], 0);
             gl.uniform2f(currentProgram.uniformsCache['surfaceSize'], this.width, this.height);
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
             gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);

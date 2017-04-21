@@ -208,17 +208,25 @@ export namespace Demolished {
 
         }
 
+
         private doAudioThingy():number{
             
+            let meterNum = 32;
+
+            let arr = new Array<number>(meterNum);
+
             if(!this.dataArray ) return 0;
             this.audioAnalyser.getFloatFrequencyData(this.dataArray);
+       
+              var step = Math.round(this.dataArray.length / meterNum); 
 
-            let r = (this.dataArray.reduce( ( p, c ) => p + c, 0 ) / this.dataArray.byteLength) ;
-          
-            if(document.querySelector("#freq")){
-             document.querySelector("#freq") .textContent = r.toString();  
+             for (var i = 0; i < meterNum; i++) {
+                var value = this.dataArray[i * step];
+                   arr.push(value);
             }
-            return r;
+
+            return arr.reduce( ( p, c ) => p + c, 0 ) / arr.length
+        
         }
 
         private addEventListeners() {
