@@ -18,9 +18,9 @@ var Demolished;
         }
         loadResources() {
             let urls = new Array();
-            urls.push("/entities/" + this.name + "/fragment.glsl");
-            urls.push("/entities/" + this.name + "/vertex.glsl");
-            urls.push("/entities/" + this.name + "/uniforms.json");
+            urls.push("entities/" + this.name + "/fragment.glsl");
+            urls.push("entities/" + this.name + "/vertex.glsl");
+            urls.push("entities/" + this.name + "/uniforms.json");
             return Promise.all(urls.map(url => fetch(url).then(resp => resp.text()))).then(result => {
                 this.fragmetShader = result[0];
                 this.vertexShader = result[1];
@@ -116,7 +116,7 @@ var Demolished;
         }
         loadMusic() {
             let context = new AudioContext();
-            window.fetch("/assets/song.mp3").then((response) => {
+            window.fetch("assets/song.mp3").then((response) => {
                 response.arrayBuffer().then((buffer) => {
                     context.decodeAudioData(buffer, (audioBuffer) => {
                         let bufferSource = context.createBufferSource();

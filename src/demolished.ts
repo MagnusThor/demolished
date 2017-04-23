@@ -31,9 +31,9 @@ export namespace Demolished {
         loadResources(): Promise<boolean> {
             let urls = new Array<string>();
 
-            urls.push("/entities/" + this.name + "/fragment.glsl");
-            urls.push("/entities/" + this.name + "/vertex.glsl");
-            urls.push("/entities/" + this.name + "/uniforms.json");
+            urls.push("entities/" + this.name + "/fragment.glsl");
+            urls.push("entities/" + this.name + "/vertex.glsl");
+            urls.push("entities/" + this.name + "/uniforms.json");
 
             return Promise.all(urls.map(url =>
                 fetch(url).then(resp => resp.text())
@@ -180,7 +180,7 @@ export namespace Demolished {
             let context = new AudioContext();
          
 
-            window.fetch("/assets/song.mp3").then((response: Response) => {
+            window.fetch("assets/song.mp3").then((response: Response) => {
                 response.arrayBuffer().then((buffer: ArrayBuffer) => {
                     context.decodeAudioData(buffer, (audioBuffer: AudioBuffer) => {
                         let bufferSource = context.createBufferSource();
