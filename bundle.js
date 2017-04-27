@@ -79,6 +79,24 @@ if (!window.requestAnimationFrame) {
         };
     })();
 }
+/*
+        parameters: any =
+        {
+            startTime: Date.now(),
+            time: 0,
+            mouseX: 0.5,
+            mouseY: 0.5,
+            screenWidth: 500,
+            screenHeight: 500,
+            custom: {}
+        };
+
+*/
+class Parameters {
+    constructor() {
+    }
+}
+exports.Parameters = Parameters;
 var Demolished;
 (function (Demolished) {
     class EnityBase {
@@ -87,7 +105,28 @@ var Demolished;
             this.name = name;
             this.loadResources().then(() => {
                 this.init();
+                this.target = this.createTarget(1, 1);
+                this.backTarget = this.createTarget(1, 1);
             });
+        }
+        createTarget(width, height) {
+            let gl = this.gl;
+            let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
+            gl.bindTexture(gl.TEXTURE_2D, target.texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, target.frameBuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.texture, 0);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, target.renderBuffer);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, target.renderBuffer);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            return target;
         }
         loadResources() {
             let urls = new Array();
@@ -103,10 +142,12 @@ var Demolished;
                 return false;
             });
         }
+        OnError(err) {
+            console.log(err);
+        }
         init() {
             let gl = this.gl;
             this.buffer = gl.createBuffer();
-            //  let program = gl.createProgram();
             this.currentProgram = gl.createProgram();
             let vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
             let fs = this.createShader(gl, this.fragmetShader, gl.FRAGMENT_SHADER);
@@ -116,13 +157,14 @@ var Demolished;
             gl.deleteShader(fs);
             gl.linkProgram(this.currentProgram);
             if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
-                this.OnError(gl.getProgramInfoLog(this.currentProgram));
+                let info = gl.getProgramInfoLog(this.currentProgram);
+                this.OnError("error -> " + info);
             }
-            this.cacheUniformLocation(this.currentProgram, 'freq');
+            this.cacheUniformLocation(this.currentProgram, 'freq_data');
+            this.cacheUniformLocation(this.currentProgram, 'freq_time');
             this.cacheUniformLocation(this.currentProgram, 'time');
             this.cacheUniformLocation(this.currentProgram, 'mouse');
             this.cacheUniformLocation(this.currentProgram, 'resolution');
-            this.cacheUniformLocation(this.currentProgram, 'surfaceSize');
             this.positionAttribute = gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
             gl.enableVertexAttribArray(this.positionAttribute);
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
@@ -135,6 +177,11 @@ var Demolished;
                 program.uniformsCache = {};
             }
             program.uniformsCache[label] = this.gl.getUniformLocation(program, label);
+        }
+        swapBuffers() {
+            let tmp = this.target;
+            this.target = this.backTarget;
+            this.backTarget = tmp;
         }
         createShader(gl, src, type) {
             let shader = gl.createShader(type);
@@ -152,29 +199,42 @@ var Demolished;
         }
     }
     Demolished.RenderTarget = RenderTarget;
+    class AudioData {
+        constructor(freqData, timeData, minDb, maxDb) {
+            this.freqData = freqData;
+            this.timeData = timeData;
+            this.minDb = minDb;
+            this.maxDb = maxDb;
+            this.freqScale = 1 / (maxDb - minDb);
+            this.freqOffset = minDb;
+        }
+        avg() {
+            let arr = this.freqData;
+            return 1 - (arr.reduce((p, c) => p + c, 0) / arr.byteLength);
+        }
+    }
+    Demolished.AudioData = AudioData;
     class World {
         constructor() {
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
             this.centerY = 0;
-            // todo: Define class
-            this.parameters = {
-                startTime: Date.now(),
-                time: 0,
-                mouseX: 0.5,
-                mouseY: 0.5,
-                screenWidth: 500,
-                screenHeight: 500,
-                custom: {}
-            };
+            this.parameters = new Parameters();
+            this.parameters.startTime = Date.now(),
+                this.parameters.time = 0;
+            this.parameters.mouseX = 0.5;
+            this.parameters.mouseY = 0.5;
+            this.parameters.screenWidth = 500;
+            this.parameters.screenHeight = 500,
+                this.parameters.custom = {};
             this.assets = new Array();
             this.nodes = new Array();
             this.canvas = document.querySelector("#gl");
             this.gl = this.getRendringContext();
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-            this.target = this.createTarget(1, 1);
-            this.backTarget = this.createTarget(1, 1);
+            this.addEntity("plasma");
+            this.currentProgram = this.nodes[0].currentProgram;
             this.addEventListeners();
             this.loadMusic();
         }
@@ -196,28 +256,17 @@ var Demolished;
                         this.audioAnalyser = context.createAnalyser();
                         bufferSource.buffer = audioBuffer;
                         bufferSource.loop = true;
-                        this.audioAnalyser.fftSize = 2048;
-                        this.frequencyBinCount = this.audioAnalyser.frequencyBinCount;
-                        this.dataArray = new Float32Array(this.frequencyBinCount);
+                        this.audioAnalyser.smoothingTimeConstant = 0.2;
+                        this.audioAnalyser.fftSize = 32;
+                        this.audioData =
+                            new AudioData(new Float32Array(32), new Float32Array(32), this.audioAnalyser.minDecibels, this.audioAnalyser.maxDecibels);
                         bufferSource.connect(this.audioAnalyser);
                         bufferSource.connect(context.destination);
                         bufferSource.start(0);
+                        this.animate(); // todo: Fire OnReady event...
                     });
                 });
             });
-        }
-        doAudioThingy() {
-            let meterNum = 32;
-            let arr = new Array(meterNum);
-            if (!this.dataArray)
-                return 0;
-            this.audioAnalyser.getFloatFrequencyData(this.dataArray);
-            var step = Math.round(this.dataArray.length / meterNum);
-            for (var i = 0; i < meterNum; i++) {
-                var value = this.dataArray[i * step];
-                arr.push(value);
-            }
-            return arr.reduce((p, c) => p + c, 0) / arr.length;
         }
         addEventListeners() {
             document.addEventListener("mousemove", (evt) => {
@@ -241,28 +290,13 @@ var Demolished;
          */
         animate() {
             requestAnimationFrame(() => {
+                if (this.audioAnalyser) {
+                    this.audioAnalyser.getFloatFrequencyData(this.audioData.freqData);
+                    this.audioAnalyser.getFloatTimeDomainData(this.audioData.timeData);
+                }
                 this.animate();
             });
             this.renderEntities(this.nodes[0]);
-        }
-        createTarget(width, height) {
-            let gl = this.gl;
-            let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
-            gl.bindTexture(gl.TEXTURE_2D, target.texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, target.frameBuffer);
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.texture, 0);
-            gl.bindRenderbuffer(gl.RENDERBUFFER, target.renderBuffer);
-            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
-            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, target.renderBuffer);
-            gl.bindTexture(gl.TEXTURE_2D, null);
-            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            return target;
         }
         /**
          * Calculate the rendering surface corners
@@ -292,29 +326,24 @@ var Demolished;
                 return;
             this.parameters.time = Date.now() - this.parameters.startTime;
             gl.useProgram(currentProgram);
-            gl.uniform1f(currentProgram.uniformsCache['freq'], this.doAudioThingy());
+            gl.uniform1fv(currentProgram.uniformsCache['freq_data'], this.audioData.freqData);
+            gl.uniform1fv(currentProgram.uniformsCache['freq_time'], this.audioData.timeData);
             gl.uniform1f(currentProgram.uniformsCache['time'], this.parameters.time / 1000);
             gl.uniform2f(currentProgram.uniformsCache['mouse'], this.parameters.mouseX, this.parameters.mouseY);
-            gl.uniform2f(currentProgram.uniformsCache['resolution'], this.parameters.screenWidth, this.parameters.screenHeight);
-            gl.uniform2f(currentProgram.uniformsCache['surfaceSize'], this.width, this.height);
+            gl.uniform2f(currentProgram.uniformsCache['resolution'], this.canvas.width, this.canvas.height);
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
             gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
             gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, this.backTarget.texture);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.target.frameBuffer);
+            gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
-            this.swapBuffers();
-        }
-        swapBuffers() {
-            let tmp = this.target;
-            this.target = this.backTarget;
-            this.backTarget = tmp;
+            ent.swapBuffers();
         }
     }
     Demolished.World = World;
@@ -331,13 +360,12 @@ const demolished_1 = __webpack_require__(0);
 class DemolishInstance {
     constructor() {
         this.world = new demolished_1.Demolished.World();
-        this.world.addEntity("plasma");
-        this.world.animate();
+        // this.world.animate();
     }
 }
 document.addEventListener("DOMContentLoaded", () => {
     let d = new DemolishInstance();
-    console.log("d", d);
+    window["food"] = d;
 });
 
 

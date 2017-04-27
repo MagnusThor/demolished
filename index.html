@@ -10,11 +10,20 @@
 				bottom: 10px;
 				left:10px;
 			}
+
+			canvas{
+				width: 100%;
+				height:  100%;
+				background: transparent;
+			}
+
+
+
 			</style>
 	</head>
 <body>
 	<mark id="freq">0</mark>
-	<canvas id="gl" style="border: red" width="360" height="240"></canvas>
+	<canvas id="gl" width="360" height="240"></canvas>
     <script src="bundle.js"></script>
 	<script>
 
@@ -22,7 +31,7 @@
 	
 		
 		window.addEventListener("resize", function(evt){
-			//		resize();
+			resize();
 		});
 
 		function resize(){
@@ -31,7 +40,7 @@
 				el.setAttribute("width",window.innerWidth);
 		}
 
-		//	resize();
+				resize();
 		
 		</script>
    

@@ -1,204 +1,147 @@
 #ifdef GL_ES
-precision highp float;
+precision mediump float;
 #endif
-
-#extension GL_OES_standard_derivatives : enable
 
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
-uniform float freq;
+uniform float freq_data[32];
+uniform float freq_time[32];
 
+// by srtuss, 2013
+// was trying to find some sort of "mechanical" fractal for texture/heightmap
+// generation, but then i ended up with this.
 
-#define iResolution resolution
-#define iMouse (mouse * resolution)
-#define iGlobalTime time
-//afl_ext 2017 
-
-#define EULER 2.7182818284590452353602874
-// its from here https://github.com/achlubek/venginenative/blob/master/shaders/include/WaterHeight.glsl 
-float wave(vec2 uv, vec2 emitter, float speed, float phase, float timeshift){
-	float dst = distance(uv, emitter);
-	return pow(EULER, sin(dst * phase - (iGlobalTime + timeshift) * speed)) / EULER;
-}
-vec2 wavedrag(vec2 uv, vec2 emitter){
-	return normalize(uv - emitter);
-}
-
-#define DRAG_MULT 4.0
-
-float getwaves(vec2 position){
-    position *= 0.1;
-	float iter = 0.0;
-    float phase = 6.0;
-    float speed = 2.0;
-    float weight = 1.0;
-    float w = 0.0;
-    float ws = 0.0;
-    for(int i=0;i<7;i++){
-        vec2 p = vec2(sin(iter), cos(iter)) * 30.0;
-        float res = wave(position, p, speed, phase, 0.0);
-        float res2 = wave(position, p, speed, phase, 0.006);
-        position -= wavedrag(position, p) * (res - res2) * weight * DRAG_MULT;
-        w += res * weight;
-        iter += 12.0;
-        ws += weight;
-        weight = mix(weight, 0.0, 0.2);
-        phase *= 1.2;
-        speed *= 1.02;
-    }
-    return w / ws;
-}
-float getwavesHI(vec2 position){
-    position *= 0.1;
-	float iter = 0.0;
-    float phase = 6.0;
-    float speed = 2.0;
-    float weight = 1.0;
-    float w = 0.0;
-    float ws = 0.0;
-    for(int i=0;i<27;i++){
-        vec2 p = vec2(sin(iter), cos(iter)) * 30.0;
-        float res = wave(position, p, speed, phase, 0.0);
-        float res2 = wave(position, p, speed, phase, 0.006);
-        position -= wavedrag(position, p) * (res - res2) * weight * DRAG_MULT;
-        w += res * weight;
-        iter += 12.0;
-        ws += weight;
-        weight = mix(weight, 0.0, 0.2);
-        phase *= 1.2;
-        speed *= 1.02;
-    }
-    return w / ws;
-}
-
-float H = 0.0;
-vec3 normal(vec2 pos, float e, float depth){
-    vec2 ex = vec2(e, 0);
-    H = getwavesHI(pos.xy) * depth;
-    vec3 a = vec3(pos.x, H, pos.y);
-    return normalize(cross(normalize(a-vec3(pos.x - e, getwavesHI(pos.xy - ex.xy) * depth, pos.y)), 
-                           normalize(a-vec3(pos.x, getwavesHI(pos.xy + ex.yx) * depth, pos.y + e))));
-}
-mat3 rotmat(vec3 axis, float angle)
+// rotate position around axis
+vec2 rotate(vec2 p, float a)
 {
-	axis = normalize(axis);
-	float s = sin(angle);
-	float c = cos(angle);
-	float oc = 1.0 - c;
-	
-	return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s, 
-	oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s, 
-	oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
-} 
-
-vec3 getRay(vec2 uv){
-
-
-    float bb = (freq / 100.0) * mouse.x;
-
-    float aa = sin(time * (freq/ 100.0));
-
-    uv = (uv * 2.0 - 1.0)* vec2(iResolution.x / iResolution.y, 1.0)  * bb;
-
-
-	vec3 proj = normalize(vec3(uv.x, uv.y, 1.0) + vec3(uv.x, uv.y, -1.0) * pow(length(uv), 2.0) * 0.05);
-    	 
-	vec3 ray = rotmat(vec3(0.0, -1.0, 0.0), bb * 2.0 - 1.0) * rotmat(vec3(1.0, 0.0, 0.0), 0.5 * -(mouse.y * 2.0 - 1.0)) * (proj);
-    return ray;
+	return vec2(p.x * cos(a) - p.y * sin(a), p.x * sin(a) + p.y * cos(a));
 }
 
-float rand2sTimex(vec2 co){
-    return fract(sin(dot(co.xy * iGlobalTime,vec2(12.9898,78.233))) * 43758.5453);
-}
-float raymarchwater2(vec3 camera, vec3 start, vec3 end, float depth){
-    float stepsize = 1.0 / 5.0;
-    float iter = 0.0;
-    vec3 pos = start;
-    float h = 0.0;
-    float rd = stepsize * rand2sTimex(end.xz);
-    for(int i=0;i<6;i++){
-        pos = mix(start, end, iter);
-        h = getwaves(pos.xz) * depth - depth;
-        if(h > pos.y) {
-            return distance(pos, camera);
-        }
-        iter += stepsize;
-    }
-    return -1.0;
-}
-
-float raymarchwater(vec3 camera, vec3 start, vec3 end, float depth){
-    float stepsize = 1.0 / 15.0;
-    float iter = 0.0;
-    vec3 pos = start;
-    float h = 0.0;
-    float rd = stepsize * rand2sTimex(end.xz);
-    for(int i=0;i<16;i++){
-        pos = mix(start, end, iter + rd);
-        h = getwaves(pos.xz) * depth - depth;
-        if(h > pos.y) {
-            return raymarchwater2(camera, mix(start, end, iter - stepsize + rd), mix(start, end, iter + rd), depth);
-        }
-        iter += stepsize;
-    }
-    return -1.0;
-}
-
-float intersectPlane(vec3 origin, vec3 direction, vec3 point, vec3 normal)
-{ 
-    return clamp(dot(point - origin, normal) / dot(direction, normal), -1.0, 9991999.0); 
-}
-
-vec3 getatm(vec3 ray){
- 	return mix(vec3(0.9), vec3(0.0, 0.2, 0.5), sqrt(abs(ray.y)));
-    
-}
-
-
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
+// 1D random numbers
+float rand(float n)
 {
-	vec2 uv = fragCoord.xy / iResolution.xy;
- 	
-	float waterdepth = 2.1;
-	vec3 wfloor = vec3(0.0, -waterdepth, 0.0);
-	vec3 wceil = vec3(0.0, 0.0, 0.0);
-	vec3 orig = vec3(0.0, 2.0, 0.0);
-	vec3 ray = getRay(uv);
-	float hihit = intersectPlane(orig, ray, wceil, vec3(0.0, 1.0, 0.0));
-    if(ray.y >= -0.01){
-        vec3 C = getatm(ray) * 2.0;
-        //tonemapping
-        C = normalize(C) * sqrt(length(C));
-     	fragColor = vec4( C,1.0);   
-        return;
-    }
-	float lohit = intersectPlane(orig, ray, wfloor, vec3(0.0, 1.0, 0.0));
-    vec3 hipos = orig + ray * hihit;
-    vec3 lopos = orig + ray * lohit;
-	float dist = raymarchwater(orig, hipos, lopos, waterdepth);
-    vec3 pos = orig + ray * dist;
-
-	vec3 N = normal(pos.xz, 0.01, waterdepth);
-    vec2 velocity = N.xz * (1.0 - N.y);
-    N = mix(vec3(0.0, 1.0, 0.0), N, 1.0 / (dist * dist * 0.01 + 1.0));
-    vec3 R = reflect(ray, N);
-    float fresnel = (0.04 + (1.0-0.04)*(pow(1.0 - max(0.0, dot(-N, ray)), 5.0)));
-	
-    vec3 C = fresnel * getatm(R) * 2.0 + fresnel;
-	
-    // water sprays, TimoKinnunen comment on 2017-Apr-2
-  	C += smoothstep(.05,.2, length(velocity));
-    //tonemapping
-    C = normalize(C) * sqrt(length(C));
-    
-	fragColor = vec4(C,1.0);
+    return fract(sin(n) * 43758.5453123);
 }
-void main( void ) {
 
-	vec2 position = ( gl_FragCoord.xy  ) ;
- 	vec4 c = vec4(0.0);
-	mainImage(c, position);
-	gl_FragColor = c;
+// 2D random numbers
+vec2 rand2(in vec2 p)
+{
+	return fract(vec2(sin(p.x * 591.32 + p.y * 154.077), cos(p.x * 391.32 + p.y * 49.077)));
+}
 
+// 1D noise
+float noise1(float p)
+{
+	float fl = floor(p);
+	float fc = fract(p);
+	return mix(rand(fl), rand(fl + 1.000004), fc);
+}
+
+// voronoi distance noise, based on iq's articles
+float voronoi(in vec2 x)
+{
+	vec2 p = floor(x);
+	vec2 f = fract(x);
+	
+	vec2 res = vec2(8.0);
+	for(int j = -1; j <= 1; j ++)
+	{
+		for(int i = -1; i <= 1; i ++)
+		{
+			vec2 b = vec2(i, j);
+			vec2 r = vec2(b) - f + rand2(p + b);
+			
+			// chebyshev distance, one of many ways to do this
+			float d = max(abs(r.x), abs(r.y));
+			
+			if(d < res.x)
+			{
+				res.y = res.x;
+				res.x = d;
+			}
+			else if(d < res.y)
+			{
+				res.y = d;
+			}
+		}
+	}
+	return res.y - res.x;
+}
+
+
+//float flicker = noise1(time * 2.0) * 0.8 + 0.4;
+
+void main(void)
+{
+	vec2 uv = gl_FragCoord.xy / resolution.xy;
+	uv = (uv - 0.5) * 2.0;
+	vec2 suv = uv;
+	uv.x *= resolution.x / resolution.y;
+	
+	
+	float v = 0.0;
+	
+	// that looks highly interesting:
+	v = 0.3 - length(uv) * 0.3;
+	
+	
+	// a bit of camera movement
+	uv *= 0.6 + sin(freq_time[15]) * 0.05;
+	uv = rotate(uv, sin(time * 0.1) * 1.0);
+	uv += time * 0.03;
+	
+	
+	
+	// add some noise octaves
+	float a = 0.6, f = 1.0;
+	
+	for(int i = 0; i < 3; i ++) // 4 octaves also look nice, its getting a bit slow though
+	{	
+		float v1 = voronoi(uv * f + 5.0);
+		float v2 = 0.0;
+		
+		// make the moving electrons-effect for higher octaves
+		if(i > 0)
+		{
+			// of course everything based on voronoi
+			v2 = voronoi(uv * f * 0.5 + 50.0 + time);
+			
+			//	v2 = voronoi(uv * f * 0.5 + 10.0 + freq_time[7] );
+
+			float va = 0.0, vb = 0.0;
+			va = 1.0 - smoothstep(0.0, 0.1, v1);
+			vb = 1.0 - smoothstep(0.0, 0.08, v2);
+			v += a * pow(va * (0.5 + vb), 2.0);
+		}
+		
+		// make sharp edges
+		v1 = 1.0 - smoothstep(0.0, 0.3, v1);
+		
+		// noise is used as intensity map
+		v2 = a * (noise1(v1 * 5.5 + 0.1));
+		
+		// octave 0's intensity changes a bit
+		if(i == 0)
+			//v += v2 * flicker;
+		//else
+			v += v2;
+		
+		f *= 3.0;
+		a *= 0.7;
+	}
+
+	// slight vignetting
+	v *= exp(-0.6 * length(suv)) * 1.2;
+	
+	// use texture channel0 for color? why not.
+	//vec3 cexp = texture2D(iChannel0, uv * 0.001).xyz * 3.0 + texture2D(iChannel0, uv * 0.01).xyz;//vec3(1.0, 2.0, 4.0);
+	
+	// old blueish color st
+	vec3 cexp = vec3(0.5, 1.7, 1.0);
+		cexp *= 1.3;
+
+	vec3 col = vec3(pow(v, cexp.x), pow(v, cexp.y), pow(v, cexp.z)) * 2.0;
+	
+	gl_FragColor = vec4(col, 1.0);
 }
