@@ -237,7 +237,7 @@ var Demolished;
             return gl;
         }
         loadTimeline() {
-            let timeline = window.fetch("/entities/timeline.json").then((response) => {
+            let timeline = window.fetch("entities/timeline.json").then((response) => {
                 return response.json();
             });
             return timeline.then((json) => {

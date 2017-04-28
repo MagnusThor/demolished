@@ -242,7 +242,7 @@ export namespace Demolished {
 
         loadTimeline():Promise<Array<Effect>>{
               
-              let timeline =   window.fetch("/entities/timeline.json").then( (response:Response) => {
+              let timeline =   window.fetch("entities/timeline.json").then( (response:Response) => {
 
                         return response.json();
 
