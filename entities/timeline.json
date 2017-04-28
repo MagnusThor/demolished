@@ -1,0 +1,19 @@
+[
+    {
+        "name": "tunnel",
+        "start": 0,
+        "stop": 50000
+    }
+    ,
+    {
+        "name": "plasma",
+        "start": 50001,
+        "stop": 99999
+    },
+    {
+        "name": "sun",
+        "start": 100000,
+        "stop": 200000
+    }
+
+]

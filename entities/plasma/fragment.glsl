@@ -89,7 +89,7 @@ void main(void)
 	// a bit of camera movement
 	uv *= 0.6 + sin(freq_time[15]) * 0.05;
 	uv = rotate(uv, sin(time * 0.1) * 1.0);
-	uv += time * 0.03;
+	uv += time * 0.53;
 	
 	
 	
