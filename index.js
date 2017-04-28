@@ -9,15 +9,15 @@ class DemolishInstance {
     }
 }
 document.addEventListener("DOMContentLoaded", () => {
-    window.addEventListener("resize", function (evt) {
-        resize();
-    });
-    function resize() {
-        var el = document.querySelector("#gl");
-        el.setAttribute("height", window.innerHeight.toString());
-        el.setAttribute("width", window.innerWidth.toString());
-    }
-    resize();
+    // window.addEventListener("resize", function(evt){
+    // 	resize();
+    // });
+    // function resize(){         
+    // 	var el = document.querySelector("#gl");
+    // 		el.setAttribute("height",window.innerHeight.toString());
+    // 		el.setAttribute("width",window.innerWidth.toString());
+    // }
+    // resize();
     let d = new DemolishInstance();
     window["demolished"] = d;
 });
