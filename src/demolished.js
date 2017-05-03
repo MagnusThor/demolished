@@ -10,9 +10,12 @@ var Demolished;
 (function (Demolished) {
     class Parameters {
         constructor(screenWidth, screenHeight) {
-            this.startTime = Date.now();
             this.screenWidth = screenWidth;
             this.screenHeight = screenHeight;
+        }
+        setScreen(w, h) {
+            this.screenWidth = w;
+            this.screenWidth = h;
         }
     }
     Demolished.Parameters = Parameters;
@@ -20,19 +23,21 @@ var Demolished;
     }
     Demolished.Effect = Effect;
     class EnityBase {
-        constructor(gl, name, start, stop) {
+        constructor(gl, name, start, stop, x, y) {
             this.gl = gl;
             this.name = name;
             this.start = start;
             this.stop = stop;
-            this.uniformsCache = new Object(); // todo: use WeekMap
-            this.loadResources().then(() => {
+            this.x = x;
+            this.y = y;
+            this.uniformsCache = new Map();
+            this.loadEntityResources().then(() => {
                 this.init();
-                this.target = this.createTarget(1, 1);
-                this.backTarget = this.createTarget(1, 1);
+                this.target = this.createRenderTarget(this.x, this.y);
+                this.backTarget = this.createRenderTarget(this.x, this.y);
             });
         }
-        createTarget(width, height) {
+        createRenderTarget(width, height) {
             let gl = this.gl;
             let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
             gl.bindTexture(gl.TEXTURE_2D, target.texture);
@@ -51,7 +56,7 @@ var Demolished;
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             return target;
         }
-        loadResources() {
+        loadEntityResources() {
             let urls = new Array();
             urls.push("entities/" + this.name + "/fragment.glsl");
             urls.push("entities/" + this.name + "/vertex.glsl");
@@ -61,11 +66,11 @@ var Demolished;
                 this.vertexShader = result[1];
                 return true;
             }).catch((reason) => {
-                this.OnError(reason);
+                this.onError(reason);
                 return false;
             });
         }
-        OnError(err) {
+        onError(err) {
             console.error(err);
         }
         init() {
@@ -79,21 +84,22 @@ var Demolished;
             gl.linkProgram(this.currentProgram);
             if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
                 let info = gl.getProgramInfoLog(this.currentProgram);
-                this.OnError(info);
+                this.onError(info);
             }
-            this.cacheUniformLocation(this.currentProgram, 'freq_data');
-            this.cacheUniformLocation(this.currentProgram, 'freq_time');
-            this.cacheUniformLocation(this.currentProgram, 'time');
-            this.cacheUniformLocation(this.currentProgram, 'mouse');
-            this.cacheUniformLocation(this.currentProgram, 'resolution');
+            this.cacheUniformLocation('freq_data');
+            this.cacheUniformLocation('freq_time');
+            this.cacheUniformLocation('time');
+            this.cacheUniformLocation('mouse');
+            this.cacheUniformLocation('resolution');
             this.positionAttribute = gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
             gl.enableVertexAttribArray(this.positionAttribute);
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
             gl.enableVertexAttribArray(this.vertexPosition);
             gl.useProgram(this.currentProgram);
         }
-        cacheUniformLocation(program, label) {
-            this.uniformsCache[label] = this.gl.getUniformLocation(program, label);
+        cacheUniformLocation(label) {
+            this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
+            //this.uniformsCache[label] = this.gl.getUniformLocation(program, label);
         }
         swapBuffers() {
             let tmp = this.target;
@@ -128,40 +134,38 @@ var Demolished;
     }
     Demolished.AudioData = AudioData;
     class World {
-        constructor() {
+        constructor(canvas) {
+            this.canvas = canvas;
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
             this.centerY = 0;
             this.currentEntity = 0;
-            this.canvas = document.querySelector("#gl");
             this.parameters = new Parameters(this.canvas.width, this.canvas.height);
             this.parameters.time = 0;
             this.parameters.mouseX = 0.5;
             this.parameters.mouseY = 0.5;
-            this.parameters.screenWidth = 500;
-            this.parameters.screenHeight = 500,
-                this.parameters.custom = {};
             this.entities = new Array();
             this.gl = this.getRendringContext();
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+            this.resizeCanvas();
+            this.webGLbuffer = this.gl.createBuffer();
             this.addEventListeners();
+            // load and add the entities
             this.loadTimeline().then((effects) => {
                 effects.forEach((effect) => {
                     this.addEntity(effect.name, effect.start, effect.stop);
-                    console.log("effects", effect);
                 });
                 this.loadMusic();
             });
         }
         getRendringContext() {
-            let gl;
-            gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
-            gl.getExtension('OES_standard_derivatives');
-            this.buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), gl.STATIC_DRAW);
-            return gl;
+            let renderingContext;
+            renderingContext = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+            renderingContext.getExtension('OES_standard_derivatives');
+            this.webGLbuffer = renderingContext.createBuffer();
+            renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
+            renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);
+            return renderingContext;
         }
         loadTimeline() {
             let timeline = window.fetch("entities/timeline.json").then((response) => {
@@ -171,8 +175,11 @@ var Demolished;
                 return json;
             });
         }
+        onStart() {
+        }
+        onStop() {
+        }
         onReady() {
-            throw ("Not implemented");
         }
         loadMusic() {
             let context = new AudioContext();
@@ -191,6 +198,7 @@ var Demolished;
                         bufferSource.connect(context.destination);
                         bufferSource.start(0);
                         this.onReady();
+                        this.resizeCanvas();
                     });
                 });
             });
@@ -200,23 +208,25 @@ var Demolished;
                 this.parameters.mouseX = evt.clientX / window.innerWidth;
                 this.parameters.mouseY = 1 - evt.clientY / window.innerHeight;
             });
+            window.addEventListener("resize", () => {
+                this.resizeCanvas();
+            });
         }
         addEntity(name, start, stop) {
-            const entity = new EnityBase(this.gl, name, start, stop);
+            const entity = new EnityBase(this.gl, name, start, stop, this.canvas.width, this.canvas.height);
             this.entities.push(entity);
             return entity;
         }
-        init() {
-            this.computeSurfaceCorners(); // todo: needs to be called OnResize
+        start(time) {
+            this.animate(time);
+            this.onStart();
         }
-        /**
-         *
-         *
-         *
-         * @memberOf World
-         */
+        stop() {
+            cancelAnimationFrame(this.animationFrameId);
+            this.onStop();
+        }
         animate(time) {
-            requestAnimationFrame((_time) => {
+            this.animationFrameId = requestAnimationFrame((_time) => {
                 if (this.audioAnalyser) {
                     this.audioAnalyser.getFloatFrequencyData(this.audioData.freqData);
                     this.audioAnalyser.getFloatTimeDomainData(this.audioData.timeData);
@@ -225,52 +235,57 @@ var Demolished;
             });
             // What to render needs to come from graph;
             let ent = this.entities[this.currentEntity];
-            // for next frame ,  use next effect;
+            // for next frame ,  use next effect if we reached the end of current
             if (time > ent.stop) {
                 this.currentEntity++;
-                // to do -> fire Dispose on current , maybe fadeOut ?? 
-                if (this.currentEntity === this.entities.length)
-                    this.currentEntity = 0;
+                if (this.currentEntity === this.entities.length) {
+                    this.stop();
+                }
             }
             this.renderEntities(ent, time);
         }
-        /**
-         * Calculate the rendering surface corners
-         *
-         *
-         * @memberOf World
-         */
-        computeSurfaceCorners() {
+        surfaceCorners() {
             if (this.gl) {
                 this.width = this.height * this.parameters.screenWidth / this.parameters.screenHeight;
-                let halfWidth = this.width * 0.5;
-                let halfHeight = this.height * 0.5;
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.webGLbuffer);
                 this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-                    this.centerX - halfWidth, this.centerY - halfHeight,
-                    this.centerX + halfWidth, this.centerY - halfHeight,
-                    this.centerX - halfWidth, this.centerY + halfHeight,
-                    this.centerX + halfWidth, this.centerY - halfHeight,
-                    this.centerX + halfWidth, this.centerY + halfHeight,
-                    this.centerX - halfWidth, this.centerY + halfHeight]), this.gl.STATIC_DRAW);
+                    this.centerX - this.width, this.centerY - this.height,
+                    this.centerX + this.width, this.centerY - this.height,
+                    this.centerX - this.width, this.centerY + this.height,
+                    this.centerX + this.width, this.centerY - this.height,
+                    this.centerX + this.width, this.centerY + this.height,
+                    this.centerX - this.width, this.centerY + this.height]), this.gl.STATIC_DRAW);
             }
+        }
+        setViewPort(width, height) {
+            this.gl.viewport(0, 0, width, height);
+        }
+        resizeCanvas() {
+            let width = window.innerWidth / 2;
+            let height = window.innerHeight / 2;
+            this.canvas.width = width;
+            this.canvas.height = height;
+            this.canvas.style.width = window.innerWidth + 'px';
+            this.canvas.style.height = window.innerHeight + 'px';
+            this.parameters.screenWidth = width;
+            this.parameters.screenHeight = height;
+            this.surfaceCorners();
+            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         }
         renderEntities(ent, tm) {
             document.querySelector("#time").textContent = ((tm / 1000) % 60).toFixed(2).toString();
             document.querySelector("#effect").textContent = ent.name;
             let gl = this.gl;
-            if (!ent.currentProgram)
-                return;
             this.parameters.time = tm; // Date.now() - this.parameters.startTime;
             gl.useProgram(ent.currentProgram);
-            gl.uniform1fv(ent.uniformsCache['freq_data'], this.audioData.freqData);
-            gl.uniform1fv(ent.uniformsCache['freq_time'], this.audioData.timeData);
-            gl.uniform1f(ent.uniformsCache['time'], this.parameters.time / 1000);
-            gl.uniform2f(ent.uniformsCache['mouse'], this.parameters.mouseX, this.parameters.mouseY);
-            gl.uniform2f(ent.uniformsCache['resolution'], this.canvas.width, this.canvas.height);
+            gl.uniform1fv(ent.uniformsCache.get('freq_data'), this.audioData.freqData);
+            gl.uniform1fv(ent.uniformsCache.get('freq_time'), this.audioData.timeData);
+            gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
+            gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
+            gl.uniform2f(ent.uniformsCache.get('resolution'), this.parameters.screenWidth, this.parameters.screenHeight);
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
             gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.webGLbuffer);
             gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);

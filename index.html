@@ -2,11 +2,18 @@
 
 <head>
 	<style>
-		html,
-		body {
+		body{
+			background-color: #000000;
 			margin: 0;
 			padding: 0;
-			background: #0088FF;
+			overflow: hidden;
+		}
+		
+		
+
+		.debug{
+			background: #fff;
+   			opacity: 0.6;
 		}
 		
 		mark {
@@ -14,11 +21,11 @@
 			bottom: 10px;
 			left: 10px;
 			padding: 10px;
-			background: #ffff00;
+		
 		}
 		
 		time {
-			background: #ffff00;
+		
 			position: absolute;
 			bottom: 10px;
 			right: 10px;
@@ -26,27 +33,64 @@
 		}
 		
 		canvas {
-			padding-left: 0;
-			padding-right: 0;
-			margin-left: auto;
-			margin-right: auto;
 			display: block;
-			width: 768px;
-			height: 428pxnde;
-			background: transparent;
+			width: 100vpw;
+			height: 100wph;
 		}
+
+		#debug{
+			width: 300px;
+			height: 300px;
+			background-color:rgba(255,255,255,0.5);
+			position: absolute;
+			top:10px;
+			left:10px;
+		}
+		.tune{
+			position: absolute;
+			top:10px;
+			left:10px;
+		
+			padding: 10px;
+		}
+		button{
+			position: absolute;
+			top:10px;
+			right:10px;
+			padding: 10px;
+			border: none;
+			z-index: 1000;
+		}
+
 	</style>
 </head>
 
 <body>
-	<mark id="effect">Loading........</mark>
-	<time id="time">0.00</time>
-	<canvas id="gl" width="760" height="428"></canvas>
+	<div id="main">
+	<button id="full-screen" class="debug">
+		fullscreen
+		</button>
+	<div class="tune debug">
+		MON Demo 1991 (Stroke My Big One Little Woman) arranged by ScareCrow</div>
+
+	<mark id="effect" class="debug">Loading........</mark>
+	<time id="time" class="debug">0.00</time>
+
+	<canvas id="gl"></canvas>
+	</div>
 	<script src="bundle.js"></script>
 	<script>
-
-	</script>
-
+	function launchFullscreen(element) {
+		if (element.requestFullscreen) { element.requestFullscreen(); } else if (element.mozRequestFullScreen)
+		{ element.mozRequestFullScreen(); } else if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); } else
+			if (element.msRequestFullscreen) { element.msRequestFullscreen(); }
+	}
+		console.log("..");
+		document.querySelector("#full-screen").addEventListener("click", function(){
+			launchFullscreen(document.querySelector("#main"));
+		});
+		
+		</script>
 </body>
 
 </html>
