@@ -10,10 +10,16 @@ class DemolishInstance{
             document.querySelector("#gl") as HTMLCanvasElement
         );
    
-        this.world.onReady = () => {
+        window.setTimeout( () => {
+
+             this.world.onReady = () => {
               this.world.start(0);
         }
 
+
+        },2000);
+
+       
 
     
     }

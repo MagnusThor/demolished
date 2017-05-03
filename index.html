@@ -2,18 +2,16 @@
 
 <head>
 	<style>
-		body{
+		body {
 			background-color: #000000;
 			margin: 0;
 			padding: 0;
 			overflow: hidden;
 		}
 		
-		
-
-		.debug{
+		.debug {
 			background: #fff;
-   			opacity: 0.6;
+			opacity: 0.6;
 		}
 		
 		mark {
@@ -21,11 +19,9 @@
 			bottom: 10px;
 			left: 10px;
 			padding: 10px;
-		
 		}
 		
 		time {
-		
 			position: absolute;
 			bottom: 10px;
 			right: 10px;
@@ -37,60 +33,59 @@
 			width: 100vpw;
 			height: 100wph;
 		}
-
-		#debug{
+		
+		#debug {
 			width: 300px;
 			height: 300px;
-			background-color:rgba(255,255,255,0.5);
+			background-color: rgba(255, 255, 255, 0.5);
 			position: absolute;
-			top:10px;
-			left:10px;
+			top: 10px;
+			left: 10px;
 		}
-		.tune{
-			position: absolute;
-			top:10px;
-			left:10px;
 		
+		.tune {
+			position: absolute;
+			top: 10px;
+			left: 10px;
 			padding: 10px;
 		}
-		button{
+		
+		button {
 			position: absolute;
-			top:10px;
-			right:10px;
+			top: 10px;
+			right: 10px;
 			padding: 10px;
 			border: none;
 			z-index: 1000;
 		}
-
 	</style>
 </head>
 
 <body>
 	<div id="main">
-	<button id="full-screen" class="debug">
+		<button id="full-screen" class="debug">
 		fullscreen
 		</button>
-	<div class="tune debug">
-		MON Demo 1991 (Stroke My Big One Little Woman) arranged by ScareCrow</div>
+		<div class="tune debug">
+			MON Demo 1991 (Stroke My Big One Little Woman) arranged by ScareCrow</div>
 
-	<mark id="effect" class="debug">Loading........</mark>
-	<time id="time" class="debug">0.00</time>
+		<mark id="effect" class="debug">Loading........</mark>
+		<time id="time" class="debug">0.00</time>
 
-	<canvas id="gl"></canvas>
+		<canvas id="gl"></canvas>
 	</div>
 	<script src="bundle.js"></script>
 	<script>
-	function launchFullscreen(element) {
-		if (element.requestFullscreen) { element.requestFullscreen(); } else if (element.mozRequestFullScreen)
-		{ element.mozRequestFullScreen(); } else if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); } else
-			if (element.msRequestFullscreen) { element.msRequestFullscreen(); }
-	}
-		console.log("..");
-		document.querySelector("#full-screen").addEventListener("click", function(){
+		function launchFullscreen(element) {
+			if (element.requestFullscreen) { element.requestFullscreen(); } else if (element.mozRequestFullScreen)
+			{ element.mozRequestFullScreen(); } else if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); } else
+				if (element.msRequestFullscreen) { element.msRequestFullscreen(); }
+		}
+	
+		document.querySelector("#full-screen").addEventListener("click", function () {
 			launchFullscreen(document.querySelector("#main"));
 		});
-		
-		</script>
+	</script>
 </body>
 
 </html>
