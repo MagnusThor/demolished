@@ -14,10 +14,11 @@ class DemolishInstance{
 
              this.world.onReady = () => {
               this.world.start(0);
+              x
         }
 
 
-        },2000);
+        },8000);
 
        
 
