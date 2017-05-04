@@ -385,9 +385,11 @@ const demolished_1 = __webpack_require__(0);
 class DemolishInstance {
     constructor() {
         this.world = new demolished_1.Demolished.World(document.querySelector("#gl"));
-        this.world.onReady = () => {
-            this.world.start(0);
-        };
+        window.setTimeout(() => {
+            this.world.onReady = () => {
+                this.world.start(0);
+            };
+        }, 2000);
     }
 }
 document.addEventListener("DOMContentLoaded", () => {

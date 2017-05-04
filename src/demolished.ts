@@ -5,9 +5,6 @@ if (!window.requestAnimationFrame) {
         };
     })();
 }
-
-
-
 export namespace Demolished {
 
     export class Parameters {
