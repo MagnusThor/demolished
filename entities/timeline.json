@@ -2,38 +2,9 @@
 
     {
         "order": 0,
-        "name": "old-school",
+        "name": "landscape",
         "description": "",
         "start": 0,
-        "stop": 10500
-    },
-
-    {
-        "order": 0,
-        "name": "vu",
-        "description": "http://glslsandbox.com/e#39954.7",
-        "start": 15000,
-        "stop": 19500
-    },
-    {
-        "order": 1,
-        "name": "plasma",
-        "description": "based on http://glslsandbox.com/e#40233.0",
-        "start": 19500,
-        "stop": 50000
-    },
-    {
-        "order": 2,
-        "name": "voronoi",
-        "description": "http://glslsandbox.com/e#40169.0",
-        "start": 50001,
-        "stop": 80000
-    },
-    {
-        "order": 2,
-        "name": "fractal_cartoon",
-        "description": "http://glslsandbox.com/e#25523.0",
-        "start": 80001,
-        "stop": 116000
+        "stop": 187800
     }
 ]

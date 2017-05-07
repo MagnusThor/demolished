@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
         launchButton.textContent = "Press to start!";
     };
     launchButton.addEventListener("click", function () {
-        launchFullscreen(document.querySelector("#main"));
+        //launchFullscreen(document.querySelector("#main"));
         launchButton.style.display = "none";
         demolished.world.start(0);
     });

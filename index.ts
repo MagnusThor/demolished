@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	
 		launchButton.addEventListener("click", function () {
 
-			launchFullscreen(document.querySelector("#main"));
+			//launchFullscreen(document.querySelector("#main"));
             launchButton.style.display = "none"
               demolished.world.start(0);
 		});

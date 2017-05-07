@@ -267,7 +267,7 @@ var Demolished;
                         this.bufferSource = context.createBufferSource();
                         this.audioAnalyser = context.createAnalyser();
                         this.bufferSource.buffer = audioBuffer;
-                        this.audioAnalyser.smoothingTimeConstant = 0.2;
+                        this.audioAnalyser.smoothingTimeConstant = 0.7;
                         this.audioAnalyser.fftSize = 32;
                         this.audioData =
                             new AudioData(new Float32Array(32), new Float32Array(32), this.audioAnalyser.minDecibels, this.audioAnalyser.maxDecibels);
@@ -420,7 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
         launchButton.textContent = "Press to start!";
     };
     launchButton.addEventListener("click", function () {
-        launchFullscreen(document.querySelector("#main"));
+        //launchFullscreen(document.querySelector("#main"));
         launchButton.style.display = "none";
         demolished.world.start(0);
     });
