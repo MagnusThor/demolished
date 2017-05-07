@@ -402,7 +402,7 @@ export namespace Demolished {
 
         renderEntities(ent: EnityBase, tm: number) {
 
-            document.querySelector("#time").textContent =((tm/1000)%60).toFixed(2).toString();
+            document.querySelector("#time").textContent = ((tm/1000)%60).toFixed(2).toString();
             document.querySelector("#effect").textContent = ent.name;
 
             let gl = this.gl;
