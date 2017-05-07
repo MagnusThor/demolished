@@ -19,6 +19,7 @@ vec4 pal(float t) {
 void main( void ) {
 	vec2 pos = gl_FragCoord.xy / resolution;
 	float aspect = resolution.x / resolution.y  + freq_time[7] ;
+	
 
 	float rand = mod(fract(sin(dot(pos + time, vec2(12.9898,100.233))) * 43758.5453), 1.0) * 0.0;
 	rand += .8 * (1. - (length((pos - (1.0 -mouse)) * vec2(aspect, 1.)) * 8.));

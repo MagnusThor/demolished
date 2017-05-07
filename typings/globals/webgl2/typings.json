@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/44102c1983b84c931ed574bc07c68759efd67cfa/webgl2/index.d.ts",
+    "raw": "registry:dt/webgl2#0.0.0+20170321023124",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/44102c1983b84c931ed574bc07c68759efd67cfa/webgl2/index.d.ts"
+  }
+}
