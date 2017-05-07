@@ -50,41 +50,35 @@
 			padding: 10px;
 		}
 		
-		button {
+		button#full-screen {
 			position: absolute;
-			top: 10px;
-			right: 10px;
+			top: 50%;
+			right: 25%;
+			left: 25%;
 			padding: 10px;
 			border: none;
 			z-index: 1000;
+			width: 50%;
 		}
 	</style>
 </head>
 
 <body>
 	<div id="main">
-		<button id="full-screen" class="debug">
-		fullscreen
+		<button id="full-screen" class="debug" disabled="true">
+		Loading 
 		</button>
 		<div class="tune debug">
 			MON Demo 1991 (Stroke My Big One Little Woman) arranged by ScareCrow</div>
 
-		<mark id="effect" class="debug">Loading........</mark>
+		<mark id="effect" class="debug">....</mark>
 		<time id="time" class="debug">0.00</time>
 
 		<canvas id="gl"></canvas>
 	</div>
 	<script src="bundle.js"></script>
 	<script>
-		function launchFullscreen(element) {
-			if (element.requestFullscreen) { element.requestFullscreen(); } else if (element.mozRequestFullScreen)
-			{ element.mozRequestFullScreen(); } else if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); } else
-				if (element.msRequestFullscreen) { element.msRequestFullscreen(); }
-		}
-	
-		document.querySelector("#full-screen").addEventListener("click", function () {
-			launchFullscreen(document.querySelector("#main"));
-		});
+
 	</script>
 </body>
 

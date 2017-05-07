@@ -143,7 +143,7 @@ export namespace Demolished {
             this.cacheUniformLocation('mouse');
             this.cacheUniformLocation('resolution');
 
-            this.positionAttribute = gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
+            this.positionAttribute = 0;// gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
             gl.enableVertexAttribArray(this.positionAttribute);
 
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
@@ -200,7 +200,7 @@ export namespace Demolished {
 
         entities: Array<EnityBase>;
 
-        gl: WebGLRenderingContext;
+        gl: WebGLRenderingContext | any;
         webGLbuffer: WebGLBuffer
 
         width: number = 1;
@@ -214,8 +214,17 @@ export namespace Demolished {
 
         currentEntity : number =0;
         private getRendringContext(): WebGLRenderingContext {
-            let renderingContext: WebGLRenderingContext;
-            renderingContext = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
+            let renderingContext: any;
+
+            let contextAttributes = { preserveDrawingBuffer: true };
+
+
+            renderingContext = 
+            this.canvas.getContext( 'webgl2', contextAttributes )
+        || this.canvas.getContext( 'webgl', contextAttributes )
+        || this.canvas.getContext( 'experimental-webgl', contextAttributes );
+            
+            //this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
             renderingContext.getExtension('OES_standard_derivatives');
             this.webGLbuffer = renderingContext.createBuffer();
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
@@ -268,17 +277,18 @@ export namespace Demolished {
 
         onReady() { 
         }
+
+        bufferSource:  AudioBufferSourceNode
         loadMusic() {
             let context = new AudioContext();
 
             window.fetch("assets/song.mp3").then((response: Response) => {
                 response.arrayBuffer().then((buffer: ArrayBuffer) => {
                     context.decodeAudioData(buffer, (audioBuffer: AudioBuffer) => {
-                        let bufferSource = context.createBufferSource();
+                        this.bufferSource = context.createBufferSource();
                         this.audioAnalyser = context.createAnalyser();
 
-                        bufferSource.buffer = audioBuffer;
-                        bufferSource.loop = true;
+                        this.bufferSource.buffer = audioBuffer;
 
                         this.audioAnalyser.smoothingTimeConstant = 0.2;
                         this.audioAnalyser.fftSize = 32;
@@ -287,11 +297,10 @@ export namespace Demolished {
                             new AudioData(new Float32Array(32), new Float32Array(32),
                                 this.audioAnalyser.minDecibels, this.audioAnalyser.maxDecibels);
 
-                        bufferSource.connect(this.audioAnalyser);
-                        bufferSource.connect(context.destination);
+                        this.bufferSource.connect(this.audioAnalyser);
+                        this.bufferSource.connect(context.destination);
 
-                        bufferSource.start(0);
-
+                       
                         this.onReady();
 
                         this.resizeCanvas();
@@ -319,7 +328,10 @@ export namespace Demolished {
         }
 
         start(time:number){
+            //    console.log("demo start called..");
                 this.animate(time);
+                this.bufferSource.start(0);
+
                 this.onStart();
         }
         stop(){
@@ -415,7 +427,6 @@ export namespace Demolished {
 
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
-
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
 

@@ -91,7 +91,7 @@ var Demolished;
             this.cacheUniformLocation('time');
             this.cacheUniformLocation('mouse');
             this.cacheUniformLocation('resolution');
-            this.positionAttribute = gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
+            this.positionAttribute = 0; // gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
             gl.enableVertexAttribArray(this.positionAttribute);
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
             gl.enableVertexAttribArray(this.vertexPosition);
@@ -160,7 +160,12 @@ var Demolished;
         }
         getRendringContext() {
             let renderingContext;
-            renderingContext = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+            let contextAttributes = { preserveDrawingBuffer: true };
+            renderingContext =
+                this.canvas.getContext('webgl2', contextAttributes)
+                    || this.canvas.getContext('webgl', contextAttributes)
+                    || this.canvas.getContext('experimental-webgl', contextAttributes);
+            //this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
             renderingContext.getExtension('OES_standard_derivatives');
             this.webGLbuffer = renderingContext.createBuffer();
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
@@ -186,17 +191,15 @@ var Demolished;
             window.fetch("assets/song.mp3").then((response) => {
                 response.arrayBuffer().then((buffer) => {
                     context.decodeAudioData(buffer, (audioBuffer) => {
-                        let bufferSource = context.createBufferSource();
+                        this.bufferSource = context.createBufferSource();
                         this.audioAnalyser = context.createAnalyser();
-                        bufferSource.buffer = audioBuffer;
-                        bufferSource.loop = true;
+                        this.bufferSource.buffer = audioBuffer;
                         this.audioAnalyser.smoothingTimeConstant = 0.2;
                         this.audioAnalyser.fftSize = 32;
                         this.audioData =
                             new AudioData(new Float32Array(32), new Float32Array(32), this.audioAnalyser.minDecibels, this.audioAnalyser.maxDecibels);
-                        bufferSource.connect(this.audioAnalyser);
-                        bufferSource.connect(context.destination);
-                        bufferSource.start(0);
+                        this.bufferSource.connect(this.audioAnalyser);
+                        this.bufferSource.connect(context.destination);
                         this.onReady();
                         this.resizeCanvas();
                     });
@@ -218,7 +221,9 @@ var Demolished;
             return entity;
         }
         start(time) {
+            //    console.log("demo start called..");
             this.animate(time);
+            this.bufferSource.start(0);
             this.onStart();
         }
         stop() {
