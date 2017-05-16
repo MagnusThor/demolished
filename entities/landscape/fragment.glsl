@@ -6,6 +6,9 @@ uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
 
+uniform float freq_data[32];
+uniform float freq_time[32];
+
 
 mat3 m = mat3( 0.00,  0.80,  0.60,
               -0.80,  0.36, -0.48,
@@ -235,9 +238,9 @@ vec3 camPath( float time )
 
 void main(void)
 {
-    vec2 xy = -1.0 + 2.0*gl_FragCoord.xy / resolution.xy;
+    vec2 xy = -1.0 + 2.0* gl_FragCoord.xy / resolution.xy;
 
-	vec2 s = xy*vec2(1.75,1.0);
+	vec2 s = xy * vec2(1.75,1.0);
 	
     float time =  time*.15;
 
@@ -246,9 +249,11 @@ void main(void)
 
 
 	vec3 campos = camPath( time );
-	vec3 camtar = camPath( time + 3.0 );
+	vec3 camtar = camPath( time + 2.0 );
 	campos.y = terrain( campos.xz ) + 15.0;
-	camtar.y = campos.y*0.5;
+    camtar.y = (campos.y * (.5 ));
+
+
 
 	float roll = 0.1*cos(0.1*time);
 	vec3 cw = normalize(camtar-campos);
@@ -258,6 +263,7 @@ void main(void)
 	vec3 rd = normalize( s.x*cu + s.y*cv + 1.6*cw );
 
 	float sundot = clamp(dot(rd,light1),0.0,1.0);
+
 	vec3 col;
     float t;
     if( !jinteresct(campos,rd,t) )
@@ -288,13 +294,15 @@ void main(void)
   	    col *= 0.75;
          // snow
         #if 1
-		float h = smoothstep(55.0,80.0,pos.y + 25.0*fbm(0.01*pos.xz) );
-        float e = smoothstep(1.0-0.5*h,1.0-0.1*h,nor.y);
-        float o = 0.3 + 0.7*smoothstep(0.0,0.1,nor.x+h*h);
-        float s = h*e*o;
+            float h = smoothstep(55.0,80.0,pos.y + 25.0*fbm(0.01*pos.xz) );
+            float e = smoothstep(1.0-0.5*h,1.0-0.1*h,nor.y);
+            float o = 0.3 + 0.7*smoothstep(0.0,0.1,nor.x+h*h);
+            float s = h*e*o;
         s = smoothstep( 0.1, 0.9, s );
         col = mix( col, 0.4*vec3(0.6,0.65,0.7), s );
         #endif
+
+        
 
 		
 		vec3 brdf  = 2.0*vec3(0.17,0.19,0.20)*clamp(nor.y,0.0,1.0);
@@ -313,9 +321,10 @@ void main(void)
 	vec2 uv = xy*0.5+0.5;
 	col *= 0.7 + 0.3*pow(16.0*uv.x*uv.y*(1.0-uv.x)*(1.0-uv.y),0.1);
 	
-    #ifdef STEREO	
-    col *= vec3( isCyan, 1.0-isCyan, 1.0-isCyan );	
-	#endif
+   
+
+
+
 	
 	gl_FragColor=vec4(col,1.0);
 }

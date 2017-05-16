@@ -8,22 +8,27 @@ if (!window.requestAnimationFrame) {
 }
 var Demolished;
 (function (Demolished) {
-    class Parameters {
-        constructor(screenWidth, screenHeight) {
+    var Parameters = (function () {
+        function Parameters(screenWidth, screenHeight) {
             this.screenWidth = screenWidth;
             this.screenHeight = screenHeight;
         }
-        setScreen(w, h) {
+        Parameters.prototype.setScreen = function (w, h) {
             this.screenWidth = w;
             this.screenWidth = h;
-        }
-    }
+        };
+        return Parameters;
+    }());
     Demolished.Parameters = Parameters;
-    class Effect {
-    }
+    var Effect = (function () {
+        function Effect() {
+        }
+        return Effect;
+    }());
     Demolished.Effect = Effect;
-    class EnityBase {
-        constructor(gl, name, start, stop, x, y) {
+    var EnityBase = (function () {
+        function EnityBase(gl, name, start, stop, x, y) {
+            var _this = this;
             this.gl = gl;
             this.name = name;
             this.start = start;
@@ -31,15 +36,15 @@ var Demolished;
             this.x = x;
             this.y = y;
             this.uniformsCache = new Map();
-            this.loadEntityResources().then(() => {
-                this.init();
-                this.target = this.createRenderTarget(this.x, this.y);
-                this.backTarget = this.createRenderTarget(this.x, this.y);
+            this.loadEntityResources().then(function () {
+                _this.initShader();
+                _this.target = _this.createRenderTarget(_this.x, _this.y);
+                _this.backTarget = _this.createRenderTarget(_this.x, _this.y);
             });
         }
-        createRenderTarget(width, height) {
-            let gl = this.gl;
-            let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
+        EnityBase.prototype.createRenderTarget = function (width, height) {
+            var gl = this.gl;
+            var target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
             gl.bindTexture(gl.TEXTURE_2D, target.texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -55,35 +60,38 @@ var Demolished;
             gl.bindRenderbuffer(gl.RENDERBUFFER, null);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             return target;
-        }
-        loadEntityResources() {
-            let urls = new Array();
+        };
+        EnityBase.prototype.loadEntityResources = function () {
+            var _this = this;
+            var urls = new Array();
             urls.push("entities/" + this.name + "/fragment.glsl");
             urls.push("entities/" + this.name + "/vertex.glsl");
-            urls.push("entities/" + this.name + "/uniforms.json");
-            return Promise.all(urls.map(url => fetch(url).then(resp => resp.text()))).then(result => {
-                this.fragmetShader = result[0];
-                this.vertexShader = result[1];
+            //  urls.push("entities/" + this.name + "/uniforms.json");
+            return Promise.all(urls.map(function (url) {
+                return fetch(url).then(function (resp) { return resp.text(); });
+            })).then(function (result) {
+                _this.fragmetShader = result[0];
+                _this.vertexShader = result[1];
                 return true;
-            }).catch((reason) => {
-                this.onError(reason);
+            }).catch(function (reason) {
+                _this.onError(reason);
                 return false;
             });
-        }
-        onError(err) {
+        };
+        EnityBase.prototype.onError = function (err) {
             console.error(err);
-        }
-        init() {
-            let gl = this.gl;
+        };
+        EnityBase.prototype.initShader = function () {
+            var gl = this.gl;
             this.buffer = gl.createBuffer();
             this.currentProgram = gl.createProgram();
-            let vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
-            let fs = this.createShader(gl, this.fragmetShader, gl.FRAGMENT_SHADER);
+            var vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
+            var fs = this.createShader(gl, this.fragmetShader, gl.FRAGMENT_SHADER);
             gl.attachShader(this.currentProgram, vs);
             gl.attachShader(this.currentProgram, fs);
             gl.linkProgram(this.currentProgram);
             if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
-                let info = gl.getProgramInfoLog(this.currentProgram);
+                var info = gl.getProgramInfoLog(this.currentProgram);
                 this.onError(info);
             }
             this.cacheUniformLocation('freq_data');
@@ -91,39 +99,40 @@ var Demolished;
             this.cacheUniformLocation('time');
             this.cacheUniformLocation('mouse');
             this.cacheUniformLocation('resolution');
-            this.positionAttribute = 0; // gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
-            gl.enableVertexAttribArray(this.positionAttribute);
+            // this.positionAttribute = 0;// gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
+            // gl.enableVertexAttribArray(this.positionAttribute);
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
             gl.enableVertexAttribArray(this.vertexPosition);
             gl.useProgram(this.currentProgram);
-        }
-        cacheUniformLocation(label) {
+        };
+        EnityBase.prototype.cacheUniformLocation = function (label) {
             this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
-            //this.uniformsCache[label] = this.gl.getUniformLocation(program, label);
-        }
-        swapBuffers() {
-            let tmp = this.target;
+        };
+        EnityBase.prototype.swapBuffers = function () {
+            var tmp = this.target;
             this.target = this.backTarget;
             this.backTarget = tmp;
-        }
-        createShader(gl, src, type) {
-            let shader = gl.createShader(type);
+        };
+        EnityBase.prototype.createShader = function (gl, src, type) {
+            var shader = gl.createShader(type);
             gl.shaderSource(shader, src);
             gl.compileShader(shader);
             return shader;
-        }
-    }
+        };
+        return EnityBase;
+    }());
     Demolished.EnityBase = EnityBase;
-    class RenderTarget {
-        constructor(frameBuffer, renderBuffer, texture) {
+    var RenderTarget = (function () {
+        function RenderTarget(frameBuffer, renderBuffer, texture) {
             this.frameBuffer = frameBuffer;
             this.renderBuffer = renderBuffer;
             this.texture = texture;
         }
-    }
+        return RenderTarget;
+    }());
     Demolished.RenderTarget = RenderTarget;
-    class AudioData {
-        constructor(freqData, timeData, minDb, maxDb) {
+    var AudioData = (function () {
+        function AudioData(freqData, timeData, minDb, maxDb) {
             this.freqData = freqData;
             this.timeData = timeData;
             this.minDb = minDb;
@@ -131,11 +140,25 @@ var Demolished;
             this.freqScale = 1 / (maxDb - minDb);
             this.freqOffset = minDb;
         }
-    }
+        return AudioData;
+    }());
     Demolished.AudioData = AudioData;
-    class World {
-        constructor(canvas) {
+    var AudioAnalyzerSettings = (function () {
+        function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {
+            this.fftSize = fftSize;
+            this.smoothingTimeConstant = smoothingTimeConstant;
+            this.minDecibels = minDecibels;
+            this.maxDecibels = maxDecibels;
+        }
+        return AudioAnalyzerSettings;
+    }());
+    Demolished.AudioAnalyzerSettings = AudioAnalyzerSettings;
+    var World = (function () {
+        function World(canvas, timelineFile, audioAnalyzerSettings) {
+            var _this = this;
             this.canvas = canvas;
+            this.timelineFile = timelineFile;
+            this.audioAnalyzerSettings = audioAnalyzerSettings;
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
@@ -147,99 +170,106 @@ var Demolished;
             this.parameters.mouseY = 0.5;
             this.entities = new Array();
             this.gl = this.getRendringContext();
-            this.resizeCanvas();
             this.webGLbuffer = this.gl.createBuffer();
             this.addEventListeners();
             // load and add the entities
-            this.loadTimeline().then((effects) => {
-                effects.forEach((effect) => {
-                    this.addEntity(effect.name, effect.start, effect.stop);
+            this.loadTimeline(this.timelineFile).then(function (effects) {
+                effects.forEach(function (effect) {
+                    _this.addEntity(effect.name, effect.start, effect.stop);
                 });
-                this.loadMusic();
+                _this.loadMusic();
             });
         }
-        getRendringContext() {
-            let renderingContext;
-            let contextAttributes = { preserveDrawingBuffer: true };
+        World.prototype.getRendringContext = function () {
+            var renderingContext;
+            var contextAttributes = { preserveDrawingBuffer: true };
             renderingContext =
                 this.canvas.getContext('webgl2', contextAttributes)
                     || this.canvas.getContext('webgl', contextAttributes)
                     || this.canvas.getContext('experimental-webgl', contextAttributes);
-            //this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl')
             renderingContext.getExtension('OES_standard_derivatives');
             this.webGLbuffer = renderingContext.createBuffer();
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);
             return renderingContext;
-        }
-        loadTimeline() {
-            let timeline = window.fetch("entities/timeline.json").then((response) => {
+        };
+        World.prototype.loadTimeline = function (timelineFile) {
+            var timeline = window.fetch(timelineFile).then(function (response) {
                 return response.json();
             });
-            return timeline.then((json) => {
-                return json;
+            return timeline.then(function (json) {
+                return json.entities;
             });
-        }
-        onStart() {
-        }
-        onStop() {
-        }
-        onReady() {
-        }
-        loadMusic() {
-            let context = new AudioContext();
-            window.fetch("assets/song.mp3").then((response) => {
-                response.arrayBuffer().then((buffer) => {
-                    context.decodeAudioData(buffer, (audioBuffer) => {
-                        this.bufferSource = context.createBufferSource();
-                        this.audioAnalyser = context.createAnalyser();
-                        this.bufferSource.buffer = audioBuffer;
-                        this.audioAnalyser.smoothingTimeConstant = 0.7;
-                        this.audioAnalyser.fftSize = 32;
-                        this.audioData =
-                            new AudioData(new Float32Array(32), new Float32Array(32), this.audioAnalyser.minDecibels, this.audioAnalyser.maxDecibels);
-                        this.bufferSource.connect(this.audioAnalyser);
-                        this.bufferSource.connect(context.destination);
-                        this.onReady();
-                        this.resizeCanvas();
+        };
+        World.prototype.onStart = function () {
+        };
+        World.prototype.onStop = function () {
+        };
+        World.prototype.onReady = function () {
+        };
+        // todo:Rename
+        World.prototype.getAudioTracks = function () {
+            var ms = this.bufferSource.context["createMediaStreamDestination"]();
+            this.bufferSource.connect(ms);
+            return ms.stream.getAudioTracks();
+        };
+        World.prototype.loadMusic = function () {
+            var _this = this;
+            var context = new AudioContext();
+            window.fetch("assets/song.mp3").then(function (response) {
+                response.arrayBuffer().then(function (buffer) {
+                    context.decodeAudioData(buffer, function (audioBuffer) {
+                        _this.bufferSource = context.createBufferSource();
+                        _this.audioAnalyser = context.createAnalyser();
+                        _this.bufferSource.buffer = audioBuffer;
+                        _this.audioAnalyser.smoothingTimeConstant = _this.audioAnalyzerSettings.smoothingTimeConstant;
+                        _this.audioAnalyser.fftSize = _this.audioAnalyzerSettings.fftSize;
+                        _this.audioData =
+                            new AudioData(new Float32Array(32), new Float32Array(32), _this.audioAnalyzerSettings.minDecibels, _this.audioAnalyzerSettings.maxDecibels);
+                        _this.bufferSource.connect(_this.audioAnalyser);
+                        _this.bufferSource.connect(context.destination);
+                        _this.resizeCanvas();
+                        _this.onReady();
                     });
                 });
             });
-        }
-        addEventListeners() {
-            document.addEventListener("mousemove", (evt) => {
-                this.parameters.mouseX = evt.clientX / window.innerWidth;
-                this.parameters.mouseY = 1 - evt.clientY / window.innerHeight;
+        };
+        World.prototype.addEventListeners = function () {
+            var _this = this;
+            document.addEventListener("mousemove", function (evt) {
+                _this.parameters.mouseX = evt.clientX / window.innerWidth;
+                _this.parameters.mouseY = 1 - evt.clientY / window.innerHeight;
             });
-            window.addEventListener("resize", () => {
-                this.resizeCanvas();
+            window.addEventListener("resize", function () {
+                _this.resizeCanvas();
             });
-        }
-        addEntity(name, start, stop) {
-            const entity = new EnityBase(this.gl, name, start, stop, this.canvas.width, this.canvas.height);
+        };
+        World.prototype.addEntity = function (name, start, stop) {
+            var entity = new EnityBase(this.gl, name, start, stop, this.canvas.width, this.canvas.height);
             this.entities.push(entity);
             return entity;
-        }
-        start(time) {
-            //    console.log("demo start called..");
+        };
+        World.prototype.start = function (time) {
             this.animate(time);
             this.bufferSource.start(0);
             this.onStart();
-        }
-        stop() {
+        };
+        World.prototype.stop = function () {
             cancelAnimationFrame(this.animationFrameId);
+            this.bufferSource.stop();
             this.onStop();
-        }
-        animate(time) {
-            this.animationFrameId = requestAnimationFrame((_time) => {
-                if (this.audioAnalyser) {
-                    this.audioAnalyser.getFloatFrequencyData(this.audioData.freqData);
-                    this.audioAnalyser.getFloatTimeDomainData(this.audioData.timeData);
+        };
+        World.prototype.animate = function (time) {
+            var _this = this;
+            this.animationFrameId = requestAnimationFrame(function (_time) {
+                if (_this.audioAnalyser) {
+                    _this.audioAnalyser.getFloatFrequencyData(_this.audioData.freqData);
+                    _this.audioAnalyser.getFloatTimeDomainData(_this.audioData.timeData);
                 }
-                this.animate(_time);
+                _this.animate(_time);
             });
             // What to render needs to come from graph;
-            let ent = this.entities[this.currentEntity];
+            var ent = this.entities[this.currentEntity];
             // for next frame ,  use next effect if we reached the end of current
             if (time > ent.stop) {
                 this.currentEntity++;
@@ -248,8 +278,8 @@ var Demolished;
                 }
             }
             this.renderEntities(ent, time);
-        }
-        surfaceCorners() {
+        };
+        World.prototype.surfaceCorners = function () {
             if (this.gl) {
                 this.width = this.height * this.parameters.screenWidth / this.parameters.screenHeight;
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.webGLbuffer);
@@ -261,13 +291,13 @@ var Demolished;
                     this.centerX + this.width, this.centerY + this.height,
                     this.centerX - this.width, this.centerY + this.height]), this.gl.STATIC_DRAW);
             }
-        }
-        setViewPort(width, height) {
+        };
+        World.prototype.setViewPort = function (width, height) {
             this.gl.viewport(0, 0, width, height);
-        }
-        resizeCanvas() {
-            let width = window.innerWidth / 2;
-            let height = window.innerHeight / 2;
+        };
+        World.prototype.resizeCanvas = function () {
+            var width = window.innerWidth / 2;
+            var height = window.innerHeight / 2;
             this.canvas.width = width;
             this.canvas.height = height;
             this.canvas.style.width = window.innerWidth + 'px';
@@ -276,11 +306,10 @@ var Demolished;
             this.parameters.screenHeight = height;
             this.surfaceCorners();
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-        }
-        renderEntities(ent, tm) {
+        };
+        World.prototype.renderEntities = function (ent, tm) {
             document.querySelector("#time").textContent = ((tm / 1000) % 60).toFixed(2).toString();
-            document.querySelector("#effect").textContent = ent.name;
-            let gl = this.gl;
+            var gl = this.gl;
             this.parameters.time = tm; // Date.now() - this.parameters.startTime;
             gl.useProgram(ent.currentProgram);
             gl.uniform1fv(ent.uniformsCache.get('freq_data'), this.audioData.freqData);
@@ -301,7 +330,8 @@ var Demolished;
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             ent.swapBuffers();
-        }
-    }
+        };
+        return World;
+    }());
     Demolished.World = World;
 })(Demolished = exports.Demolished || (exports.Demolished = {}));

@@ -1,85 +1,27 @@
 <html>
-
 <head>
-	<style>
-		body {
-			background-color: #000000;
-			margin: 0;
-			padding: 0;
-			overflow: hidden;
-		}
-		
-		.debug {
-			background: #fff;
-			opacity: 0.6;
-		}
-		
-		mark {
-			position: absolute;
-			bottom: 10px;
-			left: 10px;
-			padding: 10px;
-		}
-		
-		time {
-			position: absolute;
-			bottom: 10px;
-			right: 10px;
-			padding: 10px;
-		
-		}
-		
-		canvas {
-			display: block;
-			width: 100vpw;
-			height: 100wph;
-		}
-		
-		#debug {
-			width: 300px;
-			height: 300px;
-			background-color: rgba(255, 255, 255, 0.5);
-			position: absolute;
-			top: 10px;
-			left: 10px;
-		}
-		
-		.tune {
-			position: absolute;
-			top: 10px;
-			left: 10px;
-			padding: 10px;
-		}
-		
-		button#full-screen {
-			position: absolute;
-			top: 50%;
-			right: 25%;
-			left: 25%;
-			padding: 10px;
-			border: none;
-			z-index: 1000;
-			width: 50%;
-		}
-	</style>
+	<title>demolished | magnus thor</title>
+	<link href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
+	<link href="css/style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
+	<div class="toolbar">
+		<label>
+			<input type="checkbox" id="record-canvas"/>
+					Record demo playback  
+			</label>
+		<div class="debug hide" id="recording">
+		</div>
+		<time id="time">0.00</time>
+	</div>
 	<div id="main">
-		<button id="full-screen" class="debug" disabled="true">
-		Loading 
+		<button id="full-screen" class="debug" disabled="true">	Start			
 		</button>
-		<div class="tune debug">
-			MON Demo 1991 (Stroke My Big One Little Woman) arranged by ScareCrow</div>
-
-		<mark id="effect" class="debug">....</mark>
-		<time id="time" class="debug">0.00</time>
-
 		<canvas id="gl"></canvas>
 	</div>
 	<script src="bundle.js"></script>
 	<script>
-
 	</script>
 </body>
 

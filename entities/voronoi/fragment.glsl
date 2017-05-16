@@ -8,29 +8,22 @@ uniform vec2 resolution;
 uniform float freq_data[32];
 uniform float freq_time[32];
 
-// by srtuss, 2013
-// was trying to find some sort of "mechanical" fractal for texture/heightmap
-// generation, but then i ended up with this.
 
-// rotate position around axis
+
 vec2 rotate(vec2 p, float a)
 {
 	return vec2(p.x * cos(a) - p.y * sin(a), p.x * sin(a) + p.y * cos(a));
 }
 
-// 1D random numbers
 float rand(float n)
 {
     return fract(sin(n) * 43758.5453123);
 }
 
-// 2D random numbers
 vec2 rand2(in vec2 p)
 {
 	return fract(vec2(sin(p.x * 591.32 + p.y * 154.077), cos(p.x * 391.32 + p.y * 49.077)));
 }
-
-// 1D noise
 float noise1(float p)
 {
 	float fl = floor(p);
@@ -38,7 +31,6 @@ float noise1(float p)
 	return mix(rand(fl), rand(fl + 1.000004), fc);
 }
 
-// voronoi distance noise, based on iq's articles
 float voronoi(in vec2 x)
 {
 	vec2 p = floor(x);
@@ -70,7 +62,6 @@ float voronoi(in vec2 x)
 }
 
 
-//float flicker = noise1(time * 2.0) * 0.8 + 0.4;
 
 void main(void)
 {
