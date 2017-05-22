@@ -17,16 +17,17 @@ var DemolishInstance = (function () {
                 var videoStream = _this.world.canvas["captureStream"](60);
                 var videoTrack = videoStream.getVideoTracks()[0];
                 var audioTrack = _this.world.getAudioTracks()[0];
-                audioTrack.enabled = false;
                 _this.recorder = new demolishedRecorder_1.DemolishedRecorder(videoTrack, audioTrack);
                 _this.recorder.start(1000);
             }
         };
         this.world.onStop = function () {
-            if (_this.recorder.data) {
+            if (_this.recorder) {
                 var recorderNode = document.querySelector("#recording");
                 _this.recorder.stop();
-                var blob = new Blob(_this.recorder.data, { type: 'video/webm' });
+                var blob = new Blob(_this.recorder.data, {
+                    type: 'video/webm'
+                });
                 var url = window.URL.createObjectURL(blob);
                 var downloadlink = document.createElement('a');
                 downloadlink.textContent = "download recording";
@@ -36,8 +37,7 @@ var DemolishInstance = (function () {
             }
         };
     }
-    DemolishInstance.prototype.onReady = function () {
-    };
+    DemolishInstance.prototype.onReady = function () { };
     return DemolishInstance;
 }());
 document.addEventListener("DOMContentLoaded", function () {

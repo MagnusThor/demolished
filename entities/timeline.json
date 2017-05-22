@@ -4,13 +4,28 @@
         "fftSize": 32,
         "smoothingTimeConstant": 0.6
     },
-    "entities": [
-        {
-            "order": 0,
-            "name": "landscape",
-            "description": "https://www.shadertoy.com/view/4ttXzj",
-            "start": 0,
-            "stop": 144000
-        }
-    ]
+
+
+    "entities": [{
+        "order": 0,
+        "name": "basic",
+        "description": "",
+        "start": 0,
+        "stop": 249600 ,
+        "textures": [
+           {
+               "url" :"/assets/noise.jpg",
+               "uniform" :"uSampler",
+               "width": 1024,
+               "height": 1024
+           } ,
+           {
+               "url" :"/assets/noise2.png",
+               "uniform" :"uSampler2",
+               "width": 512,
+               "height": 512
+           }
+        ]
+
+    }]
 }

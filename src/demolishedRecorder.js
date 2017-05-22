@@ -6,9 +6,7 @@ var DemolishedRecorder = (function () {
         this.audioTrack = audioTrack;
         this.mediaStream = new MediaStream([videoTrack, audioTrack]);
         this.recorder = new MediaRecorder(this.mediaStream, {
-            mimeType: 'video/webm;codecs=vp9',
-            ignoreMutedMedia: true,
-        });
+            mimeType: 'video/webm;codecs=vp9' });
         this.recorder.ondataavailable = function (e) { return _this.data.push(e.data); };
     }
     DemolishedRecorder.prototype.stop = function () {

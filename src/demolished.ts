@@ -12,9 +12,41 @@ if (!window.requestAnimationFrame) {
 
 export namespace Demolished {
 
+
+
+    export  class Utils{
+
+        static getExponentOfTwo(value: number, max: number): number {
+            var count = 1;
+            do {
+                count *= 2;
+            } while (count < value);
+
+            if (count > max)
+                count = max;
+
+            return count;
+        }
+
+
+        static convertBuffer(buffer:ArrayBuffer):Float32Array{
+            var data = new DataView(buffer);
+                    var tempArray = new Float32Array(1024*1024*4);
+                    var len = tempArray.length;
+                   
+                    for (var jj = 0; jj < len; ++jj) {
+                    tempArray[jj] =
+                        data.getFloat32(jj * Float32Array.BYTES_PER_ELEMENT, true);
+                    }
+                  
+                    return tempArray;
+
+        }
+    }
+
     export class Parameters {
 
-        scale: number; 
+        scale: number;
         time: number;
         mouseX: number;
         mouseY: number;
@@ -35,6 +67,10 @@ export namespace Demolished {
         start: number;
         stop: number;
         name: string
+        textures: Array<any>;
+        constructor() {
+            this.textures = new Array<any>();
+        }
     }
 
     export class EnityBase {
@@ -52,14 +88,21 @@ export namespace Demolished {
 
         uniformsCache: Map<string, WebGLUniformLocation>;
 
+
         constructor(public gl: WebGLRenderingContext, public name: string,
-            public start: number, public stop: number, public x: number, public y: number) {
-            this.uniformsCache = new Map<string, WebGLUniformLocation>();
-            this.loadEntityResources().then(() => {
+            public start: number, public stop: number, public x: number, public y: number,
+            public arrayBuffers: Array<Asset>
+        ) {
+            this.uniformsCache = new Map<string, WebGLUniformLocation>()
+
+            this.loadEntityShaders().then(() => {
+
                 this.initShader();
                 this.target = this.createRenderTarget(this.x, this.y);
                 this.backTarget = this.createRenderTarget(this.x, this.y);
             });
+
+          
 
         }
 
@@ -96,13 +139,14 @@ export namespace Demolished {
             return target;
         }
 
-        loadEntityResources(): Promise<boolean> {
+        loadEntityShaders(): Promise<boolean> {
 
             let urls = new Array<string>();
             urls.push("entities/" + this.name + "/fragment.glsl");
             urls.push("entities/" + this.name + "/vertex.glsl");
-          //  urls.push("entities/" + this.name + "/uniforms.json");
-            return Promise.all(urls.map( (url:string) =>
+
+            //  urls.push("entities/" + this.name + "/uniforms.json");
+            return Promise.all(urls.map((url: string) =>
                 fetch(url).then(resp => resp.text())
             )).then(result => {
                 this.fragmetShader = result[0];
@@ -116,6 +160,37 @@ export namespace Demolished {
 
         onError(err) {
             console.error(err)
+        }
+
+        createTextureFromData(width:number, height:number, image:HTMLImageElement) {
+            let gl = this.gl;
+            let texture = gl.createTexture()
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+            gl.generateMipmap(gl.TEXTURE_2D);
+
+   
+
+            gl.bindTexture(gl.TEXTURE_2D, null)
+
+            return texture;
+        }
+        createTextureFromFloat32(width:number, height:number, array:Float32Array){
+            let gl = this.gl;
+            let texture = gl.createTexture();
+               if (!gl.getExtension("OES_texture_float")) {
+                throw ("Requires OES_texture_float extension");
+            }
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.FLOAT,array );
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST);
+            gl.bindTexture(gl.TEXTURE_2D,null);
+            return texture;
         }
 
         initShader() {
@@ -140,6 +215,7 @@ export namespace Demolished {
 
             this.cacheUniformLocation('freq_data');
             this.cacheUniformLocation('freq_time');
+            this.cacheUniformLocation("mytext");
 
             this.cacheUniformLocation('time');
             this.cacheUniformLocation('mouse');
@@ -150,6 +226,13 @@ export namespace Demolished {
 
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
             gl.enableVertexAttribArray(this.vertexPosition);
+            
+            this.arrayBuffers.forEach( (asset:Asset) => {
+                asset.texture = this.createTextureFromData(asset.width, asset.height, 
+                        asset.buffer);             
+            });
+          
+            // this.createTextureFromFloat32(1,2,new Float32Array([255,0,0,255]));
 
             gl.useProgram(this.currentProgram);
 
@@ -164,7 +247,7 @@ export namespace Demolished {
             this.backTarget = tmp;
         }
         createShader(gl: WebGLRenderingContext, src: string, type: number): WebGLShader {
-            let shader:WebGLShader = gl.createShader(type);
+            let shader: WebGLShader = gl.createShader(type);
             gl.shaderSource(shader, src);
             gl.compileShader(shader);
             return shader;
@@ -175,22 +258,34 @@ export namespace Demolished {
         constructor(public frameBuffer: WebGLFramebuffer, public renderBuffer: WebGLFramebuffer,
             public texture: WebGLTexture) {
         }
+
     }
 
-    export class AudioData {
+    
+    export class Asset{
+            texture :WebGLTexture;
+            constructor(public buffer:HTMLImageElement, public name:string,public width:number,
+            public height:number){
+            }
+
+    }
+    
+
+   export class AudioData {
 
         freqOffset: number;
         freqScale: number;
 
         constructor(public freqData: Float32Array,
             public timeData: Float32Array,
-            public minDb: number, public maxDb: number
-
-        ) {
-            this.freqScale = 1 / (maxDb - minDb)
+            public minDb: number, public maxDb: number) 
+        {
+            this.freqScale = 1 / (maxDb - minDb);
             this.freqOffset = minDb;
         }
     }
+ 
+
     export class AudioAnalyzerSettings {
         constructor(public fftSize: number, public smoothingTimeConstant: number,
             public minDecibels: number, public maxDecibels: number
@@ -198,6 +293,8 @@ export namespace Demolished {
         }
     }
     export class World {
+
+        animationFrameId: number;
 
         entities: Array<EnityBase>;
 
@@ -217,7 +314,7 @@ export namespace Demolished {
 
         currentEntity: number = 0;
         private getRendringContext(): WebGLRenderingContext {
-            
+
             let renderingContext: any;
 
             let contextAttributes = { preserveDrawingBuffer: true };
@@ -235,16 +332,16 @@ export namespace Demolished {
             ), renderingContext.STATIC_DRAW)
             return renderingContext;
         }
-        loadTimeline(timelineFile:string): Promise<Array<Effect>> {
+        loadTimeline(timelineFile: string): Promise<Array<Effect>> {
             let timeline = window.fetch(timelineFile).then((response: Response) => {
                 return response.json();
             });
             return timeline.then((json: any) => {
-                return json.entities as Array<Effect>;
+                return json;
             });
         }
         constructor(public canvas: HTMLCanvasElement,
-            public timelineFile:string,
+            public timelineFile: string,
             public audioAnalyzerSettings: AudioAnalyzerSettings
         ) {
             this.parameters = new Parameters(this.canvas.width, this.canvas.height);
@@ -262,14 +359,50 @@ export namespace Demolished {
             this.addEventListeners()
 
             // load and add the entities
-            this.loadTimeline(this.timelineFile).then((effects: Array<Effect>) => {
-                effects.forEach((effect: Effect) => {
-                    this.addEntity(effect.name, effect.start, effect.stop);
+            this.loadTimeline(this.timelineFile).then((timeline: any) => {
+                this.loadAudio().then((audioBuffer: AudioBuffer) => {
+                    timeline.entities.forEach((effect: Effect) => {
+                        let textures = Promise.all(effect.textures.map((texture: any) => {
+                           
+                            return new Promise( (resolve, reject) => {
+                                let image = new Image();
+                                image.src = texture.url;
+                                image.onload = () => {
+                                    resolve(image);
+                                }
+                                image.onerror = (err) => resolve(err);
 
+                            }).then((image: HTMLImageElement) => {
+                                return new Asset(image, texture.uniform, texture.width, texture.height);
+                            });
+
+
+                        })).then((assets: Array < Asset > ) => {
+
+                            let temp = this.addEntity(effect.name, effect.start, effect.stop, assets);
+
+                                temp.createTextureFromFloat32(1,audioBuffer.length,
+                                audioBuffer.getChannelData(0));
+
+                        });
+                    });
+
+                    // for each Channel of the AudioBuffer
+
+                    console.log("audioBuffer", audioBuffer.numberOfChannels, audioBuffer.sampleRate,audioBuffer.duration);
+
+                  //  console.log("channelData 0", new Float32Array(audioBuffer.getChannelData(0)));;
+
+                 //   console.log("channelData 1", new Float32Array(audioBuffer.getChannelData(1)));;
+
+                    this.resizeCanvas();
+
+                    this.onReady();
                 });
-                this.loadMusic()
             });
         }
+
+
         onStart() {
         }
 
@@ -280,22 +413,28 @@ export namespace Demolished {
         }
 
         // todo:Rename
-        getAudioTracks():Array<MediaStreamTrack>{
-            let ms = this.bufferSource.context["createMediaStreamDestination"]() ;
-        
+        getAudioTracks(): Array<MediaStreamTrack> {
+            let ms = this.bufferSource.context["createMediaStreamDestination"]();
             this.bufferSource.connect(ms);
-           
             return ms.stream.getAudioTracks();
         }
 
-        loadMusic() {
-            let context = new AudioContext();
 
-            window.fetch("assets/song.mp3").then((response: Response) => {
-                response.arrayBuffer().then((buffer: ArrayBuffer) => {
-                    context.decodeAudioData(buffer, (audioBuffer: AudioBuffer) => {
+        loadAudio():Promise<AudioBuffer> {
+           
+            
+            return window.fetch("assets/song.mp3").then((response: Response) => {
 
-                    
+                return response.arrayBuffer().then((buffer: ArrayBuffer) => {
+
+                    let context = new AudioContext();
+
+
+                    return context.decodeAudioData(buffer).then ( (audioBuffer: AudioBuffer)  => {
+
+
+                        
+
 
                         this.bufferSource = context.createBufferSource();
                         this.audioAnalyser = context.createAnalyser();
@@ -309,11 +448,13 @@ export namespace Demolished {
                             new AudioData(new Float32Array(32), new Float32Array(32),
                                 this.audioAnalyzerSettings.minDecibels,
                                 this.audioAnalyzerSettings.maxDecibels);
+
                         this.bufferSource.connect(this.audioAnalyser);
                         this.bufferSource.connect(context.destination);
-                        this.resizeCanvas();
+                     
 
-                        this.onReady();
+                        return audioBuffer;
+                        
 
                     });
 
@@ -331,17 +472,21 @@ export namespace Demolished {
             });
 
         }
-        addEntity(name: string, start: number, stop: number): EnityBase {
-            const entity = new EnityBase(this.gl, name, start, stop, this.canvas.width, this.canvas.height);
+        addEntity(name: string, start: number, stop: number,
+            textures: Array<Asset>
+        ): EnityBase {
+            const entity = new EnityBase(this.gl, name, start, stop,
+                this.canvas.width, this.canvas.height,
+                textures
+            );
             this.entities.push(entity);
             return entity;
         }
-
         start(time: number) {
             this.animate(time);
             this.bufferSource.start(0);
             this.onStart();
-          
+
         }
         stop() {
             cancelAnimationFrame(this.animationFrameId);
@@ -349,7 +494,6 @@ export namespace Demolished {
             this.onStop();
         }
 
-        animationFrameId: number;
 
         private animate(time: number) {
             this.animationFrameId = requestAnimationFrame((_time: number) => {
@@ -420,12 +564,15 @@ export namespace Demolished {
 
             gl.useProgram(ent.currentProgram);
 
+
+
             gl.uniform1fv(ent.uniformsCache.get('freq_data'), this.audioData.freqData);
             gl.uniform1fv(ent.uniformsCache.get('freq_time'), this.audioData.timeData);
 
             gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
             gl.uniform2f(ent.uniformsCache.get('resolution'), this.parameters.screenWidth, this.parameters.screenHeight);
+
 
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
 
@@ -436,6 +583,21 @@ export namespace Demolished {
 
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
+
+            ent.arrayBuffers.forEach ( (asset:Asset,index:number) => {
+
+                gl.activeTexture(gl.TEXTURE1 + index);
+                gl.bindTexture(gl.TEXTURE_2D, asset.texture);
+                gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), index+1);
+
+            } );
+
+
+             gl.uniform1i(gl.getUniformLocation(ent.currentProgram,"fft"),ent.arrayBuffers.length +2);
+        
+
+          
+
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
 

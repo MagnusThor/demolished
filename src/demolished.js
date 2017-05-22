@@ -8,6 +8,31 @@ if (!window.requestAnimationFrame) {
 }
 var Demolished;
 (function (Demolished) {
+    var Utils = (function () {
+        function Utils() {
+        }
+        Utils.getExponentOfTwo = function (value, max) {
+            var count = 1;
+            do {
+                count *= 2;
+            } while (count < value);
+            if (count > max)
+                count = max;
+            return count;
+        };
+        Utils.convertBuffer = function (buffer) {
+            var data = new DataView(buffer);
+            var tempArray = new Float32Array(1024 * 1024 * 4);
+            var len = tempArray.length;
+            for (var jj = 0; jj < len; ++jj) {
+                tempArray[jj] =
+                    data.getFloat32(jj * Float32Array.BYTES_PER_ELEMENT, true);
+            }
+            return tempArray;
+        };
+        return Utils;
+    }());
+    Demolished.Utils = Utils;
     var Parameters = (function () {
         function Parameters(screenWidth, screenHeight) {
             this.screenWidth = screenWidth;
@@ -22,12 +47,13 @@ var Demolished;
     Demolished.Parameters = Parameters;
     var Effect = (function () {
         function Effect() {
+            this.textures = new Array();
         }
         return Effect;
     }());
     Demolished.Effect = Effect;
     var EnityBase = (function () {
-        function EnityBase(gl, name, start, stop, x, y) {
+        function EnityBase(gl, name, start, stop, x, y, arrayBuffers) {
             var _this = this;
             this.gl = gl;
             this.name = name;
@@ -35,8 +61,9 @@ var Demolished;
             this.stop = stop;
             this.x = x;
             this.y = y;
+            this.arrayBuffers = arrayBuffers;
             this.uniformsCache = new Map();
-            this.loadEntityResources().then(function () {
+            this.loadEntityShaders().then(function () {
                 _this.initShader();
                 _this.target = _this.createRenderTarget(_this.x, _this.y);
                 _this.backTarget = _this.createRenderTarget(_this.x, _this.y);
@@ -61,7 +88,7 @@ var Demolished;
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             return target;
         };
-        EnityBase.prototype.loadEntityResources = function () {
+        EnityBase.prototype.loadEntityShaders = function () {
             var _this = this;
             var urls = new Array();
             urls.push("entities/" + this.name + "/fragment.glsl");
@@ -81,7 +108,34 @@ var Demolished;
         EnityBase.prototype.onError = function (err) {
             console.error(err);
         };
+        EnityBase.prototype.createTextureFromData = function (width, height, image) {
+            var gl = this.gl;
+            var texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+            gl.generateMipmap(gl.TEXTURE_2D);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            return texture;
+        };
+        EnityBase.prototype.createTextureFromFloat32 = function (width, height, array) {
+            var gl = this.gl;
+            var texture = gl.createTexture();
+            if (!gl.getExtension("OES_texture_float")) {
+                throw ("Requires OES_texture_float extension");
+            }
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.FLOAT, array);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            return texture;
+        };
         EnityBase.prototype.initShader = function () {
+            var _this = this;
             var gl = this.gl;
             this.buffer = gl.createBuffer();
             this.currentProgram = gl.createProgram();
@@ -96,6 +150,7 @@ var Demolished;
             }
             this.cacheUniformLocation('freq_data');
             this.cacheUniformLocation('freq_time');
+            this.cacheUniformLocation("mytext");
             this.cacheUniformLocation('time');
             this.cacheUniformLocation('mouse');
             this.cacheUniformLocation('resolution');
@@ -103,6 +158,10 @@ var Demolished;
             // gl.enableVertexAttribArray(this.positionAttribute);
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
             gl.enableVertexAttribArray(this.vertexPosition);
+            this.arrayBuffers.forEach(function (asset) {
+                asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.buffer);
+            });
+            // this.createTextureFromFloat32(1,2,new Float32Array([255,0,0,255]));
             gl.useProgram(this.currentProgram);
         };
         EnityBase.prototype.cacheUniformLocation = function (label) {
@@ -131,6 +190,16 @@ var Demolished;
         return RenderTarget;
     }());
     Demolished.RenderTarget = RenderTarget;
+    var Asset = (function () {
+        function Asset(buffer, name, width, height) {
+            this.buffer = buffer;
+            this.name = name;
+            this.width = width;
+            this.height = height;
+        }
+        return Asset;
+    }());
+    Demolished.Asset = Asset;
     var AudioData = (function () {
         function AudioData(freqData, timeData, minDb, maxDb) {
             this.freqData = freqData;
@@ -173,11 +242,32 @@ var Demolished;
             this.webGLbuffer = this.gl.createBuffer();
             this.addEventListeners();
             // load and add the entities
-            this.loadTimeline(this.timelineFile).then(function (effects) {
-                effects.forEach(function (effect) {
-                    _this.addEntity(effect.name, effect.start, effect.stop);
+            this.loadTimeline(this.timelineFile).then(function (timeline) {
+                _this.loadAudio().then(function (audioBuffer) {
+                    timeline.entities.forEach(function (effect) {
+                        var textures = Promise.all(effect.textures.map(function (texture) {
+                            return new Promise(function (resolve, reject) {
+                                var image = new Image();
+                                image.src = texture.url;
+                                image.onload = function () {
+                                    resolve(image);
+                                };
+                                image.onerror = function (err) { return resolve(err); };
+                            }).then(function (image) {
+                                return new Asset(image, texture.uniform, texture.width, texture.height);
+                            });
+                        })).then(function (assets) {
+                            var temp = _this.addEntity(effect.name, effect.start, effect.stop, assets);
+                            temp.createTextureFromFloat32(1, audioBuffer.length, audioBuffer.getChannelData(0));
+                        });
+                    });
+                    // for each Channel of the AudioBuffer
+                    console.log("audioBuffer", audioBuffer.numberOfChannels, audioBuffer.sampleRate, audioBuffer.duration);
+                    //  console.log("channelData 0", new Float32Array(audioBuffer.getChannelData(0)));;
+                    //   console.log("channelData 1", new Float32Array(audioBuffer.getChannelData(1)));;
+                    _this.resizeCanvas();
+                    _this.onReady();
                 });
-                _this.loadMusic();
             });
         }
         World.prototype.getRendringContext = function () {
@@ -198,7 +288,7 @@ var Demolished;
                 return response.json();
             });
             return timeline.then(function (json) {
-                return json.entities;
+                return json;
             });
         };
         World.prototype.onStart = function () {
@@ -213,12 +303,12 @@ var Demolished;
             this.bufferSource.connect(ms);
             return ms.stream.getAudioTracks();
         };
-        World.prototype.loadMusic = function () {
+        World.prototype.loadAudio = function () {
             var _this = this;
-            var context = new AudioContext();
-            window.fetch("assets/song.mp3").then(function (response) {
-                response.arrayBuffer().then(function (buffer) {
-                    context.decodeAudioData(buffer, function (audioBuffer) {
+            return window.fetch("assets/song.mp3").then(function (response) {
+                return response.arrayBuffer().then(function (buffer) {
+                    var context = new AudioContext();
+                    return context.decodeAudioData(buffer).then(function (audioBuffer) {
                         _this.bufferSource = context.createBufferSource();
                         _this.audioAnalyser = context.createAnalyser();
                         _this.bufferSource.buffer = audioBuffer;
@@ -228,8 +318,7 @@ var Demolished;
                             new AudioData(new Float32Array(32), new Float32Array(32), _this.audioAnalyzerSettings.minDecibels, _this.audioAnalyzerSettings.maxDecibels);
                         _this.bufferSource.connect(_this.audioAnalyser);
                         _this.bufferSource.connect(context.destination);
-                        _this.resizeCanvas();
-                        _this.onReady();
+                        return audioBuffer;
                     });
                 });
             });
@@ -244,8 +333,8 @@ var Demolished;
                 _this.resizeCanvas();
             });
         };
-        World.prototype.addEntity = function (name, start, stop) {
-            var entity = new EnityBase(this.gl, name, start, stop, this.canvas.width, this.canvas.height);
+        World.prototype.addEntity = function (name, start, stop, textures) {
+            var entity = new EnityBase(this.gl, name, start, stop, this.canvas.width, this.canvas.height, textures);
             this.entities.push(entity);
             return entity;
         };
@@ -323,6 +412,12 @@ var Demolished;
             gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
+            ent.arrayBuffers.forEach(function (asset, index) {
+                gl.activeTexture(gl.TEXTURE1 + index);
+                gl.bindTexture(gl.TEXTURE_2D, asset.texture);
+                gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), index + 1);
+            });
+            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), ent.arrayBuffers.length + 2);
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);

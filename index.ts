@@ -1,12 +1,15 @@
-import { Demolished } from './src/demolished'
-import { DemolishedRecorder } from './src/demolishedRecorder';
+import {
+    Demolished
+} from './src/demolished'
+import {
+    DemolishedRecorder
+} from './src/demolishedRecorder';
 
 class DemolishInstance {
     world: Demolished.World;
     recorder: DemolishedRecorder;
 
-    onReady(): void {
-    }
+    onReady(): void {}
     constructor() {
 
         let analyzerSettings = new Demolished.AudioAnalyzerSettings(32, 0.7, -100, -30);
@@ -24,7 +27,7 @@ class DemolishInstance {
 
         this.world.onStart = () => {
             let p = document.querySelector("#record-canvas") as any;
-              if (p.checked) {
+            if (p.checked) {
                 let videoStream = this.world.canvas["captureStream"](60) as MediaStream;
                 let videoTrack = videoStream.getVideoTracks()[0];
                 let audioTrack = this.world.getAudioTracks()[0];
@@ -37,13 +40,15 @@ class DemolishInstance {
 
         this.world.onStop = () => {
 
-            if (this.recorder.data) {
+            if (this.recorder) {
 
                 let recorderNode = document.querySelector("#recording");
 
                 this.recorder.stop();
 
-                let blob = new Blob(this.recorder.data, { type: 'video/webm' });
+                let blob = new Blob(this.recorder.data, {
+                    type: 'video/webm'
+                });
                 let url = window.URL.createObjectURL(blob);
                 let downloadlink = document.createElement('a');
                 downloadlink.textContent = "download recording"
@@ -67,9 +72,16 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector("#full-screen") as HTMLButtonElement;
 
     function launchFullscreen(element) {
-        if (element.requestFullscreen) { element.requestFullscreen(); } else if (element.mozRequestFullScreen)
-        { element.mozRequestFullScreen(); } else if (element.webkitRequestFullscreen) { element.webkitRequestFullscreen(); } else
-            if (element.msRequestFullscreen) { element.msRequestFullscreen(); }
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        } else
+        if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
     }
 
     let demolished = new DemolishInstance()
