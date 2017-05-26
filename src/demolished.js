@@ -53,7 +53,7 @@ var Demolished;
     }());
     Demolished.Effect = Effect;
     var EnityBase = (function () {
-        function EnityBase(gl, name, start, stop, x, y, arrayBuffers) {
+        function EnityBase(gl, name, start, stop, x, y, assets) {
             var _this = this;
             this.gl = gl;
             this.name = name;
@@ -61,7 +61,7 @@ var Demolished;
             this.stop = stop;
             this.x = x;
             this.y = y;
-            this.arrayBuffers = arrayBuffers;
+            this.assets = assets;
             this.uniformsCache = new Map();
             this.loadEntityShaders().then(function () {
                 _this.initShader();
@@ -119,21 +119,23 @@ var Demolished;
             gl.bindTexture(gl.TEXTURE_2D, null);
             return texture;
         };
-        EnityBase.prototype.createTextureFromFloat32 = function (width, height, array) {
-            var gl = this.gl;
-            var texture = gl.createTexture();
-            if (!gl.getExtension("OES_texture_float")) {
-                throw ("Requires OES_texture_float extension");
-            }
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.FLOAT, array);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST);
-            gl.bindTexture(gl.TEXTURE_2D, null);
-            return texture;
-        };
+        //     createTextureFromFloat32(width:number, height:number, array:Float32Array){
+        //         let gl = this.gl;
+        //         let texture = gl.createTexture();
+        //            if (!gl.getExtension("OES_texture_float")) {
+        //             throw ("Requires OES_texture_float extension");
+        //         }
+        //         gl.bindTexture(gl.TEXTURE_2D, texture);
+        //        //            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, new Float32Array([255,255,255,0])));
+        //     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,32,32,0,gl.RGBA,gl.FLOAT,array);
+        //       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        //    //     gl.generateMipmap(gl.TEXTURE_2D);
+        //         gl.bindTexture(gl.TEXTURE_2D,null);
+        //         return texture;
+        //     }
         EnityBase.prototype.initShader = function () {
             var _this = this;
             var gl = this.gl;
@@ -154,12 +156,23 @@ var Demolished;
             this.cacheUniformLocation('time');
             this.cacheUniformLocation('mouse');
             this.cacheUniformLocation('resolution');
+            this.cacheUniformLocation("sampleRate");
+            this.cacheUniformLocation("fft");
             // this.positionAttribute = 0;// gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
             // gl.enableVertexAttribArray(this.positionAttribute);
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
             gl.enableVertexAttribArray(this.vertexPosition);
-            this.arrayBuffers.forEach(function (asset) {
-                asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.buffer);
+            this.assets.forEach(function (asset) {
+                switch (asset.assetType) {
+                    case 0:
+                        asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
+                        break;
+                    case 1:
+                        //  asset.texture = this.createTextureFromFloat32(32,32,new Float32Array(32*32*4));
+                        break;
+                    default:
+                        throw "unknown asset type";
+                }
             });
             // this.createTextureFromFloat32(1,2,new Float32Array([255,0,0,255]));
             gl.useProgram(this.currentProgram);
@@ -191,11 +204,12 @@ var Demolished;
     }());
     Demolished.RenderTarget = RenderTarget;
     var Asset = (function () {
-        function Asset(buffer, name, width, height) {
-            this.buffer = buffer;
+        function Asset(image, name, width, height, assetType) {
+            this.image = image;
             this.name = name;
             this.width = width;
             this.height = height;
+            this.assetType = assetType;
         }
         return Asset;
     }());
@@ -254,17 +268,12 @@ var Demolished;
                                 };
                                 image.onerror = function (err) { return resolve(err); };
                             }).then(function (image) {
-                                return new Asset(image, texture.uniform, texture.width, texture.height);
+                                return new Asset(image, texture.uniform, texture.width, texture.height, 0);
                             });
                         })).then(function (assets) {
                             var temp = _this.addEntity(effect.name, effect.start, effect.stop, assets);
-                            temp.createTextureFromFloat32(1, audioBuffer.length, audioBuffer.getChannelData(0));
                         });
                     });
-                    // for each Channel of the AudioBuffer
-                    console.log("audioBuffer", audioBuffer.numberOfChannels, audioBuffer.sampleRate, audioBuffer.duration);
-                    //  console.log("channelData 0", new Float32Array(audioBuffer.getChannelData(0)));;
-                    //   console.log("channelData 1", new Float32Array(audioBuffer.getChannelData(1)));;
                     _this.resizeCanvas();
                     _this.onReady();
                 });
@@ -284,11 +293,10 @@ var Demolished;
             return renderingContext;
         };
         World.prototype.loadTimeline = function (timelineFile) {
-            var timeline = window.fetch(timelineFile).then(function (response) {
+            return window.fetch(timelineFile).then(function (response) {
                 return response.json();
-            });
-            return timeline.then(function (json) {
-                return json;
+            }).then(function (timeline) {
+                return timeline;
             });
         };
         World.prototype.onStart = function () {
@@ -314,8 +322,10 @@ var Demolished;
                         _this.bufferSource.buffer = audioBuffer;
                         _this.audioAnalyser.smoothingTimeConstant = _this.audioAnalyzerSettings.smoothingTimeConstant;
                         _this.audioAnalyser.fftSize = _this.audioAnalyzerSettings.fftSize;
+                        _this.audioAnalyser.maxDecibels = -10;
+                        _this.audioAnalyser.minDecibels = -90;
                         _this.audioData =
-                            new AudioData(new Float32Array(32), new Float32Array(32), _this.audioAnalyzerSettings.minDecibels, _this.audioAnalyzerSettings.maxDecibels);
+                            new AudioData(new Float32Array(_this.audioAnalyser.fftSize), new Float32Array(_this.audioAnalyser.fftSize), _this.audioAnalyzerSettings.minDecibels, _this.audioAnalyzerSettings.maxDecibels);
                         _this.bufferSource.connect(_this.audioAnalyser);
                         _this.bufferSource.connect(context.destination);
                         return audioBuffer;
@@ -348,17 +358,34 @@ var Demolished;
             this.bufferSource.stop();
             this.onStop();
         };
+        World.prototype.createFFTTexture = function (width, height, array) {
+            var gl = this.gl;
+            var texture = gl.createTexture();
+            if (!gl.getExtension("OES_texture_float")) {
+                throw ("Requires OES_texture_float extension");
+            }
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, array);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            return texture;
+        };
         World.prototype.animate = function (time) {
             var _this = this;
             this.animationFrameId = requestAnimationFrame(function (_time) {
                 if (_this.audioAnalyser) {
-                    _this.audioAnalyser.getFloatFrequencyData(_this.audioData.freqData);
-                    _this.audioAnalyser.getFloatTimeDomainData(_this.audioData.timeData);
+                    var bufferLength = _this.audioAnalyser.frequencyBinCount;
+                    var dataArray = new Uint8Array(bufferLength);
+                    _this.audioAnalyser.getByteFrequencyData(dataArray);
+                    _this.fftTexture = _this.createFFTTexture(32, 32, dataArray);
                 }
                 _this.animate(_time);
             });
             // What to render needs to come from graph;
             var ent = this.entities[this.currentEntity];
+            //  ent.assets[0].texture = 
             // for next frame ,  use next effect if we reached the end of current
             if (time > ent.stop) {
                 this.currentEntity++;
@@ -401,8 +428,9 @@ var Demolished;
             var gl = this.gl;
             this.parameters.time = tm; // Date.now() - this.parameters.startTime;
             gl.useProgram(ent.currentProgram);
-            gl.uniform1fv(ent.uniformsCache.get('freq_data'), this.audioData.freqData);
-            gl.uniform1fv(ent.uniformsCache.get('freq_time'), this.audioData.timeData);
+            gl.uniform1f(ent.uniformsCache.get('sampleRate'), 44100);
+            // gl.uniform1fv(ent.uniformsCache.get('freq_data'), this.audioData.freqData);
+            // gl.uniform1fv(ent.uniformsCache.get('freq_time'), this.audioData.timeData);
             gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
             gl.uniform2f(ent.uniformsCache.get('resolution'), this.parameters.screenWidth, this.parameters.screenHeight);
@@ -410,14 +438,18 @@ var Demolished;
             gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
             gl.bindBuffer(gl.ARRAY_BUFFER, this.webGLbuffer);
             gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-            gl.activeTexture(gl.TEXTURE0);
+            gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
-            ent.arrayBuffers.forEach(function (asset, index) {
-                gl.activeTexture(gl.TEXTURE1 + index);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
+            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
+            var offset = 2;
+            ent.assets.forEach(function (asset, index) {
+                gl.activeTexture(gl.TEXTURE0 + (offset + index));
                 gl.bindTexture(gl.TEXTURE_2D, asset.texture);
-                gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), index + 1);
+                gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), offset + index);
             });
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), ent.arrayBuffers.length + 2);
+            //   gl.uniform1i(gl.getUniformLocation(ent.currentProgram,"fft"),2);
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);

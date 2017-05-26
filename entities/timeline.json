@@ -8,24 +8,23 @@
 
     "entities": [{
         "order": 0,
-        "name": "basic",
+        "name": "boxes",
         "description": "",
         "start": 0,
-        "stop": 249600 ,
-        "textures": [
-           {
-               "url" :"/assets/noise.jpg",
-               "uniform" :"uSampler",
-               "width": 1024,
-               "height": 1024
-           } ,
-           {
-               "url" :"/assets/noise2.png",
-               "uniform" :"uSampler2",
-               "width": 512,
-               "height": 512
-           }
+        "stop": 249600,
+        "textures": [{
+            "url":"/assets/wood.jpg",
+            "name":"uSampler",
+            "width":1024,
+            "height":1024,
+            "type:":0
+            },{
+            "url":"/assets/noise.jpg",
+            "name":"uNoise",
+            "width":1024,
+            "height":1024,
+            "type:":0
+            }
         ]
-
     }]
 }

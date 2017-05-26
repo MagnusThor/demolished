@@ -12,7 +12,7 @@ class DemolishInstance {
     onReady(): void {}
     constructor() {
 
-        let analyzerSettings = new Demolished.AudioAnalyzerSettings(32, 0.7, -100, -30);
+        let analyzerSettings = new Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
 
         let canvas = document.querySelector("#gl") as HTMLCanvasElement;
 

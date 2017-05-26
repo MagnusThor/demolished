@@ -1,30 +1,55 @@
 #ifdef GL_ES
-precision mediump float;
+precision highp float;
+precision highp int;
 #endif
 
-uniform float time;
-uniform vec2 mouse;
-uniform vec2 resolution;
+#extension GL_EXT_shader_texture_lod : enable
 
+uniform vec2 resolution;
+uniform float time;
 uniform float freq_data[32];
 uniform float freq_time[32];
-uniform sampler2D uSampler;
-uniform sampler2D uSampler2;
 uniform sampler2D fft;
 
-void main( void ) {
 
-	vec2 position = ( gl_FragCoord.xy / resolution.xy ) + mouse / 4.0;
+const float PI = 3.14159;
 
-	float color = 0.0;
-	color += sin( position.x * cos( time / 15.0 ) * 80.0 ) + cos( position.y * cos( time / 15.0 ) * 10.0 );
-	color += sin( position.y * sin( time / 10.0 ) * 40.0 ) + cos( position.x * sin( time / 25.0 ) * 40.0 );
-	color += sin( position.x * sin( time / 5.0 ) * 10.0 ) + sin( position.y * sin( time / 35.0 ) * 80.0 );
-	color *= sin( time / 10.0 ) * 0.5;
+vec3 hsv(float h,float s,float v) {
+	return mix(vec3(1.),clamp((abs(fract(h+vec3(3.,2.,1.)/3.)*6.-3.)-1.),0.,1.),s)*v;
+}
 
-    vec4 p = texture2D(uSampler, vec2(position.s, position.t));
+void main()
+{
+    // create pixel coordinates
+	vec2 uv = gl_FragCoord.xy / resolution.xy;
+	
+	// quantize coordinates
+	const float bands = 40.0;
+	vec2 p;
+	p.x = floor(uv.x*bands)/bands;
+	p.y = uv.y;
+	
+	// read frequency data from first row of texture
+	float fft  = texture2D( fft, vec2(p.x,0.0) ).x;	
 
+	// led color
+	vec3 color = hsv(p.x, 1.0 - p.y, 1.0);
+	
+	// led shape
+	float dx = fract( (uv.x - p.x) * bands) - 0.5;
+	//float led = smoothstep(0.5, 0.3, abs(d.x)) *
+	//	        smoothstep(0.5, 0.3, abs(d.y));
+	
+	float led = smoothstep(0.5, 0.3, abs(dx));	
+	
+	// output final color
+	//fragColor = vec4(vec3(fft),1.0);
 
-	gl_FragColor = p ; // vec4( vec3( color, color * 0.5, sin( color + time / 3.0 ) * 0.75 ), 1.0 );
-
+    //fragColor = vec4(d, 0.0, 1.0);	
+	
+	//fragColor = vec4(vec3(led), 1.0);
+	
+	// mask for bar graph
+	float mask = (p.y < fft) ? 1.0 : 0.0;	
+	gl_FragColor = vec4(color*mask*led, 1.0);
 }

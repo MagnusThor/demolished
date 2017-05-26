@@ -4,7 +4,7 @@ var demolishedRecorder_1 = require('./src/demolishedRecorder');
 var DemolishInstance = (function () {
     function DemolishInstance() {
         var _this = this;
-        var analyzerSettings = new demolished_1.Demolished.AudioAnalyzerSettings(32, 0.7, -100, -30);
+        var analyzerSettings = new demolished_1.Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
         var canvas = document.querySelector("#gl");
         var assetsFile = window.location.hash === "" ? "timeline.json" : window.location.hash.replace("#", "");
         this.world = new demolished_1.Demolished.World(canvas, "entities/" + assetsFile, analyzerSettings);

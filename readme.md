@@ -35,4 +35,20 @@ TBD
 ### Add an effect to the demo timeline / story
 
 
-TBD
+### Add textures to shader programs
+
+        ..
+        "textures":[
+            {
+                "url" :"/assets/noise.jpg",
+                "uniform" :"uSampler",
+                "width": 1024,
+                "height": 1024
+            },
+            {
+                "url" :"/assets/noise2.png",
+                "uniform" :"uSampler2",
+                "width": 512,
+                "height": 512
+            }
+        ]
