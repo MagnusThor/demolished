@@ -13,13 +13,13 @@
         "start": 0,
         "stop": 249600,
         "textures": [{
-            "url":"/assets/wood.jpg",
+            "url":"assets/wood.jpg",
             "name":"uSampler",
             "width":1024,
             "height":1024,
             "type:":0
             },{
-            "url":"/assets/noise.jpg",
+            "url":"assets/noise.jpg",
             "name":"uNoise",
             "width":1024,
             "height":1024,
