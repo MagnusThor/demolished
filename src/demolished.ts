@@ -279,7 +279,6 @@ export namespace Demolished {
 
     
     export class Asset{
-        
             texture :WebGLTexture;
             constructor(public image:any, public name:string,public width:number,public height:number,public assetType:number){
             }
@@ -288,15 +287,15 @@ export namespace Demolished {
 
    export class AudioData {
 
-        freqOffset: number;
-        freqScale: number;
+        // freqOffset: number;
+        // freqScale: number;
 
         constructor(public freqData: Float32Array,
             public timeData: Float32Array,
             public minDb: number, public maxDb: number) 
         {
-            this.freqScale = 1 / (maxDb - minDb);
-            this.freqOffset = minDb;
+            // this.freqScale = 1 / (maxDb - minDb);
+            // this.freqOffset = minDb;
         }
     }
  
@@ -331,7 +330,6 @@ export namespace Demolished {
         private getRendringContext(): WebGLRenderingContext {
 
             let renderingContext: any;
-
             let contextAttributes = { preserveDrawingBuffer: true };
 
             renderingContext =
@@ -594,7 +592,11 @@ export namespace Demolished {
 
         renderEntities(ent: EnityBase, tm: number) {
 
-            document.querySelector("#time").textContent = ((tm / 1000) % 60).toFixed(2).toString();
+            // todo: onFrame should be thrown - 
+
+            document.querySelector("#time").textContent =
+            ((tm / 1000) / 60).toFixed(0).toString() + ":" +
+             ((tm / 1000) % 60).toFixed(2).toString();
 
             let gl = this.gl;
 

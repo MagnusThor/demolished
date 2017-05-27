@@ -6,8 +6,8 @@ var DemolishInstance = (function () {
         var _this = this;
         var analyzerSettings = new demolished_1.Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
         var canvas = document.querySelector("#gl");
-        var assetsFile = window.location.hash === "" ? "timeline.json" : window.location.hash.replace("#", "");
-        this.world = new demolished_1.Demolished.World(canvas, "entities/" + assetsFile, analyzerSettings);
+        var timeline = window.location.hash === "" ? "timeline.json" : window.location.hash.replace("#", "");
+        this.world = new demolished_1.Demolished.World(canvas, "entities/" + timeline, analyzerSettings);
         this.world.onReady = function () {
             _this.onReady();
         };
@@ -59,6 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var demolished = new DemolishInstance();
     window["demo"] = demolished;
     demolished.onReady = function () {
+        launchButton.textContent = "Start";
         launchButton.disabled = false;
     };
     launchButton.addEventListener("click", function () {

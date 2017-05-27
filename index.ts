@@ -16,12 +16,13 @@ class DemolishInstance {
 
         let canvas = document.querySelector("#gl") as HTMLCanvasElement;
 
-        let assetsFile = window.location.hash === "" ? "timeline.json" : window.location.hash.replace("#", "");
+        let timeline = window.location.hash === "" ? "timeline.json" : window.location.hash.replace("#", "");
 
         this.world = new Demolished.World(canvas,
-            "entities/" + assetsFile, analyzerSettings);
+            "entities/" + timeline, analyzerSettings);
 
         this.world.onReady = () => {
+        
             this.onReady();
         }
 
@@ -89,6 +90,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window["demo"] = demolished;
 
     demolished.onReady = () => {
+        launchButton.textContent = "Start";
+        
         launchButton.disabled = false;
 
     };

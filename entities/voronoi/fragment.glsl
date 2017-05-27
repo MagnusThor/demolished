@@ -5,8 +5,10 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
-uniform float freq_data[32];
-uniform float freq_time[32];
+uniform sampler2D fft;
+
+float freqs[4];
+
 
 
 
@@ -71,6 +73,12 @@ void main(void)
 	uv.x *= resolution.x / resolution.y;
 	
 	
+	freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
+	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
+	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
+	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;
+	
+	
 	float v = 0.0;
 	
 	// that looks highly interesting:
@@ -78,7 +86,7 @@ void main(void)
 	
 	
 	// a bit of camera movement
-	uv *= 0.6 + sin(freq_time[15]) * 0.05;
+	uv *= 0.6 + sin(1.0 * 0.05);
 	uv = rotate(uv, sin(time * 0.1) * 1.0);
 	uv += time * 0.53;
 	
@@ -96,10 +104,9 @@ void main(void)
 		if(i > 0)
 		{
 			// of course everything based on voronoi
-			v2 = voronoi(uv * f * 0.5 + 50.0 + time);
+			v2 = voronoi(uv * (freqs[3] / 50.0) * time );
 			
-			//	v2 = voronoi(uv * f * 0.5 + 10.0 + freq_time[7] );
-
+		
 			float va = 0.0, vb = 0.0;
 			va = 1.0 - smoothstep(0.0, 0.1, v1);
 			vb = 1.0 - smoothstep(0.0, 0.08, v2);
@@ -107,7 +114,7 @@ void main(void)
 		}
 		
 		// make sharp edges
-		v1 = 1.0 - smoothstep(0.0, 0.3, v1);
+		v1 = 1.0 - smoothstep(0.0, freqs[0], v1);
 		
 		// noise is used as intensity map
 		v2 = a * (noise1(v1 * 5.5 + 0.1));
@@ -126,7 +133,7 @@ void main(void)
 	v *= exp(-0.6 * length(suv)) * 1.2;
 	
 	// use texture channel0 for color? why not.
-	//vec3 cexp = texture2D(iChannel0, uv * 0.001).xyz * 3.0 + texture2D(iChannel0, uv * 0.01).xyz;//vec3(1.0, 2.0, 4.0);
+	//vec3 cexp = texture2D(fft, uv * 0.001).xyz * 3.0 + texture2D(fft, uv * 0.01).xyz;//vec3(1.0, 2.0, 4.0);
 	
 	// old blueish color st
 	vec3 cexp = vec3(0.5, 1.7, 1.0);

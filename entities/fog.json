@@ -4,13 +4,17 @@
         "fftSize": 8192,
         "smoothingTimeConstant": 0.85
     },
+
+
     "entities": [
         {
-            "name": "landscape",
-            "description": "",
-            "start": 0,
-            "stop": 187800
-        }
+      
+        "name": "fog",
+        "description": "",
+        "start": 0,
+        "stop": 312000,
+        "textures": []
+    
        
-    ]
+    }]
 }

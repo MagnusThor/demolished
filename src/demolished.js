@@ -215,13 +215,15 @@ var Demolished;
     }());
     Demolished.Asset = Asset;
     var AudioData = (function () {
+        // freqOffset: number;
+        // freqScale: number;
         function AudioData(freqData, timeData, minDb, maxDb) {
             this.freqData = freqData;
             this.timeData = timeData;
             this.minDb = minDb;
             this.maxDb = maxDb;
-            this.freqScale = 1 / (maxDb - minDb);
-            this.freqOffset = minDb;
+            // this.freqScale = 1 / (maxDb - minDb);
+            // this.freqOffset = minDb;
         }
         return AudioData;
     }());
@@ -424,7 +426,10 @@ var Demolished;
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         };
         World.prototype.renderEntities = function (ent, tm) {
-            document.querySelector("#time").textContent = ((tm / 1000) % 60).toFixed(2).toString();
+            // todo: onFrame should be thrown - 
+            document.querySelector("#time").textContent =
+                ((tm / 1000) / 60).toFixed(0).toString() + ":" +
+                    ((tm / 1000) % 60).toFixed(2).toString();
             var gl = this.gl;
             this.parameters.time = tm; // Date.now() - this.parameters.startTime;
             gl.useProgram(ent.currentProgram);
