@@ -12,7 +12,7 @@
         "name": "voronoi",
         "description": "",
         "start": 0,
-        "stop": 50000,
+        "stop": 120000,
         "textures": []
         },
         {
@@ -20,7 +20,7 @@
       
         "name": "boxes",
         "description": "",
-        "start": 50000,
+        "start": 120001,
         "stop": 312000,
         "textures": [{
             "url": "assets/wood.jpg",
