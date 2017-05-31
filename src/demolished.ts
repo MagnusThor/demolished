@@ -14,6 +14,7 @@ export namespace Demolished {
 
 
 
+
     export  class Utils{
 
         static getExponentOfTwo(value: number, max: number): number {
@@ -99,11 +100,7 @@ export namespace Demolished {
                 this.target = this.createRenderTarget(this.x, this.y);
                 this.backTarget = this.createRenderTarget(this.x, this.y);
             });
-
-          
-
         }
-
 
         private createRenderTarget(width: number, height: number): RenderTarget {
 
@@ -175,26 +172,6 @@ export namespace Demolished {
 
             return texture;
         }
-    //     createTextureFromFloat32(width:number, height:number, array:Float32Array){
-    //         let gl = this.gl;
-    //         let texture = gl.createTexture();
-    //            if (!gl.getExtension("OES_texture_float")) {
-    //             throw ("Requires OES_texture_float extension");
-    //         }
-    //         gl.bindTexture(gl.TEXTURE_2D, texture);
-    //        //            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, new Float32Array([255,255,255,0])));
-    //     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,32,32,0,gl.RGBA,gl.FLOAT,array);
-   
-    //       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-    //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-    //    //     gl.generateMipmap(gl.TEXTURE_2D);
-    //         gl.bindTexture(gl.TEXTURE_2D,null);
-    //         return texture;
-    //     }
 
         initShader() {
 
@@ -283,22 +260,6 @@ export namespace Demolished {
             constructor(public image:any, public name:string,public width:number,public height:number,public assetType:number){
             }
     }
-    
-
-   export class AudioData {
-
-        // freqOffset: number;
-        // freqScale: number;
-
-        constructor(public freqData: Float32Array,
-            public timeData: Float32Array,
-            public minDb: number, public maxDb: number) 
-        {
-            // this.freqScale = 1 / (maxDb - minDb);
-            // this.freqOffset = minDb;
-        }
-    }
- 
 
     export class AudioAnalyzerSettings {
         constructor(public fftSize: number, public smoothingTimeConstant: number,
@@ -308,7 +269,9 @@ export namespace Demolished {
     }
     export class World {
 
+        animationStartTime:number;
         animationFrameId: number;
+        animationOffsetTime: number;
 
         entities: Array<EnityBase>;
 
@@ -324,9 +287,9 @@ export namespace Demolished {
         bufferSource: AudioBufferSourceNode
 
         audioAnalyser: AnalyserNode
-        audioData: AudioData;
-
+    
         currentEntity: number = 0;
+
         private getRendringContext(): WebGLRenderingContext {
 
             let renderingContext: any;
@@ -346,7 +309,7 @@ export namespace Demolished {
             return renderingContext;
         }
         loadTimeline(timelineFile: string): Promise<Array<Effect>> {
-            return window.fetch(timelineFile).then((response: Response) => {
+            return fetch(timelineFile).then((response: Response) => {
                 return response.json();
             }).then( (timeline:any) => {
                 return timeline;
@@ -373,8 +336,24 @@ export namespace Demolished {
 
             // load and add the entities
             this.loadTimeline(this.timelineFile).then((timeline: any) => {
-                this.loadAudio().then((audioBuffer: AudioBuffer) => {
-                    timeline.entities.forEach((effect: Effect) => {
+          
+               console.log("timeline fetched");
+
+                this.cretateAudio("assets/song.mp3").then( (analyzer:AnalyserNode) => {
+
+                           console.log("audio fetched & created");
+
+                        this.audioAnalyser = analyzer;
+                      
+                        this.audioAnalyser.smoothingTimeConstant = this.audioAnalyzerSettings.smoothingTimeConstant;
+                        this.audioAnalyser.fftSize = this.audioAnalyzerSettings.fftSize;
+                        this.audioAnalyser.maxDecibels = -10;
+                        this.audioAnalyser.minDecibels = -90;
+
+
+
+                        timeline.entities.forEach((effect: Effect) => {
+
                         let textures = Promise.all(effect.textures.map((texture: any) => {
                            
                             return new Promise( (resolve, reject) => {
@@ -391,21 +370,26 @@ export namespace Demolished {
 
 
                         })).then((assets: Array < Asset > ) => {
-
-                            let temp = this.addEntity(effect.name, effect.start, effect.stop, assets);                
-
-                           
-
+                            
+                                this.addEntity(effect.name, effect.start, effect.stop, assets); 
+                                if(this.entities.length === timeline.entities.length){ // todo: refactor
+                                     this.onReady();   
+                                     this.resizeCanvas();
+                                }
                         });
                     });
 
+                   
                     this.resizeCanvas();
-
-                    this.onReady();
                 });
             });
         }
 
+
+        onFrame(frame:any){
+
+
+        }
 
         onStart() {
         }
@@ -422,51 +406,29 @@ export namespace Demolished {
             this.bufferSource.connect(ms);
             return ms.stream.getAudioTracks();
         }
+  
+          audio: HTMLAudioElement;      
 
-
-        loadAudio():Promise<AudioBuffer> {
-           
-            
-            return window.fetch("assets/song.mp3").then((response: Response) => {
-
-                return response.arrayBuffer().then((buffer: ArrayBuffer) => {
-
+        cretateAudio(src:string):Promise<AnalyserNode>{
+           return new Promise( (resolve, reject) => {
+                 let audioEl =  new Audio(); //document.createElement("audio");
+                    audioEl.preload = "auto";
+                    audioEl.src = src;
+                    audioEl.crossOrigin = "anonymous"
                     let context = new AudioContext();
+                    let analyser = context.createAnalyser();
 
-
-                    return context.decodeAudioData(buffer).then ( (audioBuffer: AudioBuffer)  => {
-
-
-                        
-
-
-                        this.bufferSource = context.createBufferSource();
-                        this.audioAnalyser = context.createAnalyser();
-
-                        this.bufferSource.buffer = audioBuffer;
-
-                        this.audioAnalyser.smoothingTimeConstant = this.audioAnalyzerSettings.smoothingTimeConstant;
-                        this.audioAnalyser.fftSize = this.audioAnalyzerSettings.fftSize;
-                        this.audioAnalyser.maxDecibels = -10;
-                        this.audioAnalyser.minDecibels = -90;
-                        this.audioData =
-                            new AudioData(new Float32Array(this.audioAnalyser.fftSize), 
-                            new Float32Array(this.audioAnalyser.fftSize),
-                                this.audioAnalyzerSettings.minDecibels,
-                                this.audioAnalyzerSettings.maxDecibels);
-
-                        this.bufferSource.connect(this.audioAnalyser);
-                        this.bufferSource.connect(context.destination);
-                     
-
-                        return audioBuffer;
-                        
-
-                    });
-
-                });
-            });
-
+                    let onLoad = () => {    
+                        let source = context.createMediaElementSource(audioEl);
+                        source.connect(analyser);
+                        analyser.connect(context.destination);
+                        resolve(analyser)
+                        window.addEventListener("load", onLoad,false);
+                };
+                // // Need window.onload to fire first. See crbug.com/112368.
+                onLoad();
+                this.audio = audioEl;
+             });
         }
         private addEventListeners() {
             document.addEventListener("mousemove", (evt: MouseEvent) => {
@@ -488,17 +450,41 @@ export namespace Demolished {
             this.entities.push(entity);
             return entity;
         }
+
+        private findEntityByTime(time:number):number{
+            return this.entities.findIndex(  (pre:EnityBase) => {  return time < pre.stop &&   time  >= pre.start  }); 
+        }
+
+
         start(time: number) {
+            this.animationOffsetTime  = time;
+            this.currentEntity  =  this.findEntityByTime(time);
+            
+            console.log("Starting at ent index",this.currentEntity);
+
+          
+           // if(this.currentEntity)
+
+            this.animationStartTime = performance.now();
+
             this.animate(time);
-            this.bufferSource.start(0);
+
+            this.audio.currentTime = (time/1000)%60
+            this.audio.play();
+
+          
             this.onStart();
 
         }
-        stop() {
+        stop():number {
+        //    let farId: number  = this.animationFrameId;
             cancelAnimationFrame(this.animationFrameId);
-            this.bufferSource.stop();
+                                                                                                                                                      ;
             this.onStop();
+            return this.animationFrameId;
         }
+
+      
 
          fftTexture: WebGLTexture;
 
@@ -518,37 +504,32 @@ export namespace Demolished {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
-
-   
-            return texture;
+         return texture;
         }
 
 
-
         private animate(time: number) {
+            let at = time - this.animationStartTime;
             this.animationFrameId = requestAnimationFrame((_time: number) => {
-                if (this.audioAnalyser) {
-                   var bufferLength = this.audioAnalyser.frequencyBinCount;
-                   var dataArray = new Uint8Array(bufferLength);
-                   this.audioAnalyser.getByteFrequencyData(dataArray);
-                    
-                   this.fftTexture  = this.createFFTTexture(32,32,dataArray);
-
-                }
                 this.animate(_time);
             });
-            // What to render needs to come from graph;
+
+             if (this.audioAnalyser) {
+                   let bufferLength = this.audioAnalyser.frequencyBinCount;
+                   let freqArray = new Uint8Array(bufferLength);
+                   this.audioAnalyser.getByteFrequencyData(freqArray); 
+                   this.fftTexture  = this.createFFTTexture(32,32,freqArray);
+                }
+           
             let ent: EnityBase = this.entities[this.currentEntity];
 
-          //  ent.assets[0].texture = 
-            // for next frame ,  use next effect if we reached the end of current
-            if (time > ent.stop) {
+            if (at > ent.stop) {
                 this.currentEntity++;
                 if (this.currentEntity === this.entities.length) {
                     this.stop()
                 }
             }
-            this.renderEntities(ent, time);
+            this.renderEntities(ent, at);
         }
 
         private surfaceCorners() {
@@ -590,47 +571,30 @@ export namespace Demolished {
         }
 
 
-        renderEntities(ent: EnityBase, tm: number) {
-
-            // todo: onFrame should be thrown - 
-
-            document.querySelector("#time").textContent =
-            ((tm / 1000) / 60).toFixed(0).toString() + ":" +
-             ((tm / 1000) % 60).toFixed(2).toString();
+        renderEntities(ent: EnityBase, ts: number) {
 
             let gl = this.gl;
 
-            this.parameters.time = tm; // Date.now() - this.parameters.startTime;
+            this.parameters.time = ts; // Date.now() - this.parameters.startTime;
 
             gl.useProgram(ent.currentProgram);
 
-
-            gl.uniform1f(ent.uniformsCache.get('sampleRate'),44100);
-
-            // gl.uniform1fv(ent.uniformsCache.get('freq_data'), this.audioData.freqData);
-            // gl.uniform1fv(ent.uniformsCache.get('freq_time'), this.audioData.timeData);
-
-            gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
+            gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000 );
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
             gl.uniform2f(ent.uniformsCache.get('resolution'), this.parameters.screenWidth, this.parameters.screenHeight);
 
-
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
-
             gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
-
             gl.bindBuffer(gl.ARRAY_BUFFER, this.webGLbuffer);
             gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-
-            
 
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
 
-
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
 
+            // Should be fftSampler
             gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"),0);
 
             let offset = 2;
@@ -638,18 +602,8 @@ export namespace Demolished {
                 gl.activeTexture(gl.TEXTURE0 + (offset + index));
                 gl.bindTexture(gl.TEXTURE_2D, asset.texture);
                 gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), offset + index);
-             
             } );
-
-
           
-
-          //   gl.uniform1i(gl.getUniformLocation(ent.currentProgram,"fft"),2);
-        
-
-          
-
-
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
 
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -660,6 +614,11 @@ export namespace Demolished {
             gl.drawArrays(gl.TRIANGLES, 0, 6);
 
             ent.swapBuffers();
+
+            this.onFrame({
+                ts: this.animationOffsetTime + ts,
+                raflId: this.animationFrameId                 
+            });
 
         }
     }

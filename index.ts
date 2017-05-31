@@ -8,20 +8,92 @@ import {
 class DemolishInstance {
     world: Demolished.World;
     recorder: DemolishedRecorder;
+    timeLine: HTMLInputElement;
+
+    pauseUi: boolean;
 
     onReady(): void {}
+
+
+    private generereTimeLineDetails(arr:Array<any>):void{
+       let parent = document.querySelector(".demolished-timeline");
+       let ox:number = 0;
+        arr.forEach( (ent:any,index:number) => {
+            let el = document.createElement("div");
+
+
+
+                el.classList.add("timeline-entry")
+            
+                let d:number = (parseInt(ent.d) / 312600);
+
+                let w:number = 100 * (Math.round(100 * (d*1)) / 100) 
+
+                el.style.width =  w + "%"
+                el.style.left = ox + "%";
+                el.style.background = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+
+                parent.appendChild(el);
+                
+                ox = ox + w;
+             
+                 
+
+        });
+    }
+
+
     constructor() {
+
+        this.timeLine = document.querySelector(".demolished-timeline input") as HTMLInputElement;
+
+        this.timeLine.addEventListener("mousedown", (evt:any) =>{
+         
+             this.world.stop();
+        });
+
+         this.timeLine.addEventListener("mouseup", (evt:any) =>{
+          
+            let ms = parseInt(evt.target.value);
+            let s = (ms/1000)%60
+           
+           
+            this.world.audio.currentTime = s; 
+            this.world.audio.play();
+
+      
+            this.world.start(ms);
+
+       
+
+        });
+
+        this.timeLine.addEventListener("change", (evt:any) => {
+        });
 
         let analyzerSettings = new Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
 
         let canvas = document.querySelector("#gl") as HTMLCanvasElement;
 
-        let timeline = window.location.hash === "" ? "timeline.json" : window.location.hash.replace("#", "");
 
         this.world = new Demolished.World(canvas,
-            "entities/" + timeline, analyzerSettings);
+            "entities/timeline.json", analyzerSettings);
 
         this.world.onReady = () => {
+
+
+            let arr = this.world.entities.map( function(a,index) {
+                return {
+                    d: a.stop - a.start, i: index}
+            });
+
+            this.generereTimeLineDetails(arr);
+
+
+            let endTime = 352966;
+
+           this.timeLine.setAttribute("max",endTime.toString());
+       
         
             this.onReady();
         }
@@ -38,6 +110,18 @@ class DemolishInstance {
             }
 
         }
+
+        this.world.onFrame =(frame:any) =>{
+        
+            var t = frame.ts;
+            document.querySelector("#time").textContent =
+            ((t / 1000) / 60).toFixed(0).toString() + ":" +
+             ((t/ 1000) % 60).toFixed(2).toString();
+
+             if(!this.pauseUi)
+
+             this.timeLine.value = frame.ts.toString();
+        } 
 
         this.world.onStop = () => {
 
@@ -98,7 +182,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     launchButton.addEventListener("click", function () {
         launchButton.classList.add("hide");
-        demolished.world.start(0);
+        console.log("start called", location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
+        demolished.world.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
     });
 
 });

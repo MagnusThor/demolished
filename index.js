@@ -4,11 +4,30 @@ var demolishedRecorder_1 = require('./src/demolishedRecorder');
 var DemolishInstance = (function () {
     function DemolishInstance() {
         var _this = this;
+        this.timeLine = document.querySelector(".demolished-timeline input");
+        this.timeLine.addEventListener("mousedown", function (evt) {
+            _this.world.stop();
+        });
+        this.timeLine.addEventListener("mouseup", function (evt) {
+            var ms = parseInt(evt.target.value);
+            var s = (ms / 1000) % 60;
+            _this.world.audio.currentTime = s;
+            _this.world.audio.play();
+            _this.world.start(ms);
+        });
+        this.timeLine.addEventListener("change", function (evt) {
+        });
         var analyzerSettings = new demolished_1.Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
         var canvas = document.querySelector("#gl");
-        var timeline = window.location.hash === "" ? "timeline.json" : window.location.hash.replace("#", "");
-        this.world = new demolished_1.Demolished.World(canvas, "entities/" + timeline, analyzerSettings);
+        this.world = new demolished_1.Demolished.World(canvas, "entities/timeline.json", analyzerSettings);
         this.world.onReady = function () {
+            var arr = _this.world.entities.map(function (a, index) {
+                return {
+                    d: a.stop - a.start, i: index };
+            });
+            _this.generereTimeLineDetails(arr);
+            var endTime = 352966;
+            _this.timeLine.setAttribute("max", endTime.toString());
             _this.onReady();
         };
         this.world.onStart = function () {
@@ -20,6 +39,14 @@ var DemolishInstance = (function () {
                 _this.recorder = new demolishedRecorder_1.DemolishedRecorder(videoTrack, audioTrack);
                 _this.recorder.start(1000);
             }
+        };
+        this.world.onFrame = function (frame) {
+            var t = frame.ts;
+            document.querySelector("#time").textContent =
+                ((t / 1000) / 60).toFixed(0).toString() + ":" +
+                    ((t / 1000) % 60).toFixed(2).toString();
+            if (!_this.pauseUi)
+                _this.timeLine.value = frame.ts.toString();
         };
         this.world.onStop = function () {
             if (_this.recorder) {
@@ -38,6 +65,21 @@ var DemolishInstance = (function () {
         };
     }
     DemolishInstance.prototype.onReady = function () { };
+    DemolishInstance.prototype.generereTimeLineDetails = function (arr) {
+        var parent = document.querySelector(".demolished-timeline");
+        var ox = 0;
+        arr.forEach(function (ent, index) {
+            var el = document.createElement("div");
+            el.classList.add("timeline-entry");
+            var d = (parseInt(ent.d) / 312600);
+            var w = 100 * (Math.round(100 * (d * 1)) / 100);
+            el.style.width = w + "%";
+            el.style.left = ox + "%";
+            el.style.background = '#' + (Math.random() * 0xFFFFFF << 0).toString(16);
+            parent.appendChild(el);
+            ox = ox + w;
+        });
+    };
     return DemolishInstance;
 }());
 document.addEventListener("DOMContentLoaded", function () {
@@ -64,6 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     launchButton.addEventListener("click", function () {
         launchButton.classList.add("hide");
-        demolished.world.start(0);
+        console.log("start called", location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
+        demolished.world.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
     });
 });

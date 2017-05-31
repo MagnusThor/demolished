@@ -6,8 +6,8 @@
         "experimentalDecorators" :true,
         "emitDecoratorMetadata": true,
         "noImplicitAny": false,
-        "sourceMap": false
-        
+        "sourceMap": false,
+        "lib":["es6", "dom"]
     
     },
     "exclude": [

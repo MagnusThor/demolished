@@ -119,23 +119,6 @@ var Demolished;
             gl.bindTexture(gl.TEXTURE_2D, null);
             return texture;
         };
-        //     createTextureFromFloat32(width:number, height:number, array:Float32Array){
-        //         let gl = this.gl;
-        //         let texture = gl.createTexture();
-        //            if (!gl.getExtension("OES_texture_float")) {
-        //             throw ("Requires OES_texture_float extension");
-        //         }
-        //         gl.bindTexture(gl.TEXTURE_2D, texture);
-        //        //            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, new Float32Array([255,255,255,0])));
-        //     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,32,32,0,gl.RGBA,gl.FLOAT,array);
-        //       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        //    //     gl.generateMipmap(gl.TEXTURE_2D);
-        //         gl.bindTexture(gl.TEXTURE_2D,null);
-        //         return texture;
-        //     }
         EnityBase.prototype.initShader = function () {
             var _this = this;
             var gl = this.gl;
@@ -214,20 +197,6 @@ var Demolished;
         return Asset;
     }());
     Demolished.Asset = Asset;
-    var AudioData = (function () {
-        // freqOffset: number;
-        // freqScale: number;
-        function AudioData(freqData, timeData, minDb, maxDb) {
-            this.freqData = freqData;
-            this.timeData = timeData;
-            this.minDb = minDb;
-            this.maxDb = maxDb;
-            // this.freqScale = 1 / (maxDb - minDb);
-            // this.freqOffset = minDb;
-        }
-        return AudioData;
-    }());
-    Demolished.AudioData = AudioData;
     var AudioAnalyzerSettings = (function () {
         function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {
             this.fftSize = fftSize;
@@ -259,7 +228,14 @@ var Demolished;
             this.addEventListeners();
             // load and add the entities
             this.loadTimeline(this.timelineFile).then(function (timeline) {
-                _this.loadAudio().then(function (audioBuffer) {
+                console.log("timeline fetched");
+                _this.cretateAudio("assets/song.mp3").then(function (analyzer) {
+                    console.log("audio fetched & created");
+                    _this.audioAnalyser = analyzer;
+                    _this.audioAnalyser.smoothingTimeConstant = _this.audioAnalyzerSettings.smoothingTimeConstant;
+                    _this.audioAnalyser.fftSize = _this.audioAnalyzerSettings.fftSize;
+                    _this.audioAnalyser.maxDecibels = -10;
+                    _this.audioAnalyser.minDecibels = -90;
                     timeline.entities.forEach(function (effect) {
                         var textures = Promise.all(effect.textures.map(function (texture) {
                             return new Promise(function (resolve, reject) {
@@ -273,11 +249,14 @@ var Demolished;
                                 return new Asset(image, texture.uniform, texture.width, texture.height, 0);
                             });
                         })).then(function (assets) {
-                            var temp = _this.addEntity(effect.name, effect.start, effect.stop, assets);
+                            _this.addEntity(effect.name, effect.start, effect.stop, assets);
+                            if (_this.entities.length === timeline.entities.length) {
+                                _this.onReady();
+                                _this.resizeCanvas();
+                            }
                         });
                     });
                     _this.resizeCanvas();
-                    _this.onReady();
                 });
             });
         }
@@ -295,11 +274,13 @@ var Demolished;
             return renderingContext;
         };
         World.prototype.loadTimeline = function (timelineFile) {
-            return window.fetch(timelineFile).then(function (response) {
+            return fetch(timelineFile).then(function (response) {
                 return response.json();
             }).then(function (timeline) {
                 return timeline;
             });
+        };
+        World.prototype.onFrame = function (frame) {
         };
         World.prototype.onStart = function () {
         };
@@ -313,26 +294,25 @@ var Demolished;
             this.bufferSource.connect(ms);
             return ms.stream.getAudioTracks();
         };
-        World.prototype.loadAudio = function () {
+        World.prototype.cretateAudio = function (src) {
             var _this = this;
-            return window.fetch("assets/song.mp3").then(function (response) {
-                return response.arrayBuffer().then(function (buffer) {
-                    var context = new AudioContext();
-                    return context.decodeAudioData(buffer).then(function (audioBuffer) {
-                        _this.bufferSource = context.createBufferSource();
-                        _this.audioAnalyser = context.createAnalyser();
-                        _this.bufferSource.buffer = audioBuffer;
-                        _this.audioAnalyser.smoothingTimeConstant = _this.audioAnalyzerSettings.smoothingTimeConstant;
-                        _this.audioAnalyser.fftSize = _this.audioAnalyzerSettings.fftSize;
-                        _this.audioAnalyser.maxDecibels = -10;
-                        _this.audioAnalyser.minDecibels = -90;
-                        _this.audioData =
-                            new AudioData(new Float32Array(_this.audioAnalyser.fftSize), new Float32Array(_this.audioAnalyser.fftSize), _this.audioAnalyzerSettings.minDecibels, _this.audioAnalyzerSettings.maxDecibels);
-                        _this.bufferSource.connect(_this.audioAnalyser);
-                        _this.bufferSource.connect(context.destination);
-                        return audioBuffer;
-                    });
-                });
+            return new Promise(function (resolve, reject) {
+                var audioEl = new Audio(); //document.createElement("audio");
+                audioEl.preload = "auto";
+                audioEl.src = src;
+                audioEl.crossOrigin = "anonymous";
+                var context = new AudioContext();
+                var analyser = context.createAnalyser();
+                var onLoad = function () {
+                    var source = context.createMediaElementSource(audioEl);
+                    source.connect(analyser);
+                    analyser.connect(context.destination);
+                    resolve(analyser);
+                    window.addEventListener("load", onLoad, false);
+                };
+                // // Need window.onload to fire first. See crbug.com/112368.
+                onLoad();
+                _this.audio = audioEl;
             });
         };
         World.prototype.addEventListeners = function () {
@@ -350,15 +330,26 @@ var Demolished;
             this.entities.push(entity);
             return entity;
         };
+        World.prototype.findEntityByTime = function (time) {
+            return this.entities.findIndex(function (pre) { return time < pre.stop && time >= pre.start; });
+        };
         World.prototype.start = function (time) {
+            this.animationOffsetTime = time;
+            this.currentEntity = this.findEntityByTime(time);
+            console.log("Starting at ent index", this.currentEntity);
+            // if(this.currentEntity)
+            this.animationStartTime = performance.now();
             this.animate(time);
-            this.bufferSource.start(0);
+            this.audio.currentTime = (time / 1000) % 60;
+            this.audio.play();
             this.onStart();
         };
         World.prototype.stop = function () {
+            //    let farId: number  = this.animationFrameId;
             cancelAnimationFrame(this.animationFrameId);
-            this.bufferSource.stop();
+            ;
             this.onStop();
+            return this.animationFrameId;
         };
         World.prototype.createFFTTexture = function (width, height, array) {
             var gl = this.gl;
@@ -376,26 +367,24 @@ var Demolished;
         };
         World.prototype.animate = function (time) {
             var _this = this;
+            var at = time - this.animationStartTime;
             this.animationFrameId = requestAnimationFrame(function (_time) {
-                if (_this.audioAnalyser) {
-                    var bufferLength = _this.audioAnalyser.frequencyBinCount;
-                    var dataArray = new Uint8Array(bufferLength);
-                    _this.audioAnalyser.getByteFrequencyData(dataArray);
-                    _this.fftTexture = _this.createFFTTexture(32, 32, dataArray);
-                }
                 _this.animate(_time);
             });
-            // What to render needs to come from graph;
+            if (this.audioAnalyser) {
+                var bufferLength = this.audioAnalyser.frequencyBinCount;
+                var freqArray = new Uint8Array(bufferLength);
+                this.audioAnalyser.getByteFrequencyData(freqArray);
+                this.fftTexture = this.createFFTTexture(32, 32, freqArray);
+            }
             var ent = this.entities[this.currentEntity];
-            //  ent.assets[0].texture = 
-            // for next frame ,  use next effect if we reached the end of current
-            if (time > ent.stop) {
+            if (at > ent.stop) {
                 this.currentEntity++;
                 if (this.currentEntity === this.entities.length) {
                     this.stop();
                 }
             }
-            this.renderEntities(ent, time);
+            this.renderEntities(ent, at);
         };
         World.prototype.surfaceCorners = function () {
             if (this.gl) {
@@ -425,17 +414,10 @@ var Demolished;
             this.surfaceCorners();
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         };
-        World.prototype.renderEntities = function (ent, tm) {
-            // todo: onFrame should be thrown - 
-            document.querySelector("#time").textContent =
-                ((tm / 1000) / 60).toFixed(0).toString() + ":" +
-                    ((tm / 1000) % 60).toFixed(2).toString();
+        World.prototype.renderEntities = function (ent, ts) {
             var gl = this.gl;
-            this.parameters.time = tm; // Date.now() - this.parameters.startTime;
+            this.parameters.time = ts; // Date.now() - this.parameters.startTime;
             gl.useProgram(ent.currentProgram);
-            gl.uniform1f(ent.uniformsCache.get('sampleRate'), 44100);
-            // gl.uniform1fv(ent.uniformsCache.get('freq_data'), this.audioData.freqData);
-            // gl.uniform1fv(ent.uniformsCache.get('freq_time'), this.audioData.timeData);
             gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
             gl.uniform2f(ent.uniformsCache.get('resolution'), this.parameters.screenWidth, this.parameters.screenHeight);
@@ -447,6 +429,7 @@ var Demolished;
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
+            // Should be fftSampler
             gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
             var offset = 2;
             ent.assets.forEach(function (asset, index) {
@@ -454,7 +437,6 @@ var Demolished;
                 gl.bindTexture(gl.TEXTURE_2D, asset.texture);
                 gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), offset + index);
             });
-            //   gl.uniform1i(gl.getUniformLocation(ent.currentProgram,"fft"),2);
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -462,6 +444,10 @@ var Demolished;
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             ent.swapBuffers();
+            this.onFrame({
+                ts: this.animationOffsetTime + ts,
+                raflId: this.animationFrameId
+            });
         };
         return World;
     }());
