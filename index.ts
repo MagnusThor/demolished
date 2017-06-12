@@ -38,7 +38,7 @@ export class DemolishedSequencer {
 
     constructor() {
 
-        this.duration = 312600;
+        this.duration = 211200;
 
         this.timeLine = document.querySelector(".demolished-timeline input") as HTMLInputElement;
 

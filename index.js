@@ -4,7 +4,7 @@ var demolishedRecorder_1 = require('./src/demolishedRecorder');
 var DemolishedSequencer = (function () {
     function DemolishedSequencer() {
         var _this = this;
-        this.duration = 312600;
+        this.duration = 211200;
         this.timeLine = document.querySelector(".demolished-timeline input");
         this.timeLine.addEventListener("mousedown", function (evt) {
             _this.world.stop();

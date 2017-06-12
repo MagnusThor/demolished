@@ -229,12 +229,10 @@ var Demolished;
             this.addEventListeners();
             // load and add the entities
             this.loadTimeline(this.timelineFile).then(function (timeline) {
-                console.log("timeline fetched");
                 timeline.entities.sort(function (a, b) {
                     return a.start - b.start;
                 });
                 _this.cretateAudio("assets/song.mp3").then(function (analyzer) {
-                    console.log("audio fetched & created");
                     _this.audioAnalyser = analyzer;
                     _this.audioAnalyser.smoothingTimeConstant = _this.audioAnalyzerSettings.smoothingTimeConstant;
                     _this.audioAnalyser.fftSize = _this.audioAnalyzerSettings.fftSize;
@@ -273,18 +271,6 @@ var Demolished;
                 this.canvas.getContext('webgl2', contextAttributes) ||
                     this.canvas.getContext('webgl', contextAttributes) ||
                     this.canvas.getContext('experimental-webgl', contextAttributes);
-            /*
-   mFloat32Textures  = mGL.getExtension( 'OES_texture_float' );
-                            mFloat32Filter    = mGL.getExtension( 'OES_texture_float_linear');
-                            mFloat16Textures  = mGL.getExtension( 'OES_texture_half_float' );
-                            mFloat16Filter    = mGL.getExtension( 'OES_texture_half_float_linear' );
-                            mDerivatives      = mGL.getExtension( 'OES_standard_derivatives' );
-                            mDrawBuffers      = mGL.getExtension( 'WEBGL_draw_buffers' );
-                            mDepthTextures    = mGL.getExtension( 'WEBGL_depth_texture' );
-                            mShaderTextureLOD = mGL.getExtension( 'EXT_shader_texture_lod' );
-                            mAnisotropic      = mGL.getExtension( 'EXT_texture_filter_anisotropic' );
-
-            */
             renderingContext.getExtension('OES_standard_derivatives');
             renderingContext.getExtension("OES_texture_float");
             renderingContext.getExtension("OES_texture_half_float");
@@ -293,7 +279,6 @@ var Demolished;
             renderingContext.getExtension("WEBGL_depth_texture");
             renderingContext.getExtension("EXT_shader_texture_lod");
             renderingContext.getExtension("EXT_texture_filter_anisotropic");
-            renderingContext.getExtension('EXT_shader_texture_lod');
             this.webGLbuffer = renderingContext.createBuffer();
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);

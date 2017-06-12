@@ -16,10 +16,13 @@ uniform sampler2D fft;
 uniform sampler2D iChannel0;
 uniform sampler2D iChannel1;
 
+float freqs[4];
+
 vec4 textureLod(  sampler2D   s, vec2 c, float b)          { return texture2DLodEXT(s,c,b); }
 vec4 textureGrad( sampler2D   s, vec2 c, vec2 dx, vec2 dy) { return texture2DGradEXT(s,c,dx,dy); }
 	
-#define FAR 15.
+float FAR;    
+
 
 // Frequencies and amplitudes of the "path" function, used to shape the tunnel and guide the camera.
 const float freqA = 0.15/3.75;
@@ -196,13 +199,12 @@ float fbm(in vec3 p){
 
 vec3 getSky(in vec3 ro, in vec3 rd, vec3 sunDir){
 
-float beam = texture2D( fft, vec2(sunDir.x,0.0) ).x;	
 
-	float sun = max(dot(rd, sunDir), 0.0) * beam;
+	float sun = max(dot(rd, sunDir),(freqs[3] * .5)); // * (freqs[0] * 2.0);
 
-	float horiz = pow(1.0-max(rd.y, 0.0), 3.)*.35; 
-	vec3 col = mix(vec3(.25, .35, .5), vec3(.4, .375, .35), sun*.75);
-	col = mix(col, vec3(1, .9, .7), horiz);
+	float horiz = pow(1.0-max(rd.y, 0.0), 1.)*.15; 
+	vec3 col = mix(vec3(.25, .35, .5), vec3(.4, .375, .35), sun);
+	col = mix(col, vec3(1, .9, .7), horiz * (.75* freqs[0]));
     
   	col += 0.25*vec3(1, .7, .4)*pow(sun, 5.0);
 	col += 0.25*vec3(1, .8, .6)*pow(sun, 64.0);
@@ -229,8 +231,20 @@ float curve(in vec3 p){
 }
 
 
+
+
 void main(){	
 
+  
+   freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
+	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
+	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
+	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;
+
+
+    // Set FAR
+
+      FAR = 15.0  + (15.0 *  freqs[0]);
 
 	
 	// Screen coordinates.
@@ -244,6 +258,9 @@ void main(){
 	// Sending the camera and "look at" vectors down the tunnel. The "path" function is 
 	// synchronized with the distance function.
 	lookAt.xy += path(lookAt.z);
+
+   // lookAt.x += mouse.x * 0.5;
+
 	ro.xy += path(ro.z);
 
     // Using the above to produce the unit ray-direction vector.

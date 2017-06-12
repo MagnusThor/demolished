@@ -3,14 +3,45 @@
         "audioFile": "song.mp3",
         "fftSize": 8192,
         "smoothingTimeConstant": 0.85,
-        "duration": 312600
+        "duration": 211200
     },
     "entities": [{
-            "name": "basic",
-            "description": "texture, fft data",
+            "name": "corridor",
+            "description": "textures, fft data , great work by Shane - https://www.shadertoy.com/view/MlXSWX",
             "start": 0,
-            "stop": 120000,
+            "stop": 40000,
             "textures": [{
+                    "url": "assets/canvas.jpg",
+                    "uniform": "iChannel1",
+                    "width": 512,
+                    "height": 512,
+                    "type:": 0
+                },
+                {
+                    "url": "assets/wood.jpg",
+                    "uniform": "iChannel0",
+                    "width": 512,
+                    "height": 1024,
+                    "type:": 0
+                }
+            ]
+        },
+        {
+            "name": "voronoi",
+            "description": "voronoi, fft ",
+            "start": 40000,
+            "stop": 80000,
+            "textures": [
+            ]
+            }
+      ,
+       {
+            "name": "desert",
+            "description": "impressive work from https://www.shadertoy.com/view/Xs33Df",
+            "start": 80000,
+            "stop": 211200,
+           
+                "textures": [{
                     "url": "assets/iChannel0.png",
                     "uniform": "iChannel0",
                     "width": 512,
@@ -24,15 +55,7 @@
                     "height": 1024,
                     "type:": 0
                 }
-            ]
-        }
-      ,
-       {
-            "name": "desert",
-            "description": "impressive work from https://www.shadertoy.com/view/Xs33Df",
-            "start": 120000,
-            "stop": 312600,
-            "textures": [
+          
             ]
         } 
     ]
