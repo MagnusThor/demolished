@@ -303,6 +303,9 @@ var Demolished;
             // load and add the entities
             this.loadTimeline(this.timelineFile).then(function (timeline) {
                 console.log("timeline fetched");
+                timeline.entities.sort(function (a, b) {
+                    return a.start - b.start;
+                });
                 _this.cretateAudio("assets/song.mp3").then(function (analyzer) {
                     console.log("audio fetched & created");
                     _this.audioAnalyser = analyzer;

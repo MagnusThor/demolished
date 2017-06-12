@@ -5,16 +5,12 @@
         "smoothingTimeConstant": 0.85,
         "duration": 312600
     },
-
-
     "entities": [{
-
             "name": "basic",
-            "description": "",
+            "description": "texture, fft data",
             "start": 0,
-            "stop": 312600,
-            "textures": [
-                {
+            "stop": 120000,
+            "textures": [{
                     "url": "assets/iChannel0.png",
                     "uniform": "iChannel0",
                     "width": 512,
@@ -30,6 +26,14 @@
                 }
             ]
         }
-     
+      ,
+       {
+            "name": "desert",
+            "description": "impressive work from https://www.shadertoy.com/view/Xs33Df",
+            "start": 120000,
+            "stop": 312600,
+            "textures": [
+            ]
+        } 
     ]
 }

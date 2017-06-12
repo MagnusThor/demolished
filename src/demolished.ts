@@ -302,18 +302,6 @@ export namespace Demolished {
                 this.canvas.getContext('webgl', contextAttributes) ||
                 this.canvas.getContext('experimental-webgl', contextAttributes);
 
-            /*
-   mFloat32Textures  = mGL.getExtension( 'OES_texture_float' );
-                            mFloat32Filter    = mGL.getExtension( 'OES_texture_float_linear');
-                            mFloat16Textures  = mGL.getExtension( 'OES_texture_half_float' );
-                            mFloat16Filter    = mGL.getExtension( 'OES_texture_half_float_linear' );
-                            mDerivatives      = mGL.getExtension( 'OES_standard_derivatives' );
-                            mDrawBuffers      = mGL.getExtension( 'WEBGL_draw_buffers' );
-                            mDepthTextures    = mGL.getExtension( 'WEBGL_depth_texture' );
-                            mShaderTextureLOD = mGL.getExtension( 'EXT_shader_texture_lod' );
-                            mAnisotropic      = mGL.getExtension( 'EXT_texture_filter_anisotropic' );
-
-            */
             renderingContext.getExtension('OES_standard_derivatives');
             renderingContext.getExtension("OES_texture_float");
             renderingContext.getExtension("OES_texture_half_float");
@@ -323,7 +311,6 @@ export namespace Demolished {
             renderingContext.getExtension("EXT_shader_texture_lod");
             renderingContext.getExtension("EXT_texture_filter_anisotropic");
 
-            renderingContext.getExtension('EXT_shader_texture_lod');
 
             this.webGLbuffer = renderingContext.createBuffer();
 
@@ -364,12 +351,12 @@ export namespace Demolished {
 
             // load and add the entities
             this.loadTimeline(this.timelineFile).then((timeline: any) => {
-
-                console.log("timeline fetched");
+              
+                timeline.entities.sort( function(a,b)   {
+                    return a.start - b.start;
+                });
 
                 this.cretateAudio("assets/song.mp3").then((analyzer: AnalyserNode) => {
-
-                    console.log("audio fetched & created");
 
                     this.audioAnalyser = analyzer;
 
