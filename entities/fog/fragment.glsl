@@ -7,6 +7,7 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+uniform sampler2D fft;
 
 //Xyptonjtroz by nimitz (twitter: @stormoid)
 
@@ -42,6 +43,10 @@ float vine(vec3 p, in float c, in float h)
     p.x += cos(p.z*0.1575)*3.;
     vec2 q = vec2(mod(p.x, c)-c/2., p.y);
     return length(q) - h -sin(p.z*2.+sin(p.x*7.)*0.5+time*0.5)*0.13;
+}
+
+vec4 map(vec3 v){
+    return vecv(p,0.1):
 }
 
 float map(vec3 p)
@@ -113,7 +118,7 @@ float fogmap(in vec3 p, in float d)
 
 vec3 fog(in vec3 col, in vec3 ro, in vec3 rd, in float mt)
 {
-    float d = .5;
+    float d = .9;
     for(int i=0; i<7; i++)
     {
         vec3  pos = ro + rd*d;
@@ -193,9 +198,16 @@ float SCurve (float value, float amount, float correction) {
     return pow(curve, correction);
 }
 
+float  freqs[4];
+
 
 void main(void)
 {	
+    freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
+	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
+	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
+	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;
+
 	vec2 p = gl_FragCoord.xy/resolution.xy-0.5;
     vec2 q = gl_FragCoord.xy/resolution.xy;
 	p.x*=resolution.x/resolution.y;
@@ -229,7 +241,9 @@ void main(void)
         float crv = clamp(curv(pos, .4),.0,10.);
         float shd = shadow(pos,ligt,0.1,3.);
         float dif = clamp( dot( nor, ligt ), 0.0, 1.0 )*shd;
+        
         float spe = pow(clamp( dot( reflect(rd,nor), ligt ), 0.0, 1.0 ),50.)*shd;
+        spe = spe = ((spe * freqs[0]) *  freqs[1]) * 2.6;;
         float fre = pow( clamp(1.0+dot(nor,rd),0.0,1.0), 1.5 );
         vec3 brdf = vec3(0.10,0.11,0.13);
         brdf += 1.5*dif*vec3(1.00,0.90,0.7);

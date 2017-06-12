@@ -290,13 +290,14 @@ var Demolished;
             this.height = 1;
             this.centerX = 0;
             this.centerY = 0;
-            this.currentEntity = 0;
+            this.currentEntity = -1;
             this.parameters = new Parameters(this.canvas.width, this.canvas.height);
             this.parameters.time = 0;
             this.parameters.mouseX = 0.5;
             this.parameters.mouseY = 0.5;
             this.entities = new Array();
             this.gl = this.getRendringContext();
+            this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
             this.addEventListeners();
             // load and add the entities
@@ -335,12 +336,34 @@ var Demolished;
         }
         World.prototype.getRendringContext = function () {
             var renderingContext;
-            var contextAttributes = { preserveDrawingBuffer: true };
+            var contextAttributes = {
+                preserveDrawingBuffer: true
+            };
             renderingContext =
-                this.canvas.getContext('webgl2', contextAttributes)
-                    || this.canvas.getContext('webgl', contextAttributes)
-                    || this.canvas.getContext('experimental-webgl', contextAttributes);
+                this.canvas.getContext('webgl2', contextAttributes) ||
+                    this.canvas.getContext('webgl', contextAttributes) ||
+                    this.canvas.getContext('experimental-webgl', contextAttributes);
+            /*
+   mFloat32Textures  = mGL.getExtension( 'OES_texture_float' );
+                            mFloat32Filter    = mGL.getExtension( 'OES_texture_float_linear');
+                            mFloat16Textures  = mGL.getExtension( 'OES_texture_half_float' );
+                            mFloat16Filter    = mGL.getExtension( 'OES_texture_half_float_linear' );
+                            mDerivatives      = mGL.getExtension( 'OES_standard_derivatives' );
+                            mDrawBuffers      = mGL.getExtension( 'WEBGL_draw_buffers' );
+                            mDepthTextures    = mGL.getExtension( 'WEBGL_depth_texture' );
+                            mShaderTextureLOD = mGL.getExtension( 'EXT_shader_texture_lod' );
+                            mAnisotropic      = mGL.getExtension( 'EXT_texture_filter_anisotropic' );
+
+            */
             renderingContext.getExtension('OES_standard_derivatives');
+            renderingContext.getExtension("OES_texture_float");
+            renderingContext.getExtension("OES_texture_half_float");
+            renderingContext.getExtension("OES_texture_half_float_linear");
+            renderingContext.getExtension("WEBGL_draw_buffers");
+            renderingContext.getExtension("WEBGL_depth_texture");
+            renderingContext.getExtension("EXT_shader_texture_lod");
+            renderingContext.getExtension("EXT_texture_filter_anisotropic");
+            renderingContext.getExtension('EXT_shader_texture_lod');
             this.webGLbuffer = renderingContext.createBuffer();
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);
@@ -353,19 +376,14 @@ var Demolished;
                 return timeline;
             });
         };
-        World.prototype.onFrame = function (frame) {
-        };
-        World.prototype.onStart = function () {
-        };
-        World.prototype.onStop = function () {
-        };
-        World.prototype.onReady = function () {
-        };
+        World.prototype.onFrame = function (frame) { };
+        World.prototype.onStart = function () { };
+        World.prototype.onStop = function () { };
+        World.prototype.onReady = function () { };
         // todo:Rename
         World.prototype.getAudioTracks = function () {
-            var ms = this.bufferSource.context["createMediaStreamDestination"]();
-            this.bufferSource.connect(ms);
-            return ms.stream.getAudioTracks();
+            var ms = this.audio["captureStream"](60);
+            return ms.getAudioTracks();
         };
         World.prototype.cretateAudio = function (src) {
             var _this = this;
@@ -383,7 +401,7 @@ var Demolished;
                     resolve(analyser);
                     window.addEventListener("load", onLoad, false);
                 };
-                // // Need window.onload to fire first. See crbug.com/112368.
+                // Need window.onload to fire first. See crbug.com/112368.
                 onLoad();
                 _this.audio = audioEl;
             });
@@ -404,13 +422,17 @@ var Demolished;
             return entity;
         };
         World.prototype.findEntityByTime = function (time) {
-            return this.entities.findIndex(function (pre) { return time < pre.stop && time >= pre.start; });
+            return this.entities.findIndex(function (pre) {
+                return time < pre.stop && time >= pre.start;
+            });
         };
         World.prototype.start = function (time) {
+            // ensure that entities are in correct order.
+            this.entities.sort(function (a, b) {
+                return a.start - b.start;
+            });
             this.animationOffsetTime = time;
             this.currentEntity = this.findEntityByTime(time);
-            console.log("Starting at ent index", this.currentEntity);
-            // if(this.currentEntity)
             this.animationStartTime = performance.now();
             this.animate(time);
             this.audio.currentTime = (time / 1000) % 60;
@@ -418,25 +440,19 @@ var Demolished;
             this.onStart();
         };
         World.prototype.stop = function () {
-            //    let farId: number  = this.animationFrameId;
             cancelAnimationFrame(this.animationFrameId);
             ;
             this.onStop();
             return this.animationFrameId;
         };
-        World.prototype.createFFTTexture = function (width, height, array) {
+        World.prototype.updateTextureData = function (texture, width, height, bytes) {
             var gl = this.gl;
-            var texture = gl.createTexture();
-            if (!gl.getExtension("OES_texture_float")) {
-                throw ("Requires OES_texture_float extension");
-            }
             gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, array);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            return texture;
         };
         World.prototype.animate = function (time) {
             var _this = this;
@@ -448,7 +464,7 @@ var Demolished;
                 var bufferLength = this.audioAnalyser.frequencyBinCount;
                 var freqArray = new Uint8Array(bufferLength);
                 this.audioAnalyser.getByteFrequencyData(freqArray);
-                this.fftTexture = this.createFFTTexture(32, 32, freqArray);
+                this.updateTextureData(this.fftTexture, 32, 32, freqArray);
             }
             var ent = this.entities[this.currentEntity];
             if (at > ent.stop) {
@@ -469,7 +485,8 @@ var Demolished;
                     this.centerX - this.width, this.centerY + this.height,
                     this.centerX + this.width, this.centerY - this.height,
                     this.centerX + this.width, this.centerY + this.height,
-                    this.centerX - this.width, this.centerY + this.height]), this.gl.STATIC_DRAW);
+                    this.centerX - this.width, this.centerY + this.height
+                ]), this.gl.STATIC_DRAW);
             }
         };
         World.prototype.setViewPort = function (width, height) {
@@ -564,9 +581,10 @@ exports.DemolishedRecorder = DemolishedRecorder;
 
 var demolished_1 = __webpack_require__(0);
 var demolishedRecorder_1 = __webpack_require__(1);
-var DemolishInstance = (function () {
-    function DemolishInstance() {
+var DemolishedSequencer = (function () {
+    function DemolishedSequencer() {
         var _this = this;
+        this.duration = 312600;
         this.timeLine = document.querySelector(".demolished-timeline input");
         this.timeLine.addEventListener("mousedown", function (evt) {
             _this.world.stop();
@@ -582,15 +600,17 @@ var DemolishInstance = (function () {
         });
         var analyzerSettings = new demolished_1.Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
         var canvas = document.querySelector("#gl");
+        window.onerror = function () {
+            _this.world.stop();
+        };
         this.world = new demolished_1.Demolished.World(canvas, "entities/timeline.json", analyzerSettings);
         this.world.onReady = function () {
             var arr = _this.world.entities.map(function (a, index) {
                 return {
                     d: a.stop - a.start, i: index };
             });
-            _this.generereTimeLineDetails(arr);
-            var endTime = 352966;
-            _this.timeLine.setAttribute("max", endTime.toString());
+            _this.getTimeLineDetails(arr);
+            _this.timeLine.setAttribute("max", _this.duration.toString());
             _this.onReady();
         };
         this.world.onStart = function () {
@@ -600,7 +620,7 @@ var DemolishInstance = (function () {
                 var videoTrack = videoStream.getVideoTracks()[0];
                 var audioTrack = _this.world.getAudioTracks()[0];
                 _this.recorder = new demolishedRecorder_1.DemolishedRecorder(videoTrack, audioTrack);
-                _this.recorder.start(1000);
+                _this.recorder.start(100);
             }
         };
         this.world.onFrame = function (frame) {
@@ -627,24 +647,26 @@ var DemolishInstance = (function () {
             }
         };
     }
-    DemolishInstance.prototype.onReady = function () { };
-    DemolishInstance.prototype.generereTimeLineDetails = function (arr) {
+    DemolishedSequencer.prototype.onReady = function () { };
+    DemolishedSequencer.prototype.getTimeLineDetails = function (arr) {
+        var _this = this;
         var parent = document.querySelector(".demolished-timeline");
         var ox = 0;
         arr.forEach(function (ent, index) {
             var el = document.createElement("div");
             el.classList.add("timeline-entry");
-            var d = (parseInt(ent.d) / 312600);
+            var d = (parseInt(ent.d) / _this.duration);
             var w = 100 * (Math.round(100 * (d * 1)) / 100);
             el.style.width = w + "%";
             el.style.left = ox + "%";
             el.style.background = '#' + (Math.random() * 0xFFFFFF << 0).toString(16);
             parent.appendChild(el);
-            ox = ox + w;
+            ox += w;
         });
     };
-    return DemolishInstance;
+    return DemolishedSequencer;
 }());
+exports.DemolishedSequencer = DemolishedSequencer;
 document.addEventListener("DOMContentLoaded", function () {
     var launchButton = document.querySelector("#full-screen");
     function launchFullscreen(element) {
@@ -661,7 +683,7 @@ document.addEventListener("DOMContentLoaded", function () {
             element.msRequestFullscreen();
         }
     }
-    var demolished = new DemolishInstance();
+    var demolished = new DemolishedSequencer();
     window["demo"] = demolished;
     demolished.onReady = function () {
         launchButton.textContent = "Start";
@@ -669,7 +691,6 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     launchButton.addEventListener("click", function () {
         launchButton.classList.add("hide");
-        console.log("start called", location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
         demolished.world.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
     });
 });

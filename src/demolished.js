@@ -217,13 +217,14 @@ var Demolished;
             this.height = 1;
             this.centerX = 0;
             this.centerY = 0;
-            this.currentEntity = 0;
+            this.currentEntity = -1;
             this.parameters = new Parameters(this.canvas.width, this.canvas.height);
             this.parameters.time = 0;
             this.parameters.mouseX = 0.5;
             this.parameters.mouseY = 0.5;
             this.entities = new Array();
             this.gl = this.getRendringContext();
+            this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
             this.addEventListeners();
             // load and add the entities
@@ -262,12 +263,34 @@ var Demolished;
         }
         World.prototype.getRendringContext = function () {
             var renderingContext;
-            var contextAttributes = { preserveDrawingBuffer: true };
+            var contextAttributes = {
+                preserveDrawingBuffer: true
+            };
             renderingContext =
-                this.canvas.getContext('webgl2', contextAttributes)
-                    || this.canvas.getContext('webgl', contextAttributes)
-                    || this.canvas.getContext('experimental-webgl', contextAttributes);
+                this.canvas.getContext('webgl2', contextAttributes) ||
+                    this.canvas.getContext('webgl', contextAttributes) ||
+                    this.canvas.getContext('experimental-webgl', contextAttributes);
+            /*
+   mFloat32Textures  = mGL.getExtension( 'OES_texture_float' );
+                            mFloat32Filter    = mGL.getExtension( 'OES_texture_float_linear');
+                            mFloat16Textures  = mGL.getExtension( 'OES_texture_half_float' );
+                            mFloat16Filter    = mGL.getExtension( 'OES_texture_half_float_linear' );
+                            mDerivatives      = mGL.getExtension( 'OES_standard_derivatives' );
+                            mDrawBuffers      = mGL.getExtension( 'WEBGL_draw_buffers' );
+                            mDepthTextures    = mGL.getExtension( 'WEBGL_depth_texture' );
+                            mShaderTextureLOD = mGL.getExtension( 'EXT_shader_texture_lod' );
+                            mAnisotropic      = mGL.getExtension( 'EXT_texture_filter_anisotropic' );
+
+            */
             renderingContext.getExtension('OES_standard_derivatives');
+            renderingContext.getExtension("OES_texture_float");
+            renderingContext.getExtension("OES_texture_half_float");
+            renderingContext.getExtension("OES_texture_half_float_linear");
+            renderingContext.getExtension("WEBGL_draw_buffers");
+            renderingContext.getExtension("WEBGL_depth_texture");
+            renderingContext.getExtension("EXT_shader_texture_lod");
+            renderingContext.getExtension("EXT_texture_filter_anisotropic");
+            renderingContext.getExtension('EXT_shader_texture_lod');
             this.webGLbuffer = renderingContext.createBuffer();
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);
@@ -280,19 +303,14 @@ var Demolished;
                 return timeline;
             });
         };
-        World.prototype.onFrame = function (frame) {
-        };
-        World.prototype.onStart = function () {
-        };
-        World.prototype.onStop = function () {
-        };
-        World.prototype.onReady = function () {
-        };
+        World.prototype.onFrame = function (frame) { };
+        World.prototype.onStart = function () { };
+        World.prototype.onStop = function () { };
+        World.prototype.onReady = function () { };
         // todo:Rename
         World.prototype.getAudioTracks = function () {
-            var ms = this.bufferSource.context["createMediaStreamDestination"]();
-            this.bufferSource.connect(ms);
-            return ms.stream.getAudioTracks();
+            var ms = this.audio["captureStream"](60);
+            return ms.getAudioTracks();
         };
         World.prototype.cretateAudio = function (src) {
             var _this = this;
@@ -310,7 +328,7 @@ var Demolished;
                     resolve(analyser);
                     window.addEventListener("load", onLoad, false);
                 };
-                // // Need window.onload to fire first. See crbug.com/112368.
+                // Need window.onload to fire first. See crbug.com/112368.
                 onLoad();
                 _this.audio = audioEl;
             });
@@ -331,13 +349,17 @@ var Demolished;
             return entity;
         };
         World.prototype.findEntityByTime = function (time) {
-            return this.entities.findIndex(function (pre) { return time < pre.stop && time >= pre.start; });
+            return this.entities.findIndex(function (pre) {
+                return time < pre.stop && time >= pre.start;
+            });
         };
         World.prototype.start = function (time) {
+            // ensure that entities are in correct order.
+            this.entities.sort(function (a, b) {
+                return a.start - b.start;
+            });
             this.animationOffsetTime = time;
             this.currentEntity = this.findEntityByTime(time);
-            console.log("Starting at ent index", this.currentEntity);
-            // if(this.currentEntity)
             this.animationStartTime = performance.now();
             this.animate(time);
             this.audio.currentTime = (time / 1000) % 60;
@@ -345,25 +367,19 @@ var Demolished;
             this.onStart();
         };
         World.prototype.stop = function () {
-            //    let farId: number  = this.animationFrameId;
             cancelAnimationFrame(this.animationFrameId);
             ;
             this.onStop();
             return this.animationFrameId;
         };
-        World.prototype.createFFTTexture = function (width, height, array) {
+        World.prototype.updateTextureData = function (texture, width, height, bytes) {
             var gl = this.gl;
-            var texture = gl.createTexture();
-            if (!gl.getExtension("OES_texture_float")) {
-                throw ("Requires OES_texture_float extension");
-            }
             gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, array);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            return texture;
         };
         World.prototype.animate = function (time) {
             var _this = this;
@@ -375,7 +391,7 @@ var Demolished;
                 var bufferLength = this.audioAnalyser.frequencyBinCount;
                 var freqArray = new Uint8Array(bufferLength);
                 this.audioAnalyser.getByteFrequencyData(freqArray);
-                this.fftTexture = this.createFFTTexture(32, 32, freqArray);
+                this.updateTextureData(this.fftTexture, 32, 32, freqArray);
             }
             var ent = this.entities[this.currentEntity];
             if (at > ent.stop) {
@@ -396,7 +412,8 @@ var Demolished;
                     this.centerX - this.width, this.centerY + this.height,
                     this.centerX + this.width, this.centerY - this.height,
                     this.centerX + this.width, this.centerY + this.height,
-                    this.centerX - this.width, this.centerY + this.height]), this.gl.STATIC_DRAW);
+                    this.centerX - this.width, this.centerY + this.height
+                ]), this.gl.STATIC_DRAW);
             }
         };
         World.prototype.setViewPort = function (width, height) {

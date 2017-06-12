@@ -5,7 +5,12 @@ import {
     DemolishedRecorder
 } from './src/demolishedRecorder';
 
-class DemolishInstance {
+export class DemolishedSequencer {
+
+    // todo - fix
+
+    duration:number
+
     world: Demolished.World;
     recorder: DemolishedRecorder;
     timeLine: HTMLInputElement;
@@ -14,41 +19,30 @@ class DemolishInstance {
 
     onReady(): void {}
 
-
-    private generereTimeLineDetails(arr:Array<any>):void{
+    private getTimeLineDetails(arr:Array<any>):void{
        let parent = document.querySelector(".demolished-timeline");
        let ox:number = 0;
         arr.forEach( (ent:any,index:number) => {
             let el = document.createElement("div");
-
-
-
-                el.classList.add("timeline-entry")
-            
-                let d:number = (parseInt(ent.d) / 312600);
-
+                el.classList.add("timeline-entry")            
+                let d:number = (parseInt(ent.d) / this.duration);
                 let w:number = 100 * (Math.round(100 * (d*1)) / 100) 
-
                 el.style.width =  w + "%"
                 el.style.left = ox + "%";
                 el.style.background = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
-
-                parent.appendChild(el);
-                
-                ox = ox + w;
-             
-                 
-
+                parent.appendChild(el);                
+                ox +=  w;
         });
     }
 
 
     constructor() {
 
+        this.duration = 312600;
+
         this.timeLine = document.querySelector(".demolished-timeline input") as HTMLInputElement;
 
-        this.timeLine.addEventListener("mousedown", (evt:any) =>{
-         
+        this.timeLine.addEventListener("mousedown", (evt:any) =>{         
              this.world.stop();
         });
 
@@ -57,14 +51,10 @@ class DemolishInstance {
             let ms = parseInt(evt.target.value);
             let s = (ms/1000)%60
            
-           
             this.world.audio.currentTime = s; 
             this.world.audio.play();
-
       
             this.world.start(ms);
-
-       
 
         });
 
@@ -75,6 +65,9 @@ class DemolishInstance {
 
         let canvas = document.querySelector("#gl") as HTMLCanvasElement;
 
+        window.onerror = () =>{
+            this.world.stop();
+        }
 
         this.world = new Demolished.World(canvas,
             "entities/timeline.json", analyzerSettings);
@@ -87,12 +80,10 @@ class DemolishInstance {
                     d: a.stop - a.start, i: index}
             });
 
-            this.generereTimeLineDetails(arr);
+            this.getTimeLineDetails(arr);
 
 
-            let endTime = 352966;
-
-           this.timeLine.setAttribute("max",endTime.toString());
+           this.timeLine.setAttribute("max",this.duration.toString());
        
         
             this.onReady();
@@ -104,9 +95,8 @@ class DemolishInstance {
                 let videoStream = this.world.canvas["captureStream"](60) as MediaStream;
                 let videoTrack = videoStream.getVideoTracks()[0];
                 let audioTrack = this.world.getAudioTracks()[0];
-
                 this.recorder = new DemolishedRecorder(videoTrack, audioTrack);
-                this.recorder.start(1000);
+                this.recorder.start(100);
             }
 
         }
@@ -124,9 +114,7 @@ class DemolishInstance {
         } 
 
         this.world.onStop = () => {
-
             if (this.recorder) {
-
                 let recorderNode = document.querySelector("#recording");
 
                 this.recorder.stop();
@@ -169,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    let demolished = new DemolishInstance()
+    let demolished = new DemolishedSequencer()
 
     window["demo"] = demolished;
 
@@ -182,7 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     launchButton.addEventListener("click", function () {
         launchButton.classList.add("hide");
-        console.log("start called", location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
         demolished.world.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
     });
 

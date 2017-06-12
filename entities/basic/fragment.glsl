@@ -1,15 +1,23 @@
+#ifdef GL_OES_standard_derivatives
+#extension GL_OES_standard_derivatives : enable
+#endif
+#extension GL_EXT_shader_texture_lod : enable
 #ifdef GL_ES
 precision highp float;
 precision highp int;
 #endif
 
-#extension GL_EXT_shader_texture_lod : enable
 
 uniform vec2 resolution;
 uniform float time;
 uniform float freq_data[32];
 uniform float freq_time[32];
 uniform sampler2D fft;
+uniform sampler2D iChannel0;
+
+
+vec4 textureLod(  sampler2D   s, vec2 c, float b)          { return texture2DLodEXT(s,c,b); }
+vec4 textureGrad( sampler2D   s, vec2 c, vec2 dx, vec2 dy) { return texture2DGradEXT(s,c,dx,dy); }
 
 
 const float PI = 3.14159;
@@ -51,5 +59,7 @@ void main()
 	
 	// mask for bar graph
 	float mask = (p.y < fft) ? 1.0 : 0.0;	
-	gl_FragColor = vec4(color*mask*led, 1.0);
+	vec4 pp = texture2D(iChannel0,uv);
+
+	gl_FragColor =  mix(vec4(color*mask*led, 1.0),pp,0.5);
 }

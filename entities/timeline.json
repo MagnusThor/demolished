@@ -3,58 +3,33 @@
         "audioFile": "song.mp3",
         "fftSize": 8192,
         "smoothingTimeConstant": 0.85,
-        "duration":312600
+        "duration": 312600
     },
 
 
-    "entities": [
-        {
+    "entities": [{
 
             "name": "basic",
             "description": "",
             "start": 0,
-            "stop": 10000,
-            "textures": []
-        },
-        
-        {
-
-            "name": "voronoi",
-            "description": "",
-            "start": 10000,
-            "stop": 52001,
-            "textures": []
-        },
-        {
-            "name": "boxes",
-            "description": "",
-            "start": 52001,
-            "stop": 82600,
-            "textures": [{
-                    "url": "assets/wood.jpg",
-                    "name": "uSampler",
-                    "width": 1024,
-                    "height": 1024,
+            "stop": 312600,
+            "textures": [
+                {
+                    "url": "assets/iChannel0.png",
+                    "uniform": "iChannel0",
+                    "width": 512,
+                    "height": 512,
                     "type:": 0
                 },
-                 {
-                    "url": "assets/noise.jpg",
-                    "name": "uNoise",
+                {
+                    "url": "assets/iChannel1.jpg",
+                    "uniform": "iChannel1",
                     "width": 1024,
                     "height": 1024,
                     "type:": 0
                 }
-               
-                
             ]
-        },
-         {
-
-            "name": "landscape",
-            "description": "",
-            "start": 82600,
-            "stop":312600,
-            "textures": []
         }
+     
     ]
 }

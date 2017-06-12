@@ -13,9 +13,7 @@ if (!window.requestAnimationFrame) {
 export namespace Demolished {
 
 
-
-
-    export  class Utils{
+    export class Utils {
 
         static getExponentOfTwo(value: number, max: number): number {
             var count = 1;
@@ -30,17 +28,17 @@ export namespace Demolished {
         }
 
 
-        static convertBuffer(buffer:ArrayBuffer):Float32Array{
+        static convertBuffer(buffer: ArrayBuffer): Float32Array {
             var data = new DataView(buffer);
-                    var tempArray = new Float32Array(1024*1024*4);
-                    var len = tempArray.length;
-                   
-                    for (var jj = 0; jj < len; ++jj) {
-                    tempArray[jj] =
-                        data.getFloat32(jj * Float32Array.BYTES_PER_ELEMENT, true);
-                    }
-                  
-                    return tempArray;
+            var tempArray = new Float32Array(1024 * 1024 * 4);
+            var len = tempArray.length;
+
+            for (var jj = 0; jj < len; ++jj) {
+                tempArray[jj] =
+                    data.getFloat32(jj * Float32Array.BYTES_PER_ELEMENT, true);
+            }
+
+            return tempArray;
 
         }
     }
@@ -68,9 +66,9 @@ export namespace Demolished {
         start: number;
         stop: number;
         name: string
-        textures: Array<any>;
+        textures: Array < any > ;
         constructor() {
-            this.textures = new Array<any>();
+            this.textures = new Array < any > ();
         }
     }
 
@@ -87,13 +85,13 @@ export namespace Demolished {
         target: RenderTarget;
         backTarget: RenderTarget;
 
-        uniformsCache: Map<string, WebGLUniformLocation>;
+        uniformsCache: Map < string, WebGLUniformLocation > ;
 
         constructor(public gl: WebGLRenderingContext, public name: string,
             public start: number, public stop: number, public x: number, public y: number,
-            public assets: Array<Asset>
+            public assets: Array < Asset >
         ) {
-            this.uniformsCache = new Map<string, WebGLUniformLocation>()
+            this.uniformsCache = new Map < string, WebGLUniformLocation > ()
 
             this.loadEntityShaders().then(() => {
                 this.initShader();
@@ -134,9 +132,9 @@ export namespace Demolished {
             return target;
         }
 
-        loadEntityShaders(): Promise<boolean> {
+        loadEntityShaders(): Promise < boolean > {
 
-            let urls = new Array<string>();
+            let urls = new Array < string > ();
             urls.push("entities/" + this.name + "/fragment.glsl");
             urls.push("entities/" + this.name + "/vertex.glsl");
 
@@ -157,7 +155,7 @@ export namespace Demolished {
             console.error(err)
         }
 
-        createTextureFromData(width:number, height:number, image:HTMLImageElement) {
+        createTextureFromData(width: number, height: number, image: HTMLImageElement) {
             let gl = this.gl;
             let texture = gl.createTexture()
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -166,7 +164,7 @@ export namespace Demolished {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
             gl.generateMipmap(gl.TEXTURE_2D);
 
-   
+
 
             gl.bindTexture(gl.TEXTURE_2D, null)
 
@@ -201,30 +199,30 @@ export namespace Demolished {
             this.cacheUniformLocation('mouse');
             this.cacheUniformLocation('resolution');
             this.cacheUniformLocation("sampleRate");
-            
+
             this.cacheUniformLocation("fft");
             // this.positionAttribute = 0;// gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
             // gl.enableVertexAttribArray(this.positionAttribute);
 
             this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
             gl.enableVertexAttribArray(this.vertexPosition);
-            
-            this.assets.forEach( (asset:Asset) => {
-              
-                switch(asset.assetType){
+
+            this.assets.forEach((asset: Asset) => {
+
+                switch (asset.assetType) {
                     case 0:
-                        asset.texture = this.createTextureFromData(asset.width, asset.height, 
-                        asset.image);  
+                        asset.texture = this.createTextureFromData(asset.width, asset.height,
+                            asset.image);
                         break;
                     case 1:
-                      //  asset.texture = this.createTextureFromFloat32(32,32,new Float32Array(32*32*4));
+                        //  asset.texture = this.createTextureFromFloat32(32,32,new Float32Array(32*32*4));
                         break;
                     default:
                         throw "unknown asset type"
                 }
-                           
+
             });
-          
+
             // this.createTextureFromFloat32(1,2,new Float32Array([255,0,0,255]));
 
             gl.useProgram(this.currentProgram);
@@ -249,72 +247,101 @@ export namespace Demolished {
 
     export class RenderTarget {
         constructor(public frameBuffer: WebGLFramebuffer, public renderBuffer: WebGLFramebuffer,
-            public texture: WebGLTexture) {
-        }
+            public texture: WebGLTexture) {}
 
     }
 
-    
-    export class Asset{
-            texture :WebGLTexture;
-            constructor(public image:any, public name:string,public width:number,public height:number,public assetType:number){
-            }
+
+    export class Asset {
+        texture: WebGLTexture;
+        constructor(public image: any, public name: string, public width: number, public height: number, public assetType: number) {}
     }
 
     export class AudioAnalyzerSettings {
         constructor(public fftSize: number, public smoothingTimeConstant: number,
             public minDecibels: number, public maxDecibels: number
-        ) {
-        }
+        ) {}
     }
     export class World {
 
-        animationStartTime:number;
+        gl: WebGLRenderingContext | any;
+
+        animationStartTime: number;
         animationFrameId: number;
         animationOffsetTime: number;
 
-        entities: Array<EnityBase>;
+        audio: HTMLAudioElement;
 
-        gl: WebGLRenderingContext | any;
+        entities: Array < EnityBase > ;
+
         webGLbuffer: WebGLBuffer
+        fftTexture: WebGLTexture;
 
         width: number = 1;
         height: number = 1;
         centerX: number = 0;
         centerY: number = 0;
+
         parameters: Parameters;
 
         bufferSource: AudioBufferSourceNode
 
         audioAnalyser: AnalyserNode
-    
-        currentEntity: number = 0;
+
+        currentEntity: number = -1;
 
         private getRendringContext(): WebGLRenderingContext {
 
             let renderingContext: any;
-            let contextAttributes = { preserveDrawingBuffer: true };
+            let contextAttributes = {
+                preserveDrawingBuffer: true
+            };
 
             renderingContext =
-                this.canvas.getContext('webgl2', contextAttributes)
-                || this.canvas.getContext('webgl', contextAttributes)
-                || this.canvas.getContext('experimental-webgl', contextAttributes);
+                this.canvas.getContext('webgl2', contextAttributes) ||
+                this.canvas.getContext('webgl', contextAttributes) ||
+                this.canvas.getContext('experimental-webgl', contextAttributes);
 
+            /*
+   mFloat32Textures  = mGL.getExtension( 'OES_texture_float' );
+                            mFloat32Filter    = mGL.getExtension( 'OES_texture_float_linear');
+                            mFloat16Textures  = mGL.getExtension( 'OES_texture_half_float' );
+                            mFloat16Filter    = mGL.getExtension( 'OES_texture_half_float_linear' );
+                            mDerivatives      = mGL.getExtension( 'OES_standard_derivatives' );
+                            mDrawBuffers      = mGL.getExtension( 'WEBGL_draw_buffers' );
+                            mDepthTextures    = mGL.getExtension( 'WEBGL_depth_texture' );
+                            mShaderTextureLOD = mGL.getExtension( 'EXT_shader_texture_lod' );
+                            mAnisotropic      = mGL.getExtension( 'EXT_texture_filter_anisotropic' );
+
+            */
             renderingContext.getExtension('OES_standard_derivatives');
+            renderingContext.getExtension("OES_texture_float");
+            renderingContext.getExtension("OES_texture_half_float");
+            renderingContext.getExtension("OES_texture_half_float_linear");
+            renderingContext.getExtension("WEBGL_draw_buffers");
+            renderingContext.getExtension("WEBGL_depth_texture");
+            renderingContext.getExtension("EXT_shader_texture_lod");
+            renderingContext.getExtension("EXT_texture_filter_anisotropic");
+
+            renderingContext.getExtension('EXT_shader_texture_lod');
+
             this.webGLbuffer = renderingContext.createBuffer();
+
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
+
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array(
-                [- 1.0, - 1.0, 1.0, - 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0]
-            ), renderingContext.STATIC_DRAW)
+                [-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]
+            ), renderingContext.STATIC_DRAW);
+
             return renderingContext;
         }
-        loadTimeline(timelineFile: string): Promise<Array<Effect>> {
+        loadTimeline(timelineFile: string): Promise < Array < Effect >> {
             return fetch(timelineFile).then((response: Response) => {
                 return response.json();
-            }).then( (timeline:any) => {
+            }).then((timeline: any) => {
                 return timeline;
             })
-           
+
         }
         constructor(public canvas: HTMLCanvasElement,
             public timelineFile: string,
@@ -326,37 +353,36 @@ export namespace Demolished {
             this.parameters.mouseX = 0.5;
             this.parameters.mouseY = 0.5;
 
-            this.entities = new Array<EnityBase>();
+            this.entities = new Array < EnityBase > ();
 
             this.gl = this.getRendringContext();
 
+            this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
 
             this.addEventListeners()
 
             // load and add the entities
             this.loadTimeline(this.timelineFile).then((timeline: any) => {
-          
-               console.log("timeline fetched");
 
-                this.cretateAudio("assets/song.mp3").then( (analyzer:AnalyserNode) => {
+                console.log("timeline fetched");
 
-                           console.log("audio fetched & created");
+                this.cretateAudio("assets/song.mp3").then((analyzer: AnalyserNode) => {
 
-                        this.audioAnalyser = analyzer;
-                      
-                        this.audioAnalyser.smoothingTimeConstant = this.audioAnalyzerSettings.smoothingTimeConstant;
-                        this.audioAnalyser.fftSize = this.audioAnalyzerSettings.fftSize;
-                        this.audioAnalyser.maxDecibels = -10;
-                        this.audioAnalyser.minDecibels = -90;
+                    console.log("audio fetched & created");
 
+                    this.audioAnalyser = analyzer;
 
+                    this.audioAnalyser.smoothingTimeConstant = this.audioAnalyzerSettings.smoothingTimeConstant;
+                    this.audioAnalyser.fftSize = this.audioAnalyzerSettings.fftSize;
+                    this.audioAnalyser.maxDecibels = -10;
+                    this.audioAnalyser.minDecibels = -90;
 
-                        timeline.entities.forEach((effect: Effect) => {
+                    timeline.entities.forEach((effect: Effect) => {
 
                         let textures = Promise.all(effect.textures.map((texture: any) => {
-                           
-                            return new Promise( (resolve, reject) => {
+
+                            return new Promise((resolve, reject) => {
                                 let image = new Image();
                                 image.src = texture.url;
                                 image.onload = () => {
@@ -365,70 +391,58 @@ export namespace Demolished {
                                 image.onerror = (err) => resolve(err);
 
                             }).then((image: HTMLImageElement) => {
-                                return new Asset(image, texture.uniform, texture.width, texture.height,0);
+                                return new Asset(image, texture.uniform, texture.width, texture.height, 0);
                             });
 
 
                         })).then((assets: Array < Asset > ) => {
-                            
-                                this.addEntity(effect.name, effect.start, effect.stop, assets); 
-                                if(this.entities.length === timeline.entities.length){ // todo: refactor
-                                     this.onReady();   
-                                     this.resizeCanvas();
-                                }
+
+                            this.addEntity(effect.name, effect.start, effect.stop, assets);
+                            if (this.entities.length === timeline.entities.length) { // todo: refactor
+                                this.onReady();
+                                this.resizeCanvas();
+                            }
                         });
                     });
 
-                   
+
                     this.resizeCanvas();
                 });
             });
         }
 
-
-        onFrame(frame:any){
-
-
-        }
-
-        onStart() {
-        }
-
-        onStop() {
-        }
-
-        onReady() {
-        }
+        onFrame(frame: any):void {}
+        onStart():void {}
+        onStop():void {}
+        onReady():void {}
 
         // todo:Rename
-        getAudioTracks(): Array<MediaStreamTrack> {
-            let ms = this.bufferSource.context["createMediaStreamDestination"]();
-            this.bufferSource.connect(ms);
-            return ms.stream.getAudioTracks();
+        getAudioTracks(): any {
+            let ms = this.audio["captureStream"](60)
+            return ms.getAudioTracks();
+         
         }
-  
-          audio: HTMLAudioElement;      
 
-        cretateAudio(src:string):Promise<AnalyserNode>{
-           return new Promise( (resolve, reject) => {
-                 let audioEl =  new Audio(); //document.createElement("audio");
-                    audioEl.preload = "auto";
-                    audioEl.src = src;
-                    audioEl.crossOrigin = "anonymous"
-                    let context = new AudioContext();
-                    let analyser = context.createAnalyser();
+        cretateAudio(src: string): Promise < AnalyserNode > {
+            return new Promise((resolve, reject) => {
+                let audioEl = new Audio(); //document.createElement("audio");
+                audioEl.preload = "auto";
+                audioEl.src = src;
+                audioEl.crossOrigin = "anonymous"
+                let context = new AudioContext();
+                let analyser = context.createAnalyser();
 
-                    let onLoad = () => {    
-                        let source = context.createMediaElementSource(audioEl);
-                        source.connect(analyser);
-                        analyser.connect(context.destination);
-                        resolve(analyser)
-                        window.addEventListener("load", onLoad,false);
+                let onLoad = () => {
+                    let source = context.createMediaElementSource(audioEl);
+                    source.connect(analyser);
+                    analyser.connect(context.destination);
+                    resolve(analyser)
+                    window.addEventListener("load", onLoad, false);
                 };
-                // // Need window.onload to fire first. See crbug.com/112368.
+                // Need window.onload to fire first. See crbug.com/112368.
                 onLoad();
                 this.audio = audioEl;
-             });
+            });
         }
         private addEventListeners() {
             document.addEventListener("mousemove", (evt: MouseEvent) => {
@@ -438,10 +452,9 @@ export namespace Demolished {
             window.addEventListener("resize", () => {
                 this.resizeCanvas();
             });
-
         }
         addEntity(name: string, start: number, stop: number,
-            textures: Array<Asset>
+            textures: Array < Asset >
         ): EnityBase {
             const entity = new EnityBase(this.gl, name, start, stop,
                 this.canvas.width, this.canvas.height,
@@ -451,62 +464,55 @@ export namespace Demolished {
             return entity;
         }
 
-        private findEntityByTime(time:number):number{
-            return this.entities.findIndex(  (pre:EnityBase) => {  return time < pre.stop &&   time  >= pre.start  }); 
+        private findEntityByTime(time: number): number {
+            return this.entities.findIndex((pre: EnityBase) => {
+                return time < pre.stop && time >= pre.start
+            });
         }
 
-
         start(time: number) {
-            this.animationOffsetTime  = time;
-            this.currentEntity  =  this.findEntityByTime(time);
             
-            console.log("Starting at ent index",this.currentEntity);
+            // ensure that entities are in correct order.
+            this.entities.sort((a: EnityBase, b: EnityBase) => {
+                return a.start - b.start;
+            });
 
-          
-           // if(this.currentEntity)
+            this.animationOffsetTime = time;
+            this.currentEntity = this.findEntityByTime(time);
 
             this.animationStartTime = performance.now();
 
             this.animate(time);
 
-            this.audio.currentTime = (time/1000)%60
+            this.audio.currentTime = (time / 1000) % 60
             this.audio.play();
 
+
           
+
             this.onStart();
 
         }
-        stop():number {
-        //    let farId: number  = this.animationFrameId;
-            cancelAnimationFrame(this.animationFrameId);
-                                                                                                                                                      ;
+        stop(): number {
+            cancelAnimationFrame(this.animationFrameId);;
             this.onStop();
             return this.animationFrameId;
         }
 
-      
-
-         fftTexture: WebGLTexture;
-
-         createFFTTexture(width:number, height:number, array:Uint8Array){
+        updateTextureData(texture: WebGLTexture,width: number, height: number, bytes: Uint8Array):void {
             let gl = this.gl;
-            let texture = gl.createTexture();
-               if (!gl.getExtension("OES_texture_float")) {
-                throw ("Requires OES_texture_float extension");
-            }
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
 
-             gl.bindTexture(gl.TEXTURE_2D, texture);
-             gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,32,32,0,gl.RGBA,gl.UNSIGNED_BYTE,array);
-   
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
-         return texture;
+       
+     
         }
-
 
         private animate(time: number) {
             let at = time - this.animationStartTime;
@@ -514,13 +520,14 @@ export namespace Demolished {
                 this.animate(_time);
             });
 
-             if (this.audioAnalyser) {
-                   let bufferLength = this.audioAnalyser.frequencyBinCount;
-                   let freqArray = new Uint8Array(bufferLength);
-                   this.audioAnalyser.getByteFrequencyData(freqArray); 
-                   this.fftTexture  = this.createFFTTexture(32,32,freqArray);
-                }
-           
+            if (this.audioAnalyser) {
+                let bufferLength = this.audioAnalyser.frequencyBinCount;
+                let freqArray = new Uint8Array(bufferLength);
+                this.audioAnalyser.getByteFrequencyData(freqArray);
+                this.updateTextureData(
+                    this.fftTexture,32, 32, freqArray);
+            }
+
             let ent: EnityBase = this.entities[this.currentEntity];
 
             if (at > ent.stop) {
@@ -542,7 +549,8 @@ export namespace Demolished {
                     this.centerX - this.width, this.centerY + this.height,
                     this.centerX + this.width, this.centerY - this.height,
                     this.centerX + this.width, this.centerY + this.height,
-                    this.centerX - this.width, this.centerY + this.height]), this.gl.STATIC_DRAW);
+                    this.centerX - this.width, this.centerY + this.height
+                ]), this.gl.STATIC_DRAW);
             }
         }
 
@@ -579,7 +587,7 @@ export namespace Demolished {
 
             gl.useProgram(ent.currentProgram);
 
-            gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000 );
+            gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
             gl.uniform2f(ent.uniformsCache.get('resolution'), this.parameters.screenWidth, this.parameters.screenHeight);
 
@@ -595,15 +603,15 @@ export namespace Demolished {
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
 
             // Should be fftSampler
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"),0);
+            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
 
             let offset = 2;
-            ent.assets.forEach ( (asset:Asset,index:number) => {
+            ent.assets.forEach((asset: Asset, index: number) => {
                 gl.activeTexture(gl.TEXTURE0 + (offset + index));
                 gl.bindTexture(gl.TEXTURE_2D, asset.texture);
                 gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), offset + index);
-            } );
-          
+            });
+
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
 
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -617,7 +625,7 @@ export namespace Demolished {
 
             this.onFrame({
                 ts: this.animationOffsetTime + ts,
-                raflId: this.animationFrameId                 
+                raflId: this.animationFrameId
             });
 
         }
