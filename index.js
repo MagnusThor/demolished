@@ -4,7 +4,7 @@ var DemolishedSequencer = (function () {
     function DemolishedSequencer() {
         var _this = this;
         document.addEventListener("keydown", function (evt) {
-            console.log("time & freq ", _this.renderig.parameters.time, _this.rendering.parameters.freq);
+            console.log("time & freq ", _this.rendering.parameters.time, _this.rendering.parameters.freq);
         });
         this.totalDuration = 249600;
         this.timeLine = document.querySelector(".demolished-timeline input");
