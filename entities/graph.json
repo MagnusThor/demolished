@@ -17,15 +17,15 @@
             "css3Layers": [{
                 "name": "forest",
                 "classList": ["forest"],
-                "markup": "<p class='animated fadeIn'>size does not matter</p>"
+                "markup": "<p><strong  class='animated fadeIn delay2s'>HARDCORE LAMERS</strong><br/><span class='animated fadeIn delay3s'>PRESENTS</span><br/><span class='animated fadeIn delay4s'>OLD GUYS RULE</span></p>"
             }],
-            "entity": "sound",
+            "entity": "bars",
             "start": 0,
-            "stop": 15513
+            "stop": 55513
         },
         {
             "entity": "pink",
-            "start": 15513,
+            "start": 55513,
             "stop": 67571,
                "css3Layers":[]
         },
@@ -49,6 +49,12 @@
 
     ],
     "effects": [
+        {
+            "name": "bars",
+            "description": "",
+            "textures": [],
+            "type:": 0
+        },
 
         {
            

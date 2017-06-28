@@ -391,15 +391,11 @@ export namespace Demolished {
             }
             this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
         }
-
+      
         private removeLayers(parent: Element) {
             let layers = document.querySelectorAll(".layer");
-            console.log("removing nodes ->", layers.length);
             for (let i = 0; i < layers.length; i++)
                 parent.removeChild(layers[i]);
-
-
-
         }
 
         private surfaceCorners() {

@@ -164,7 +164,7 @@ float softShadow(in vec3 ro, in vec3 rd, in float start, in float end, in float 
     return min(max(shade, 0.) + 0.1, 1.0); 
 }
 
-float calculateAO( in vec3 p, in vec3 n, float maxDist )
+float calculate§( in vec3 p, in vec3 n, float maxDist )
 {
 	float ao = 0.0, l;
 	const float nbIte = 6.0;

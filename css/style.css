@@ -190,14 +190,29 @@
 	*/
 
 	.forest {
-/*		
+		/*		
 		background-image: url('/assets/landscape.png');
 		background-size: cover;*/
-
 		animation: xfadeOut 0.5s 1;
 		animation-fill-mode: forwards;
 		animation-delay: 18s;
 		z-index: 100;
+	}
+
+	.delay1s {
+		animation-delay: 1s;
+	}
+
+	.delay2s {
+		animation-delay: 1s;
+	}
+
+	.delay3s {
+		animation-delay: 1s;
+	}
+
+	.delay4s {
+		animation-delay: 1s;
 	}
 
 	.forest p {
@@ -210,9 +225,9 @@
 		position: relative;
 		top: 50%;
 		transform: translateY(-50%);
-		animation: xfadeOut 0.5s 1;
+		/*animation: xfadeOut 0.5s 1;
 		animation-fill-mode: forwards;
-		animation-delay: 18s;
+		animation-delay: 18s;*/
 		z-index: 100;
 	}
 

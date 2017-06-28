@@ -68,7 +68,7 @@ export class DemolishedSequencer {
 
         document.addEventListener("keydown", (evt:KeyboardEvent) =>{
            
-            console.log("time & freq ",this.rendering.parameters.time,
+            console.log("time & freq ",this.renderig.parameters.time,
             this.rendering.parameters.freq
             );
         });

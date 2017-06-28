@@ -280,7 +280,6 @@ var Demolished;
         };
         Rendering.prototype.removeLayers = function (parent) {
             var layers = document.querySelectorAll(".layer");
-            console.log("removing nodes ->", layers.length);
             for (var i = 0; i < layers.length; i++)
                 parent.removeChild(layers[i]);
         };
