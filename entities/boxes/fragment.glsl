@@ -12,9 +12,7 @@ uniform sampler2D uSampler;
 
 // Created by inigo quilez - iq/2013
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
-
 //---------------------------------
-
 //#define ANTIALIAS
 
 float hash( float n ) { return fract(sin(n)*13.5453123); }
@@ -36,7 +34,6 @@ vec4 texcube( sampler2D sam, in vec3 p, in vec3 n )
 }
 
 //---------------------------------
-
 float freqs[4];
 
 vec3 mapH( in vec2 pos )
@@ -49,10 +46,10 @@ vec3 mapH( in vec2 pos )
 	f += freqs[0] * clamp(1.0 - abs(id-0.20)/0.30, 0.0, 1.0 );
 	f += freqs[1] * clamp(1.0 - abs(id-0.40)/0.30, 0.0, 1.0 );
 	f += freqs[2] * clamp(1.0 - abs(id-0.60)/0.30, 0.0, 1.0 );
-	f += freqs[3] * clamp(1.0 - abs(id-0.80)/0.30, 0.0, 1.0 );
+        f += freqs[3] * clamp(1.0 - abs(id-0.80)/0.30, 0.0, 1.0 );
 
-    f = pow( clamp( f, 0.0, 1.0 ), 2.0 );
-    float h = 2.5*f;
+        f = pow( clamp( f, 0.0, 1.0 ), 2.0 );
+        float h = 2.5*f;
 
     return vec3( h, id, f );
 }

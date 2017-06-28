@@ -5,17 +5,23 @@ import {
     DemolishedRecorder
 } from './src/demolishedRecorder';
 
+
+import  {Utils} from './src/demolishedUtils'
+import { SmartArray} from './src/demolishedSmartArray';
+import { RenderTarget,AudioAnalyzerSettings,Uniforms,TimeFragment,Graph,Effect } from './src/demolishedModels'
+
+
 export class DemolishedSequencer {
 
-    // todo - fix
+    totalDuration:number
 
-    duration:number
-
-    world: Demolished.World;
+    rendering: Demolished.Rendering;
     recorder: DemolishedRecorder;
     timeLine: HTMLInputElement;
 
     pauseUi: boolean;
+    pausedAt:number;
+    startedAt: number;
 
     onReady(): void {}
 
@@ -25,12 +31,34 @@ export class DemolishedSequencer {
         arr.forEach( (ent:any,index:number) => {
             let el = document.createElement("div");
                 el.classList.add("timeline-entry")            
-                let d:number = (parseInt(ent.d) / this.duration);
+                let d:number = (parseInt(ent.duration) / this.totalDuration);
                 let w:number = 100 * (Math.round(100 * (d*1)) / 100) 
                 el.style.width =  w + "%"
                 el.style.left = ox + "%";
                 el.style.background = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+
+               
+                let callout = document.createElement("div");
+                callout.classList.add("timeline-callout","hide");
+                callout.textContent =  ent.name;
+                
+                el.addEventListener("mouseenter", () => {
+                  
+                  
+                callout.classList.remove("hide");
+                });
+
+                 el.addEventListener("mouseleave", () => {
+                    callout.classList.add("hide");
+                });
+
+               
+                el.appendChild(callout);
+
+
+
                 parent.appendChild(el);                
+
                 ox +=  w;
         });
     }
@@ -38,82 +66,77 @@ export class DemolishedSequencer {
 
     constructor() {
 
-        this.duration = 211200;
+        document.addEventListener("keydown", (evt:KeyboardEvent) =>{
+           
+            console.log("time & freq ",this.rendering.parameters.time,
+            this.rendering.parameters.freq
+            );
+        });
+
+        this.totalDuration = 249600;
 
         this.timeLine = document.querySelector(".demolished-timeline input") as HTMLInputElement;
 
         this.timeLine.addEventListener("mousedown", (evt:any) =>{         
-             this.world.stop();
+             this.rendering.stop();
         });
 
          this.timeLine.addEventListener("mouseup", (evt:any) =>{
-          
             let ms = parseInt(evt.target.value);
             let s = (ms/1000)%60
-           
-            this.world.audio.currentTime = s; 
-            this.world.audio.play();
-      
-            this.world.start(ms);
-
+            this.rendering.audio.pause();
+            this.rendering.start(ms);
         });
 
         this.timeLine.addEventListener("change", (evt:any) => {
         });
 
-        let analyzerSettings = new Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
-
+    
         let canvas = document.querySelector("#gl") as HTMLCanvasElement;
 
         window.onerror = () =>{
-            this.world.stop();
+            this.rendering.stop();
         }
 
-        this.world = new Demolished.World(canvas,
-            "entities/timeline.json", analyzerSettings);
+        this.rendering = new Demolished.Rendering(canvas,
+            "entities/graph.json");
 
-        this.world.onReady = () => {
+        this.rendering.onReady = () => {
 
-
-            let arr = this.world.entities.map( function(a,index) {
+            let details = this.rendering.timeFragments.map( function(a,index) {
                 return {
-                    d: a.stop - a.start, i: index}
+                    duration: a.stop - a.start, index: index,description: "foo",name:a.entity}
             });
 
-            this.getTimeLineDetails(arr);
+           this.getTimeLineDetails(details);
 
-
-           this.timeLine.setAttribute("max",this.duration.toString());
-       
+           this.timeLine.setAttribute("max",this.totalDuration.toString());
         
             this.onReady();
         }
 
-        this.world.onStart = () => {
+        this.rendering.onStart = () => {
             let p = document.querySelector("#record-canvas") as any;
             if (p.checked) {
-                let videoStream = this.world.canvas["captureStream"](60) as MediaStream;
-                let videoTrack = videoStream.getVideoTracks()[0];
-                let audioTrack = this.world.getAudioTracks()[0];
-                this.recorder = new DemolishedRecorder(videoTrack, audioTrack);
-                this.recorder.start(100);
+               // let videoStream = this.world.canvas["captureStream"](60) as MediaStream;
+                // let videoTrack = videoStream.getVideoTracks()[0];
+                // let audioTrack = this.world.getAudioTracks()[0];
+                // this.recorder = new DemolishedRecorder(videoTrack, audioTrack);
+                // this.recorder.start(100);
+                console.error("needs to be fixed");
             }
-
         }
-
-        this.world.onFrame =(frame:any) =>{
-        
+        this.rendering.onFrame =(frame:any) =>{
             var t = frame.ts;
             document.querySelector("#time").textContent =
             ((t / 1000) / 60).toFixed(0).toString() + ":" +
              ((t/ 1000) % 60).toFixed(2).toString();
-
              if(!this.pauseUi)
 
              this.timeLine.value = frame.ts.toString();
         } 
 
-        this.world.onStop = () => {
+        this.rendering.onStop = () => {
             if (this.recorder) {
                 let recorderNode = document.querySelector("#recording");
 
@@ -170,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     launchButton.addEventListener("click", function () {
         launchButton.classList.add("hide");
-        demolished.world.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
+        demolished.rendering.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
     });
 
 });

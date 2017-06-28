@@ -13,6 +13,10 @@ uniform vec2 mouse;
 uniform vec2 resolution;
 
 uniform sampler2D fft;
+uniform float bpm;
+uniform float freq;
+
+
 uniform sampler2D iChannel0;
 uniform sampler2D iChannel1;
 
@@ -44,7 +48,9 @@ float smaxP(float a, float b, float s){
     return mix(b, a, h) + h*(1.0-h)*s;
 }
 
-vec2 path(in float z){ return vec2(ampA*sin(z * freqA), ampB*cos(z * freqB) + 3.*(sin(z*0.025)  - 1.)); }
+vec2 path(in float z){ 
+    return vec2(ampA*sin(z * freqA), ampB*cos(z * freqB) + 3.*(sin(z*0.025)  - 1.)); 
+}
 
 float map(in vec3 p){
     
@@ -193,18 +199,17 @@ float noise3D(in vec3 p){
 
 float fbm(in vec3 p){    
     return 0.5333*noise3D( p ) + 0.2667*noise3D( p*2.02 ) + 0.1333*noise3D( p*4.03 ) + 0.0667*noise3D( p*8.03 );
-
 }
 
 
 vec3 getSky(in vec3 ro, in vec3 rd, vec3 sunDir){
 
 
-	float sun = max(dot(rd, sunDir),(freqs[3] * .5)); // * (freqs[0] * 2.0);
+	float sun = max(dot(rd, sunDir),(freq / 20.0)); // * (freqs[0] * 2.0);
 
-	float horiz = pow(1.0-max(rd.y, 0.0), 1.)*.15; 
+	float horiz = pow(1.0-max(rd.y, 0.0), 1.)*(.15) ; 
 	vec3 col = mix(vec3(.25, .35, .5), vec3(.4, .375, .35), sun);
-	col = mix(col, vec3(1, .9, .7), horiz * (.75* freqs[0]));
+	col = mix(col, vec3(1, .9, .7), horiz * (.75));
     
   	col += 0.25*vec3(1, .7, .4)*pow(sun, 5.0);
 	col += 0.25*vec3(1, .8, .6)*pow(sun, 64.0);
@@ -244,9 +249,8 @@ void main(){
 
     // Set FAR
 
-      FAR = 15.0  + (15.0 *  freqs[0]);
+    FAR =  65.0 ;
 
-	
 	// Screen coordinates.
 	vec2 u = (gl_FragCoord.xy - resolution.xy*0.5)/resolution.y;
 	
@@ -257,16 +261,15 @@ void main(){
 	// Using the Z-value to perturb the XY-plane.
 	// Sending the camera and "look at" vectors down the tunnel. The "path" function is 
 	// synchronized with the distance function.
-	lookAt.xy += path(lookAt.z);
-
-   // lookAt.x += mouse.x * 0.5;
-
+	lookAt.xy += path(lookAt.z) ;//+ (mouse.xy/2.0);
+ 
 	ro.xy += path(ro.z);
 
     // Using the above to produce the unit ray-direction vector.
     float FOV = 3.14159/3.; // FOV - Field of view.
     vec3 forward = normalize(lookAt-ro);
     vec3 right = normalize(vec3(forward.z, 0., -forward.x )); 
+
     vec3 up = cross(forward, right);
 
     // rd - Ray direction.
@@ -275,15 +278,12 @@ void main(){
     // Swiveling the camera about the XY-plane (from left to right) when turning corners.
     // Naturally, it's synchronized with the path in some kind of way.
 	rd.xy = rot2( path(lookAt.z).x/64. )*rd.xy;
-    
-    
-	
+    	
     // Usually, you'd just make this a unit directional light, and be done with it, but I
     // like some of the angular subtleties of point lights, so this is a point light a
     // long distance away. Fake, and probably not advisable, but no one will notice.
     vec3 lp = vec3(FAR*0.5, FAR, FAR) + vec3(0, 0, ro.z);
  
-
 	// Raymarching, using Nimitz's "Log Bisection" method. Very handy on stubborn surfaces. :)
 	float t = logBisectTrace(ro, rd);
     
@@ -300,7 +300,6 @@ void main(){
         vec3 sp = ro+t*rd; // Surface point.
         vec3 sn = normal( sp ); // Surface normal.
 
-        
         // Light direction vector. From the sun to the surface point. We're not performing
         // light distance attenuation, since it'll probably have minimal effect.
         vec3 ld = lp-sp;

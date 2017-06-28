@@ -1,49 +1,50 @@
 "use strict";
 var demolished_1 = require('./src/demolished');
-var demolishedRecorder_1 = require('./src/demolishedRecorder');
 var DemolishedSequencer = (function () {
     function DemolishedSequencer() {
         var _this = this;
-        this.duration = 211200;
+        document.addEventListener("keydown", function (evt) {
+            console.log("time & freq ", _this.rendering.parameters.time, _this.rendering.parameters.freq);
+        });
+        this.totalDuration = 249600;
         this.timeLine = document.querySelector(".demolished-timeline input");
         this.timeLine.addEventListener("mousedown", function (evt) {
-            _this.world.stop();
+            _this.rendering.stop();
         });
         this.timeLine.addEventListener("mouseup", function (evt) {
             var ms = parseInt(evt.target.value);
             var s = (ms / 1000) % 60;
-            _this.world.audio.currentTime = s;
-            _this.world.audio.play();
-            _this.world.start(ms);
+            _this.rendering.audio.pause();
+            _this.rendering.start(ms);
         });
         this.timeLine.addEventListener("change", function (evt) {
         });
-        var analyzerSettings = new demolished_1.Demolished.AudioAnalyzerSettings(8192, 0.85, -100, -30);
         var canvas = document.querySelector("#gl");
         window.onerror = function () {
-            _this.world.stop();
+            _this.rendering.stop();
         };
-        this.world = new demolished_1.Demolished.World(canvas, "entities/timeline.json", analyzerSettings);
-        this.world.onReady = function () {
-            var arr = _this.world.entities.map(function (a, index) {
+        this.rendering = new demolished_1.Demolished.Rendering(canvas, "entities/graph.json");
+        this.rendering.onReady = function () {
+            var details = _this.rendering.timeFragments.map(function (a, index) {
                 return {
-                    d: a.stop - a.start, i: index };
+                    duration: a.stop - a.start, index: index, description: "foo", name: a.entity };
             });
-            _this.getTimeLineDetails(arr);
-            _this.timeLine.setAttribute("max", _this.duration.toString());
+            _this.getTimeLineDetails(details);
+            _this.timeLine.setAttribute("max", _this.totalDuration.toString());
             _this.onReady();
         };
-        this.world.onStart = function () {
+        this.rendering.onStart = function () {
             var p = document.querySelector("#record-canvas");
             if (p.checked) {
-                var videoStream = _this.world.canvas["captureStream"](60);
-                var videoTrack = videoStream.getVideoTracks()[0];
-                var audioTrack = _this.world.getAudioTracks()[0];
-                _this.recorder = new demolishedRecorder_1.DemolishedRecorder(videoTrack, audioTrack);
-                _this.recorder.start(100);
+                // let videoStream = this.world.canvas["captureStream"](60) as MediaStream;
+                // let videoTrack = videoStream.getVideoTracks()[0];
+                // let audioTrack = this.world.getAudioTracks()[0];
+                // this.recorder = new DemolishedRecorder(videoTrack, audioTrack);
+                // this.recorder.start(100);
+                console.error("needs to be fixed");
             }
         };
-        this.world.onFrame = function (frame) {
+        this.rendering.onFrame = function (frame) {
             var t = frame.ts;
             document.querySelector("#time").textContent =
                 ((t / 1000) / 60).toFixed(0).toString() + ":" +
@@ -51,7 +52,7 @@ var DemolishedSequencer = (function () {
             if (!_this.pauseUi)
                 _this.timeLine.value = frame.ts.toString();
         };
-        this.world.onStop = function () {
+        this.rendering.onStop = function () {
             if (_this.recorder) {
                 var recorderNode = document.querySelector("#recording");
                 _this.recorder.stop();
@@ -75,11 +76,21 @@ var DemolishedSequencer = (function () {
         arr.forEach(function (ent, index) {
             var el = document.createElement("div");
             el.classList.add("timeline-entry");
-            var d = (parseInt(ent.d) / _this.duration);
+            var d = (parseInt(ent.duration) / _this.totalDuration);
             var w = 100 * (Math.round(100 * (d * 1)) / 100);
             el.style.width = w + "%";
             el.style.left = ox + "%";
             el.style.background = '#' + (Math.random() * 0xFFFFFF << 0).toString(16);
+            var callout = document.createElement("div");
+            callout.classList.add("timeline-callout", "hide");
+            callout.textContent = ent.name;
+            el.addEventListener("mouseenter", function () {
+                callout.classList.remove("hide");
+            });
+            el.addEventListener("mouseleave", function () {
+                callout.classList.add("hide");
+            });
+            el.appendChild(callout);
             parent.appendChild(el);
             ox += w;
         });
@@ -111,6 +122,6 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     launchButton.addEventListener("click", function () {
         launchButton.classList.add("hide");
-        demolished.world.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
+        demolished.rendering.start(location.hash == "" ? 0 : parseInt(location.hash.substring(1)));
     });
 });

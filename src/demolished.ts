@@ -1,268 +1,11 @@
-if (!window.requestAnimationFrame) {
-    window.requestAnimationFrame = (function () {
-        return function (callback) {
-            return window.setTimeout(callback, 1000 / 60);
-        };
-    })();
-}
-
-
-
-
+import { Utils } from './demolishedUtils'
+import { SmartArray } from './demolishedSmartArray';
+import { EnityBase, EntityTexture } from './demolishedEntity'
+import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, CSS3Layer, AudioSettings } from './demolishedModels'
 
 export namespace Demolished {
 
-
-    export class Utils {
-
-        static getExponentOfTwo(value: number, max: number): number {
-            var count = 1;
-            do {
-                count *= 2;
-            } while (count < value);
-
-            if (count > max)
-                count = max;
-
-            return count;
-        }
-
-
-        static convertBuffer(buffer: ArrayBuffer): Float32Array {
-            var data = new DataView(buffer);
-            var tempArray = new Float32Array(1024 * 1024 * 4);
-            var len = tempArray.length;
-
-            for (var jj = 0; jj < len; ++jj) {
-                tempArray[jj] =
-                    data.getFloat32(jj * Float32Array.BYTES_PER_ELEMENT, true);
-            }
-
-            return tempArray;
-
-        }
-    }
-
-    export class Parameters {
-
-        scale: number;
-        time: number;
-        mouseX: number;
-        mouseY: number;
-        screenWidth: number;
-        screenHeight: number;
-        custom: any;
-        constructor(screenWidth: number, screenHeight: number) {
-            this.screenWidth = screenWidth;
-            this.screenHeight = screenHeight;
-        }
-        setScreen(w: number, h: number) {
-            this.screenWidth = w;
-            this.screenWidth = h;
-        }
-    }
-
-    export class Effect {
-        start: number;
-        stop: number;
-        name: string
-        textures: Array < any > ;
-        constructor() {
-            this.textures = new Array < any > ();
-        }
-    }
-
-    export class EnityBase {
-
-        currentProgram: WebGLProgram
-        vertexShader: string;
-        fragmetShader: string
-
-        buffer: WebGLBuffer;
-        vertexPosition: number;
-        positionAttribute: number;
-
-        target: RenderTarget;
-        backTarget: RenderTarget;
-
-        uniformsCache: Map < string, WebGLUniformLocation > ;
-
-        constructor(public gl: WebGLRenderingContext, public name: string,
-            public start: number, public stop: number, public x: number, public y: number,
-            public assets: Array < Asset >
-        ) {
-            this.uniformsCache = new Map < string, WebGLUniformLocation > ()
-
-            this.loadEntityShaders().then(() => {
-                this.initShader();
-                this.target = this.createRenderTarget(this.x, this.y);
-                this.backTarget = this.createRenderTarget(this.x, this.y);
-            });
-        }
-
-        private createRenderTarget(width: number, height: number): RenderTarget {
-
-            let gl = this.gl;
-
-            let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
-
-
-            gl.bindTexture(gl.TEXTURE_2D, target.texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, target.frameBuffer);
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.texture, 0);
-
-            gl.bindRenderbuffer(gl.RENDERBUFFER, target.renderBuffer);
-
-            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
-            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, target.renderBuffer);
-
-
-            gl.bindTexture(gl.TEXTURE_2D, null);
-            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-            return target;
-        }
-
-        loadEntityShaders(): Promise < boolean > {
-
-            let urls = new Array < string > ();
-            urls.push("entities/" + this.name + "/fragment.glsl");
-            urls.push("entities/" + this.name + "/vertex.glsl");
-
-            //  urls.push("entities/" + this.name + "/uniforms.json");
-            return Promise.all(urls.map((url: string) =>
-                fetch(url).then(resp => resp.text())
-            )).then(result => {
-                this.fragmetShader = result[0];
-                this.vertexShader = result[1];
-                return true;
-            }).catch((reason) => {
-                this.onError(reason);
-                return false;
-            });
-        }
-
-        onError(err) {
-            console.error(err)
-        }
-
-        createTextureFromData(width: number, height: number, image: HTMLImageElement) {
-            let gl = this.gl;
-            let texture = gl.createTexture()
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-            gl.generateMipmap(gl.TEXTURE_2D);
-
-
-
-            gl.bindTexture(gl.TEXTURE_2D, null)
-
-            return texture;
-        }
-
-        initShader() {
-
-            let gl = this.gl;
-
-            this.buffer = gl.createBuffer();
-            this.currentProgram = gl.createProgram();
-
-            let vs: WebGLShader = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
-            let fs: WebGLShader = this.createShader(gl, this.fragmetShader, gl.FRAGMENT_SHADER);
-
-            gl.attachShader(this.currentProgram, vs);
-            gl.attachShader(this.currentProgram, fs);
-
-            gl.linkProgram(this.currentProgram);
-
-            if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
-                let info = gl.getProgramInfoLog(this.currentProgram);
-                this.onError(info);
-            }
-
-            this.cacheUniformLocation('freq_data');
-            this.cacheUniformLocation('freq_time');
-            this.cacheUniformLocation("mytext");
-
-            this.cacheUniformLocation('time');
-            this.cacheUniformLocation('mouse');
-            this.cacheUniformLocation('resolution');
-            this.cacheUniformLocation("sampleRate");
-
-            this.cacheUniformLocation("fft");
-            // this.positionAttribute = 0;// gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
-            // gl.enableVertexAttribArray(this.positionAttribute);
-
-            this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
-            gl.enableVertexAttribArray(this.vertexPosition);
-
-            this.assets.forEach((asset: Asset) => {
-
-                switch (asset.assetType) {
-                    case 0:
-                        asset.texture = this.createTextureFromData(asset.width, asset.height,
-                            asset.image);
-                        break;
-                    case 1:
-                        //  asset.texture = this.createTextureFromFloat32(32,32,new Float32Array(32*32*4));
-                        break;
-                    default:
-                        throw "unknown asset type"
-                }
-
-            });
-
-            // this.createTextureFromFloat32(1,2,new Float32Array([255,0,0,255]));
-
-            gl.useProgram(this.currentProgram);
-
-        }
-        cacheUniformLocation(label: string) {
-            this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
-        }
-
-        swapBuffers() {
-            let tmp = this.target;
-            this.target = this.backTarget;
-            this.backTarget = tmp;
-        }
-        createShader(gl: WebGLRenderingContext, src: string, type: number): WebGLShader {
-            let shader: WebGLShader = gl.createShader(type);
-            gl.shaderSource(shader, src);
-            gl.compileShader(shader);
-            return shader;
-        }
-    }
-
-    export class RenderTarget {
-        constructor(public frameBuffer: WebGLFramebuffer, public renderBuffer: WebGLFramebuffer,
-            public texture: WebGLTexture) {}
-
-    }
-
-
-    export class Asset {
-        texture: WebGLTexture;
-        constructor(public image: any, public name: string, public width: number, public height: number, public assetType: number) {}
-    }
-
-    export class AudioAnalyzerSettings {
-        constructor(public fftSize: number, public smoothingTimeConstant: number,
-            public minDecibels: number, public maxDecibels: number
-        ) {}
-    }
-    export class World {
+    export class Rendering {
 
         gl: WebGLRenderingContext | any;
 
@@ -270,9 +13,11 @@ export namespace Demolished {
         animationFrameId: number;
         animationOffsetTime: number;
 
-        audio: HTMLAudioElement;
+        audio: HTMLAudioElement;// AudioBufferSourceNode;
 
-        entities: Array < EnityBase > ;
+        entitiesCache: Array<EnityBase>;
+        timeFragments: Array<TimeFragment>;
+        currentTimeFragment: TimeFragment;
 
         webGLbuffer: WebGLBuffer
         fftTexture: WebGLTexture;
@@ -282,13 +27,11 @@ export namespace Demolished {
         centerX: number = 0;
         centerY: number = 0;
 
-        parameters: Parameters;
+        parameters: Uniforms;
 
-        bufferSource: AudioBufferSourceNode
 
         audioAnalyser: AnalyserNode
-
-        currentEntity: number = -1;
+        peaks: Array<any>;
 
         private getRendringContext(): WebGLRenderingContext {
 
@@ -311,7 +54,6 @@ export namespace Demolished {
             renderingContext.getExtension("EXT_shader_texture_lod");
             renderingContext.getExtension("EXT_texture_filter_anisotropic");
 
-
             this.webGLbuffer = renderingContext.createBuffer();
 
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
@@ -322,25 +64,26 @@ export namespace Demolished {
 
             return renderingContext;
         }
-        loadTimeline(timelineFile: string): Promise < Array < Effect >> {
-            return fetch(timelineFile).then((response: Response) => {
-                return response.json();
-            }).then((timeline: any) => {
-                return timeline;
-            })
 
+        loadGraph(graphFile: string): Promise<Graph> {
+            return fetch(graphFile).then((response: Response) => {
+                return response.json();
+            }).then((graph: Graph) => {
+                return graph;
+            })
         }
+
         constructor(public canvas: HTMLCanvasElement,
             public timelineFile: string,
-            public audioAnalyzerSettings: AudioAnalyzerSettings
         ) {
-            this.parameters = new Parameters(this.canvas.width, this.canvas.height);
+            this.parameters = new Uniforms(this.canvas.width, this.canvas.height);
 
             this.parameters.time = 0;
             this.parameters.mouseX = 0.5;
             this.parameters.mouseY = 0.5;
 
-            this.entities = new Array < EnityBase > ();
+            this.entitiesCache = new Array<EnityBase>();
+            this.timeFragments = new Array<TimeFragment>();
 
             this.gl = this.getRendringContext();
 
@@ -350,25 +93,35 @@ export namespace Demolished {
             this.addEventListeners()
 
             // load and add the entities
-            this.loadTimeline(this.timelineFile).then((timeline: any) => {
-              
-                timeline.entities.sort( function(a,b)   {
-                    return a.start - b.start;
+            this.loadGraph(this.timelineFile).then((graph: Graph) => {
+
+                console.log(graph);
+
+                let audioSettings: AudioSettings = graph.audioSettings;
+                
+                graph.timeline.forEach((tf: TimeFragment) => {
+
+                
+                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop, tf.css3Layers);
+                    this.timeFragments.push(_tf)
                 });
 
-                this.cretateAudio("assets/song.mp3").then((analyzer: AnalyserNode) => {
+                // sort the fragments by start time....
+                this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
+                    return a.start - b.start;
+                });
+                // todo: pick audio file from graph
+                this.createAudio(audioSettings.audioFile).then((analyzer: AnalyserNode) => {
 
                     this.audioAnalyser = analyzer;
+                    this.audioAnalyser.smoothingTimeConstant = audioSettings.audioAnalyzerSettings.smoothingTimeConstant;
+                    this.audioAnalyser.fftSize = audioSettings.audioAnalyzerSettings.fftSize
+                    this.audioAnalyser.maxDecibels = audioSettings.audioAnalyzerSettings.minDecibels;
+                    this.audioAnalyser.minDecibels = audioSettings.audioAnalyzerSettings.maxDecibels;
 
-                    this.audioAnalyser.smoothingTimeConstant = this.audioAnalyzerSettings.smoothingTimeConstant;
-                    this.audioAnalyser.fftSize = this.audioAnalyzerSettings.fftSize;
-                    this.audioAnalyser.maxDecibels = -10;
-                    this.audioAnalyser.minDecibels = -90;
-
-                    timeline.entities.forEach((effect: Effect) => {
+                    graph.effects.forEach((effect: Effect) => {
 
                         let textures = Promise.all(effect.textures.map((texture: any) => {
-
                             return new Promise((resolve, reject) => {
                                 let image = new Image();
                                 image.src = texture.url;
@@ -376,62 +129,114 @@ export namespace Demolished {
                                     resolve(image);
                                 }
                                 image.onerror = (err) => resolve(err);
-
                             }).then((image: HTMLImageElement) => {
-                                return new Asset(image, texture.uniform, texture.width, texture.height, 0);
+                                return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
                             });
 
+                        })).then((assets: Array<EntityTexture>) => {
+                            this.addEntity(effect.name, assets);
 
-                        })).then((assets: Array < Asset > ) => {
-
-                            this.addEntity(effect.name, effect.start, effect.stop, assets);
-                            if (this.entities.length === timeline.entities.length) { // todo: refactor
+                            if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still
                                 this.onReady();
                                 this.resizeCanvas();
                             }
                         });
                     });
-
-
-                    this.resizeCanvas();
+                 //   this.resizeCanvas();
                 });
             });
         }
 
-        onFrame(frame: any):void {}
-        onStart():void {}
-        onStop():void {}
-        onReady():void {}
+        onFrame(frame: any): void { }
+        onStart(): void { }
+        onStop(): void { }
+        onReady(): void { }
 
         // todo:Rename
         getAudioTracks(): any {
-            let ms = this.audio["captureStream"](60)
-            return ms.getAudioTracks();
-         
+
+
+            // let ms = this.audio["captureStream"](60)
+            // return ms.getAudioTracks();
         }
 
-        cretateAudio(src: string): Promise < AnalyserNode > {
-            return new Promise((resolve, reject) => {
-                let audioEl = new Audio(); //document.createElement("audio");
-                audioEl.preload = "auto";
-                audioEl.src = src;
-                audioEl.crossOrigin = "anonymous"
-                let context = new AudioContext();
-                let analyser = context.createAnalyser();
 
-                let onLoad = () => {
-                    let source = context.createMediaElementSource(audioEl);
-                    source.connect(analyser);
-                    analyser.connect(context.destination);
-                    resolve(analyser)
-                    window.addEventListener("load", onLoad, false);
-                };
-                // Need window.onload to fire first. See crbug.com/112368.
-                onLoad();
-                this.audio = audioEl;
+
+        createAudio(src: string): Promise<AnalyserNode> {
+            return new Promise((resolve, reject) => {
+                fetch(src).then((resp: Response) => {
+                    return resp.arrayBuffer().then((buffer: ArrayBuffer) => {
+                        let audioCtx = new AudioContext();
+                        audioCtx.decodeAudioData(buffer, (audioData: AudioBuffer) => {
+                            let offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
+
+
+                            var filteredSource = offlineCtx.createBufferSource();
+                            filteredSource.buffer = audioData;                    // tell the source which sound to play
+                            filteredSource.connect(offlineCtx.destination);       // connect the source to the context's destination (the speakers)
+
+                            var filterOffline = offlineCtx.createBiquadFilter();
+                            filterOffline.type = 'highpass';
+                            filterOffline.Q.value = 2;
+                            filterOffline.frequency.value = 2000;
+
+                            // Pipe the song into the filter, and the filter into the offline context
+                            filteredSource.connect(filterOffline);
+                            filterOffline.connect(offlineCtx.destination);
+
+                            filteredSource.start(0);
+
+                            let source = audioCtx.createBufferSource(); // creates a sound source
+                            source.buffer = audioData;                    // tell the source which sound to play
+                            source.connect(audioCtx.destination);       // connect the source to the context's destination (the speakers)
+
+                            offlineCtx.startRendering().then((renderedBuffer: AudioBuffer) => {
+                                let audioCtx = new AudioContext();
+
+
+                                let audioEl = new Audio(); //document.createElement("audio");
+                                audioEl.preload = "auto";
+                                audioEl.src = "/assets/song.mp3";
+                                audioEl.crossOrigin = "anonymous"
+
+                                const onLoad = () => {
+                                    let source = audioCtx.createMediaElementSource(audioEl);
+                                    let analyser = audioCtx.createAnalyser();
+
+                                    this.audio = audioEl;
+
+                                    source.connect(analyser);
+                                    analyser.connect(audioCtx.destination);
+                                    resolve(analyser)
+
+
+                                    window.addEventListener("load", onLoad, false);
+                                };
+                                onLoad();
+
+                                let bufferSource = audioCtx.createBufferSource();
+                                bufferSource.buffer = renderedBuffer;
+                                let analyser = audioCtx.createAnalyser();
+                                //  analyser.connect(audioCtx.destination);
+                                // bufferSource.connect(analyser);
+                                // bufferSource.connect(audioCtx.destination);
+                                //  this.audio = bufferSource;
+
+                                this.peaks = Utils.Audio.getPeaksAtThreshold(renderedBuffer.getChannelData(0),
+                                    audioData.sampleRate, 0.21);
+
+                                this.parameters.bpm = (Utils.Array.average(Utils.Array.delta(this.peaks)) / audioData.sampleRate) * 1000;
+
+
+
+                            });
+                        });
+                    });
+                });
             });
         }
         private addEventListeners() {
+
             document.addEventListener("mousemove", (evt: MouseEvent) => {
                 this.parameters.mouseX = evt.clientX / window.innerWidth;
                 this.parameters.mouseY = 1 - evt.clientY / window.innerHeight;
@@ -440,53 +245,106 @@ export namespace Demolished {
                 this.resizeCanvas();
             });
         }
-        addEntity(name: string, start: number, stop: number,
-            textures: Array < Asset >
+        addEntity(name: string, textures: Array<EntityTexture>
         ): EnityBase {
-            const entity = new EnityBase(this.gl, name, start, stop,
-                this.canvas.width, this.canvas.height,
-                textures
-            );
-            this.entities.push(entity);
+            const entity = new EnityBase(this.gl, name, this.canvas.width, this.canvas.height, textures);
+
+            this.entitiesCache.push(entity);
+            // attach to timeLine
+            let tf = this.timeFragments.filter((pre: TimeFragment) => {
+                return pre.entity === name;
+            });
+
+            tf.forEach((f: TimeFragment) => {
+                f.setEntity(entity)
+            });
+
             return entity;
         }
 
-        private findEntityByTime(time: number): number {
-            return this.entities.findIndex((pre: EnityBase) => {
-                return time < pre.stop && time >= pre.start
+
+
+        private tryFindTimeFragment(time: number): TimeFragment {
+            let parent = document.querySelector("#main");
+            this.removeLayers(parent);
+            let timeFragment = this.timeFragments.find((tf: TimeFragment) => {
+                return time < tf.stop && time >= tf.start
             });
+            if (timeFragment.hasLayers) {
+
+                timeFragment.css3Layers.forEach((cssLayer: CSS3Layer) => {
+                    let layer = document.createElement("div");
+                    layer.id = cssLayer.name;
+
+                    cssLayer.classList.forEach ( (className:string) => {
+                            layer.classList.add(className);
+                    });
+
+                    layer.innerHTML = cssLayer.markup;
+                
+                    layer.classList.add("layer");
+                    parent.appendChild(layer);
+                });
+            }
+
+
+            return timeFragment;
         }
 
         start(time: number) {
-            
-            // ensure that entities are in correct order.
-            this.entities.sort((a: EnityBase, b: EnityBase) => {
-                return a.start - b.start;
-            });
-
             this.animationOffsetTime = time;
-            this.currentEntity = this.findEntityByTime(time);
+
+            this.currentTimeFragment = this.tryFindTimeFragment(time);
 
             this.animationStartTime = performance.now();
 
             this.animate(time);
-
             this.audio.currentTime = (time / 1000) % 60
+
             this.audio.play();
-
-
-          
-
             this.onStart();
 
         }
+
+        autoCorrelateFloat(buf: Float32Array, sampleRate: number) {
+            var MIN_SAMPLES = 4;	// corresponds to an 11kHz signal
+            var MAX_SAMPLES = 1000; // corresponds to a 44Hz signal
+            var SIZE = 1000;
+            var best_offset = -1;
+            var best_correlation = 0;
+            var rms = 0;
+            if (buf.length < (SIZE + MAX_SAMPLES - MIN_SAMPLES))
+                return -1;  // Not enough data
+            for (var i = 0; i < SIZE; i++)
+                rms += buf[i] * buf[i];
+            rms = Math.sqrt(rms / SIZE);
+            for (var offset = MIN_SAMPLES; offset <= MAX_SAMPLES; offset++) {
+                var correlation = 0;
+                for (var i = 0; i < SIZE; i++) {
+                    correlation += Math.abs(buf[i] - buf[i + offset]);
+                }
+                correlation = 1 - (correlation / SIZE);
+                if (correlation > best_correlation) {
+                    best_correlation = correlation;
+                    best_offset = offset;
+                }
+            }
+            if ((rms > 0.1) && (best_correlation > 0.1)) {
+
+                //     console.log("f = " + sampleRate / best_offset + "Hz (rms: " + rms + " confidence: " + best_correlation + ")");
+                return sampleRate / best_offset;
+            } else return -1;
+            //   return sampleRate/best_offset;
+        }
+
+
         stop(): number {
             cancelAnimationFrame(this.animationFrameId);;
             this.onStop();
             return this.animationFrameId;
         }
 
-        updateTextureData(texture: WebGLTexture,width: number, height: number, bytes: Uint8Array):void {
+        updateTextureData(texture: WebGLTexture, width: number, height: number, bytes: Uint8Array): void {
             let gl = this.gl;
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 32, 32, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
@@ -497,33 +355,51 @@ export namespace Demolished {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
-       
-     
         }
 
+
         private animate(time: number) {
-            let at = time - this.animationStartTime;
+            let animationTime = time - this.animationStartTime;
             this.animationFrameId = requestAnimationFrame((_time: number) => {
                 this.animate(_time);
             });
 
             if (this.audioAnalyser) {
                 let bufferLength = this.audioAnalyser.frequencyBinCount;
+
                 let freqArray = new Uint8Array(bufferLength);
                 this.audioAnalyser.getByteFrequencyData(freqArray);
                 this.updateTextureData(
-                    this.fftTexture,32, 32, freqArray);
+                    this.fftTexture, 32, 32, freqArray);
+                this.parameters.freq = Utils.Array.average(freqArray);
+                // for debug-purpose
+                var fEl = document.querySelector("#freq");
+                fEl.textContent = Math.round(this.parameters.freq).toString();
             }
 
-            let ent: EnityBase = this.entities[this.currentEntity];
+            // todo: Make this Entities an Map<EntityBase>
+            //  let entity: EnityBase = this.entities[this.currentEntity];
 
-            if (at > ent.stop) {
-                this.currentEntity++;
-                if (this.currentEntity === this.entities.length) {
-                    this.stop()
-                }
+            // if(!entity) throw "Could not find the entity " + this.currentEntity;
+
+            if (animationTime >= this.currentTimeFragment.stop) {
+                this.currentTimeFragment = this.tryFindTimeFragment(time);
+
+                // is there css3 layers / 2d canvas elemets to set up?
+
+
             }
-            this.renderEntities(ent, at);
+            this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
+        }
+
+        private removeLayers(parent: Element) {
+            let layers = document.querySelectorAll(".layer");
+            console.log("removing nodes ->", layers.length);
+            for (let i = 0; i < layers.length; i++)
+                parent.removeChild(layers[i]);
+
+
+
         }
 
         private surfaceCorners() {
@@ -563,6 +439,15 @@ export namespace Demolished {
 
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
+            let layers = document.querySelectorAll(".layer");
+            for (var i = 0; i < layers.length; i++) {
+                //console.log(layers[i]);
+                let el = layers[i] as HTMLCanvasElement;
+                el.width = width;
+                el.height = height;
+                el.style.width = window.innerWidth + 'px';
+                el.style.height = window.innerHeight + 'px'
+            }
         }
 
 
@@ -573,6 +458,9 @@ export namespace Demolished {
             this.parameters.time = ts; // Date.now() - this.parameters.startTime;
 
             gl.useProgram(ent.currentProgram);
+
+            gl.uniform1f(ent.uniformsCache.get('bpm'), this.parameters.bpm);
+            gl.uniform1f(ent.uniformsCache.get("freq"), this.parameters.freq);
 
             gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
@@ -593,7 +481,7 @@ export namespace Demolished {
             gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
 
             let offset = 2;
-            ent.assets.forEach((asset: Asset, index: number) => {
+            ent.assets.forEach((asset: EntityTexture, index: number) => {
                 gl.activeTexture(gl.TEXTURE0 + (offset + index));
                 gl.bindTexture(gl.TEXTURE_2D, asset.texture);
                 gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), offset + index);

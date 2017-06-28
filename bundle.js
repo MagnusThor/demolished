@@ -572,7 +572,7 @@ var demolishedRecorder_1 = __webpack_require__(1);
 var DemolishedSequencer = (function () {
     function DemolishedSequencer() {
         var _this = this;
-        this.duration = 211200;
+        this.totalDuration = 211200;
         this.timeLine = document.querySelector(".demolished-timeline input");
         this.timeLine.addEventListener("mousedown", function (evt) {
             _this.world.stop();
@@ -593,12 +593,12 @@ var DemolishedSequencer = (function () {
         };
         this.world = new demolished_1.Demolished.World(canvas, "entities/timeline.json", analyzerSettings);
         this.world.onReady = function () {
-            var arr = _this.world.entities.map(function (a, index) {
+            var details = _this.world.entities.map(function (a, index) {
                 return {
-                    d: a.stop - a.start, i: index };
+                    duration: a.stop - a.start, index: index, description: "foo", name: a.name };
             });
-            _this.getTimeLineDetails(arr);
-            _this.timeLine.setAttribute("max", _this.duration.toString());
+            _this.getTimeLineDetails(details);
+            _this.timeLine.setAttribute("max", _this.totalDuration.toString());
             _this.onReady();
         };
         this.world.onStart = function () {
@@ -643,11 +643,22 @@ var DemolishedSequencer = (function () {
         arr.forEach(function (ent, index) {
             var el = document.createElement("div");
             el.classList.add("timeline-entry");
-            var d = (parseInt(ent.d) / _this.duration);
+            var d = (parseInt(ent.duration) / _this.totalDuration);
             var w = 100 * (Math.round(100 * (d * 1)) / 100);
             el.style.width = w + "%";
             el.style.left = ox + "%";
             el.style.background = '#' + (Math.random() * 0xFFFFFF << 0).toString(16);
+            var callout = document.createElement("div");
+            callout.classList.add("timeline-callout", "hide");
+            callout.textContent = ent.name;
+            el.addEventListener("mouseenter", function () {
+                callout.classList.remove("hide");
+            });
+            el.addEventListener("mouseleave", function () {
+                console.log("leave");
+                callout.classList.add("hide");
+            });
+            el.appendChild(callout);
             parent.appendChild(el);
             ox += w;
         });

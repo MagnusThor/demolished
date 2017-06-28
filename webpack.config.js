@@ -4,8 +4,9 @@ module.exports = {
   watch: true,
   entry: './index.js',
   output: {
-    filename: 'bundle.js'
+    filename: 'demo.js'
   },
   plugins: [
+    //	new UglifyJSPlugin()
   ]
 }

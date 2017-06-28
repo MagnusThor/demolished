@@ -178,7 +178,7 @@ void main(){
 	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;
 	
 	// Screen coordinates.
-		vec2 uv = (gl_FragCoord.xy - resolution.xy*0.5)/resolution.y;
+	vec2 uv = (gl_FragCoord.xy - resolution.xy*0.5)/resolution.y;
 	
 	// Camera Setup.
 	vec3 camPos = vec3(0.0, 0.0, time*5.); // Camera position, doubling as the ray origin.
