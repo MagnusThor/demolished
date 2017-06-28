@@ -6,7 +6,6 @@ precision mediump float;
 
 uniform float time;
 uniform vec2 resolution;
-varying vec2 surfacePosition;
 
 vec4 textureRND2D(vec2 uv){
 	uv = floor(fract(uv)*1e3);
@@ -32,7 +31,9 @@ float cloud(vec2 p) {
 }
 
 void main( void ) {
-	vec2 p = surfacePosition;
+	//vec2 p = surfacePosition;
+	vec2 p = ( gl_FragCoord.xy / resolution.xy ) * 2.0 - 1.0;
+
 	p *= (sin(time*.1+10.)+1.4)*.05;
 	p += 1.5;
 	vec3 c = vec3(.0, .0, .1);

@@ -190,12 +190,12 @@
 	*/
 
 	.forest {
-		/*		
-		background-image: url('/assets/landscape.png');
-		background-size: cover;*/
+				
+		background-image: url('/assets/norrlandskt_vansinne.png');
+		background-size: cover;
 		animation: xfadeOut 0.5s 1;
 		animation-fill-mode: forwards;
-		animation-delay: 18s;
+		animation-delay: 200s;
 		z-index: 100;
 	}
 

@@ -2,116 +2,49 @@
     "name": "MyDemo",
     "audioSettings": {
         "audioFile": "assets/song.mp3",
-        "audioAnalyzerSettings":{
+        "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
             "minDecibels": -30,
-            "maxDecibels":-90
+            "maxDecibels": -90
         },
-       
+
         "duration": 249600,
         "bmp": 129
     },
 
     "timeline": [{
             "css3Layers": [{
-                "name": "forest",
                 "classList": ["forest"],
-                "markup": "<p><strong  class='animated fadeIn delay2s'>HARDCORE LAMERS</strong><br/><span class='animated fadeIn delay3s'>PRESENTS</span><br/><span class='animated fadeIn delay4s'>OLD GUYS RULE</span></p>"
+                "name": "forset"
             }],
-            "entity": "bars",
+            "entity": "aurora",
             "start": 0,
-            "stop": 55513
+            "stop": 19600
         },
-        {
-            "entity": "pink",
-            "start": 55513,
-            "stop": 67571,
-               "css3Layers":[]
-        },
-         {
-            "entity": "boxes",
-            "start": 67571,
-            "stop": 112000,
-             "css3Layers":[]
-        },
-       
         {
             "css3Layers": [{
-                "name": "vingette",
-                "classList": ["vingette"],
-                "markup": ""
+                "classList": ["forest"],
+                "name": "elk"
             }],
-            "entity": "desert",
-            "start": 112000,
+            "entity": "landscape",
+            "start": 19600,
             "stop": 249600
         }
 
     ],
-    "effects": [
-        {
-            "name": "bars",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-
-        {
-           
-            "name": "boxes",
-            "textures": [{
-                "url": "assets/wood.jpg",
-                "name": "uSampler",
-                "width": 1024,
-                "height": 1024,
-                "type:": 0
-            }, {
-                "url": "assets/noise.jpg",
-                "name": "uNoise",
-                "width": 1024,
-                "height": 1024,
-                "type:": 0
-            }]
-        },
-        {
-            "name": "pink",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-
-        {
-            "name": "sound",
+    "effects": [{
+            "name": "landscape",
             "description": "",
             "textures": [],
             "type:": 0
         },
         {
-            "name": "strobe",
+            "name": "aurora",
             "description": "",
             "textures": [],
             "type:": 0
-        },
-        {
-            "name": "desert",
-            "description": "Impressive work from https://www.shadertoy.com/view/Xs33Df",
-            "type:": 0,
-            "textures": [{
-                    "url": "assets/iChannel0.png",
-                    "uniform": "iChannel0",
-                    "width": 512,
-                    "height": 512,
-                    "type:": 0
-                },
-                {
-                    "url": "assets/iChannel1.jpg",
-                    "uniform": "iChannel1",
-                    "width": 1024,
-                    "height": 1024,
-                    "type:": 0
-                }
-
-            ]
         }
+
     ]
 }

@@ -45,9 +45,7 @@ float vine(vec3 p, in float c, in float h)
     return length(q) - h -sin(p.z*2.+sin(p.x*7.)*0.5+time*0.5)*0.13;
 }
 
-vec4 map(vec3 v){
-    return vecv(p,0.1):
-}
+
 
 float map(vec3 p)
 {
