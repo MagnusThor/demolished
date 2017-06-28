@@ -342,7 +342,7 @@ var Demolished;
                                 var audioCtx = new AudioContext();
                                 var audioEl = new Audio(); //document.createElement("audio");
                                 audioEl.preload = "auto";
-                                audioEl.src = "/assets/song.mp3";
+                                audioEl.src = "assets/song.mp3";
                                 audioEl.crossOrigin = "anonymous";
                                 var onLoad = function () {
                                     var source = audioCtx.createMediaElementSource(audioEl);
@@ -492,7 +492,6 @@ var Demolished;
         };
         Rendering.prototype.removeLayers = function (parent) {
             var layers = document.querySelectorAll(".layer");
-            console.log("removing nodes ->", layers.length);
             for (var i = 0; i < layers.length; i++)
                 parent.removeChild(layers[i]);
         };
@@ -588,7 +587,7 @@ var DemolishedSequencer = (function () {
     function DemolishedSequencer() {
         var _this = this;
         document.addEventListener("keydown", function (evt) {
-            console.log("time & freq ", _this.rendering.parameters.time, _this.rendering.parameters.freq);
+            console.log("time & freq ", _this.renderig.parameters.time, _this.rendering.parameters.freq);
         });
         this.totalDuration = 249600;
         this.timeLine = document.querySelector(".demolished-timeline input");

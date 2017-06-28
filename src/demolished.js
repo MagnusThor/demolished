@@ -130,7 +130,7 @@ var Demolished;
                                 var audioCtx = new AudioContext();
                                 var audioEl = new Audio(); //document.createElement("audio");
                                 audioEl.preload = "auto";
-                                audioEl.src = "/assets/song.mp3";
+                                audioEl.src = "assets/song.mp3";
                                 audioEl.crossOrigin = "anonymous";
                                 var onLoad = function () {
                                     var source = audioCtx.createMediaElementSource(audioEl);

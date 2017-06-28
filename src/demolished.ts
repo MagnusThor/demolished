@@ -196,7 +196,7 @@ export namespace Demolished {
 
                                 let audioEl = new Audio(); //document.createElement("audio");
                                 audioEl.preload = "auto";
-                                audioEl.src = "/assets/song.mp3";
+                                audioEl.src = "assets/song.mp3";
                                 audioEl.crossOrigin = "anonymous"
 
                                 const onLoad = () => {
