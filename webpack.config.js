@@ -4,7 +4,7 @@ module.exports = {
   watch: true,
   entry: './index.js',
   output: {
-    filename: 'demo.js'
+    filename: 'norrland.js'
   },
   plugins: [
     //	new UglifyJSPlugin()

@@ -8,32 +8,99 @@
             "minDecibels": -30,
             "maxDecibels": -90
         },
-
         "duration": 249600,
         "bmp": 129
     },
 
-    "timeline": [{
+    "timeline": [
+        {
             "css3Layers": [{
-                "classList": ["forest"],
-                "name": "forset"
+                "classList": ["logo"],
+                "name": "logo",
+                "markup":""
             }],
-            "entity": "aurora",
             "start": 0,
-            "stop": 19600
+            "stop": 2000,
+            "entity":"empty"
+        },
+        
+        {
+            "css3Layers": [{
+                "classList": ["norrland"],
+                "name": "norrland",
+                "markup":""
+            },
+            {
+                "classList": ["vingette"],
+                "name": "vingette",
+                "markup":""
+            },
+            {
+                "classList": ["snow"],
+                "name": "snow",
+                "markup":""
+            }
+            ],
+            "entity": "norrland",
+            "start": 2000,
+            "stop": 20000
         },
         {
             "css3Layers": [{
-                "classList": ["forest"],
-                "name": "elk"
-            }],
-            "entity": "landscape",
-            "start": 19600,
+                "classList": ["snus"],
+                "name": "snus"
+            },{
+                "classList": ["vingette"],
+                "name": "vingette",
+                "markup":""
+            }
+            ],
+            "entity": "greensmoke",
+            "start": 20000,
+            "stop": 40000
+        },
+        {
+            "css3Layers": [{
+                "classList": ["kvist"],
+                "name": "kvist"
+            },{
+                "classList": ["vingette"],
+                "name": "vingette",
+                "markup":""
+            }
+            ],
+            "entity": "flakes",
+            "start": 40000,
             "stop": 249600
         }
 
     ],
-    "effects": [{
+    "effects": [
+         {
+            "name": "empty",
+            "description": "",
+            "textures": [],
+            "type:": 0
+        },
+         {
+            "name": "flakes",
+            "description": "",
+            "textures": [],
+            "type:": 0
+        },
+         {
+            "name": "bars",
+            "description": "",
+            "textures": [],
+            "type:": 0
+        },
+        {
+            "name": "norrland",
+            "description": "",
+            "textures": [],
+            "type:": 0
+        },
+        {
             "name": "landscape",
             "description": "",
             "textures": [],
@@ -41,6 +108,12 @@
         },
         {
             "name": "aurora",
+            "description": "",
+            "textures": [],
+            "type:": 0
+        },
+         {
+            "name": "greensmoke",
             "description": "",
             "textures": [],
             "type:": 0

@@ -189,13 +189,45 @@
 	Layers
 	*/
 
-	.forest {
+	.norrland {
 				
 		background-image: url('../assets/norrlandskt_vansinne.png');
 		background-size: cover;
-		animation: xfadeOut 0.5s 1;
+		/*animation: xfadeIn 0.5s 1;
 		animation-fill-mode: forwards;
-		animation-delay: 200s;
+		animation-delay: 5s;*/
+		z-index: 100;
+	}
+
+	.logo {
+				
+		background-image: url('../assets/logo.png');
+		background-size: cover;
+	
+		z-index: 100;
+	}
+
+	.snow{
+		animation: fadeIt 5s 1;
+		animation-fill-mode: forwards;
+		animation-delay: 15s;
+		z-index: 100;
+    }
+
+	@keyframes fadeIt {
+	0%   { background-color: #FFFFFF; }
+	50%  { background-color: #333333; }
+	100% { background-color: #FFFFFF; }
+	}
+
+	.snus {
+		background-image: url('../assets/fueled.png');
+		background-size: cover;
+		z-index: 100;
+	}
+	.kvist {
+		background-image: url('../assets/overlay1.png');
+		background-size: cover;
 		z-index: 100;
 	}
 

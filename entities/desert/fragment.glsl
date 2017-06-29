@@ -201,9 +201,7 @@ float fbm(in vec3 p){
     return 0.5333*noise3D( p ) + 0.2667*noise3D( p*2.02 ) + 0.1333*noise3D( p*4.03 ) + 0.0667*noise3D( p*8.03 );
 }
 
-
 vec3 getSky(in vec3 ro, in vec3 rd, vec3 sunDir){
-
 
 	float sun = max(dot(rd, sunDir),(freq / 20.0)); // * (freqs[0] * 2.0);
 
@@ -217,10 +215,9 @@ vec3 getSky(in vec3 ro, in vec3 rd, vec3 sunDir){
     col = clamp(col + hash(rd)*0.05 - 0.025, 0., 1.);
 
 	vec3 sc = ro + rd*FAR*100.; 
-    sc.y *= 3.;
+         sc.y *= 3.;
     
-	return mix( col, vec3(1.0,0.95,1.0), 0.5*smoothstep(0.5, 1.0, fbm(.001*sc)) * clamp(rd.y*4., 0., 1.) );
-	
+	return mix( col, vec3(1.0,0.95,1.0), 0.5*smoothstep(0.5, 1.0, fbm(.001*sc)) * clamp(rd.y*4., 0., 1.) );	
 
 }
 float curve(in vec3 p){
@@ -234,8 +231,6 @@ float curve(in vec3 p){
     
     return clamp((t1 + t2 + t3 + t4 - 4.*map(p))*amp + ampInit, 0., 1.);
 }
-
-
 
 
 void main(){	
