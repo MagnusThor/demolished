@@ -229,6 +229,7 @@
 		background-image: url('../assets/overlay1.png');
 		background-size: cover;
 		z-index: 100;
+		filter :invert(100%);
 	}
 
 	.delay1s {

@@ -69,7 +69,7 @@
                 "markup":""
             }
             ],
-            "entity": "flakes",
+            "entity": "lingon",
             "start": 40000,
             "stop": 249600
         }
@@ -114,6 +114,11 @@
         },
          {
             "name": "greensmoke",
+            "description": "",
+            "textures": [],
+            "type:": 0
+        },{
+            "name": "lingon",
             "description": "",
             "textures": [],
             "type:": 0
