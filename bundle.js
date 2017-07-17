@@ -63,11 +63,119 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 0);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolished_1 = __webpack_require__(5);
+var demolishedCanvas_1 = __webpack_require__(1);
+var scroller_1 = __webpack_require__(4);
+var ExampleDemo = (function () {
+    function ExampleDemo() {
+        var _this = this;
+        var webGlCanvas = document.querySelector("#gl");
+        var canavs2d = document.querySelector("#canvas2d");
+        this.canvasRendering = new demolishedCanvas_1.DemolishedCanvas(canavs2d);
+        this.canvasRendering.addEntity(new scroller_1.Scroller2D(this.canvasRendering.ctx, "This is a scroller.... old and gold.."));
+        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, "entities/graph.json");
+        this.webGlrendering.onReady = function () {
+            _this.onReady();
+            window.setTimeout(function () {
+                document.querySelector(".loader").classList.add("hide");
+                _this.webGlrendering.start(0);
+                _this.canvasRendering.start(0);
+            }, 3000);
+        };
+        this.webGlrendering.onStop = function () {
+        };
+        this.webGlrendering.onStart = function () {
+        };
+        this.webGlrendering.onNext = function (frameInfo) {
+        };
+        window.onerror = function () {
+            _this.webGlrendering.stop();
+        };
+    }
+    ExampleDemo.prototype.onReady = function () { };
+    return ExampleDemo;
+}());
+exports.ExampleDemo = ExampleDemo;
+document.addEventListener("DOMContentLoaded", function () {
+    var demo = new ExampleDemo();
+});
+
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var BaseEntity2D = (function () {
+    function BaseEntity2D(name, ctx) {
+        this.name = name;
+        this.ctx = ctx;
+        this.width = ctx.canvas.width;
+        this.height = ctx.canvas.height;
+    }
+    BaseEntity2D.prototype.update = function (t) {
+    };
+    return BaseEntity2D;
+}());
+exports.BaseEntity2D = BaseEntity2D;
+var DemolishedCanvas = (function () {
+    function DemolishedCanvas(canvas) {
+        this.canvas = canvas;
+        this.entities = new Array();
+        this.ctx = canvas.getContext("2d");
+        this.animationStartTime = 0;
+        this.resizeCanvas();
+    }
+    DemolishedCanvas.prototype.clear = function () {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    };
+    DemolishedCanvas.prototype.animate = function (time) {
+        var _this = this;
+        var animationTime = time - this.animationStartTime;
+        this.animationFrameId = requestAnimationFrame(function (_time) {
+            _this.animate(_time);
+        });
+        this.renderEntities(time);
+    };
+    DemolishedCanvas.prototype.addEntity = function (ent) {
+        this.entities.push(ent);
+    };
+    DemolishedCanvas.prototype.resizeCanvas = function () {
+        var width = window.innerWidth / 2;
+        var height = window.innerHeight / 2;
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.canvas.style.width = window.innerWidth + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
+    };
+    DemolishedCanvas.prototype.renderEntities = function (time) {
+        this.clear();
+        this.entities.forEach(function (ent) {
+            ent.update(time);
+        });
+    };
+    DemolishedCanvas.prototype.start = function (startTime) {
+        this.animate(startTime);
+    };
+    return DemolishedCanvas;
+}());
+exports.DemolishedCanvas = DemolishedCanvas;
+
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -153,14 +261,14 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 1 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
-var demolishedTransitions_1 = __webpack_require__(5);
+var demolishedTransitions_1 = __webpack_require__(7);
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -251,16 +359,65 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 2 */
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolishedCanvas_1 = __webpack_require__(1);
+var Scroller2D = (function (_super) {
+    __extends(Scroller2D, _super);
+    function Scroller2D(ctx, text) {
+        var _this = _super.call(this, "scroller", ctx) || this;
+        _this.text = text;
+        _this.textWidth = 0;
+        _this.y = 10;
+        _this.x = 0;
+        _this.font = "12px Arial";
+        _this.x = ctx.canvas.width;
+        ctx.fillStyle = "#FFFFFF";
+        _this.textWidth = ctx.measureText(_this.text).width;
+        _this.active = true;
+        _this.y = ctx.canvas.height - 48;
+        return _this;
+    }
+    Scroller2D.prototype.update = function (time) {
+        if (this.textWidth + this.x < 0) {
+            this.x = this.ctx.canvas.width;
+        }
+        else {
+            this.x--;
+        }
+        this.ctx.font = this.font;
+        this.ctx.fillText(this.text, this.x, this.y);
+    };
+    return Scroller2D;
+}(demolishedCanvas_1.BaseEntity2D));
+exports.Scroller2D = Scroller2D;
+
+
+/***/ }),
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedUtils_1 = __webpack_require__(6);
-var demolishedEntity_1 = __webpack_require__(4);
-var demolishedModels_1 = __webpack_require__(1);
-var demolishedLoader_1 = __webpack_require__(0);
+var demolishedUtils_1 = __webpack_require__(8);
+var demolishedEntity_1 = __webpack_require__(6);
+var demolishedModels_1 = __webpack_require__(3);
+var demolishedLoader_1 = __webpack_require__(2);
 var Demolished;
 (function (Demolished) {
     var Rendering = (function () {
@@ -597,53 +754,14 @@ var Demolished;
 
 
 /***/ }),
-/* 3 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolished_1 = __webpack_require__(2);
-var ExampleDemo = (function () {
-    function ExampleDemo() {
-        var _this = this;
-        var canvas = document.querySelector("#gl");
-        window.onerror = function () {
-            _this.rendering.stop();
-        };
-        this.rendering = new demolished_1.Demolished.Rendering(canvas, "entities/graph.json");
-        this.rendering.onReady = function () {
-            _this.onReady();
-            window.setTimeout(function () {
-                document.querySelector(".loader").classList.add("hide");
-                _this.rendering.start(0);
-            }, 3000);
-        };
-        this.rendering.onStop = function () {
-        };
-        this.rendering.onStart = function () {
-        };
-        this.rendering.onNext = function (frameInfo) {
-        };
-    }
-    ExampleDemo.prototype.onReady = function () { };
-    return ExampleDemo;
-}());
-exports.ExampleDemo = ExampleDemo;
-document.addEventListener("DOMContentLoaded", function () {
-    var demo = new ExampleDemo();
-});
-
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedModels_1 = __webpack_require__(1);
-var demolishedLoader_1 = __webpack_require__(0);
+var demolishedModels_1 = __webpack_require__(3);
+var demolishedLoader_1 = __webpack_require__(2);
 var EntityTexture = (function () {
     function EntityTexture(image, name, width, height, assetType) {
         this.image = image;
@@ -779,7 +897,7 @@ exports.EntityBase = EntityBase;
 
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -801,7 +919,7 @@ exports.DemloshedTransitionBase = DemloshedTransitionBase;
 
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
