@@ -1,7 +1,8 @@
 import { Utils } from './demolishedUtils'
 import { SmartArray } from './demolishedSmartArray';
-import { EnityBase, EntityTexture } from './demolishedEntity'
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, CSS3Layer, AudioSettings } from './demolishedModels'
+import { EntityBase, EntityTexture } from './demolishedEntity'
+import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, Overlay, AudioSettings } from './demolishedModels'
+import loadResource from './demolishedLoader'
 
 export namespace Demolished {
 
@@ -9,13 +10,14 @@ export namespace Demolished {
 
         gl: WebGLRenderingContext | any;
 
+        animationFrameCount: number;
         animationStartTime: number;
         animationFrameId: number;
         animationOffsetTime: number;
 
         audio: HTMLAudioElement;// AudioBufferSourceNode;
 
-        entitiesCache: Array<EnityBase>;
+        entitiesCache: Array<EntityBase>;i
         timeFragments: Array<TimeFragment>;
         currentTimeFragment: TimeFragment;
 
@@ -27,8 +29,7 @@ export namespace Demolished {
         centerX: number = 0;
         centerY: number = 0;
 
-        parameters: Uniforms;
-
+        uniforms: Uniforms;
 
         audioAnalyser: AnalyserNode
         peaks: Array<any>;
@@ -66,7 +67,7 @@ export namespace Demolished {
         }
 
         loadGraph(graphFile: string): Promise<Graph> {
-            return fetch(graphFile).then((response: Response) => {
+            return loadResource(graphFile).then((response: Response) => {
                 return response.json();
             }).then((graph: Graph) => {
                 return graph;
@@ -74,35 +75,35 @@ export namespace Demolished {
         }
 
         constructor(public canvas: HTMLCanvasElement,
-            public timelineFile: string,
-        ) {
-            this.parameters = new Uniforms(this.canvas.width, this.canvas.height);
-
-            this.parameters.time = 0;
-            this.parameters.mouseX = 0.5;
-            this.parameters.mouseY = 0.5;
-
-            this.entitiesCache = new Array<EnityBase>();
-            this.timeFragments = new Array<TimeFragment>();
+            public timelineFile: string, ) {
 
             this.gl = this.getRendringContext();
+
+           this.uniforms = new Uniforms(this.canvas.width, this.canvas.height);
+
+            this.uniforms.time = 0;
+            this.uniforms.mouseX = 0.5;
+            this.uniforms.mouseY = 0.5;
+
+            this.entitiesCache = new Array<EntityBase>();
+            this.timeFragments = new Array<TimeFragment>();
 
             this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
 
-            this.addEventListeners()
+            this.addEventListeners();
 
             // load and add the entities
             this.loadGraph(this.timelineFile).then((graph: Graph) => {
 
-                console.log(graph);
+             //   console.log(graph);
 
                 let audioSettings: AudioSettings = graph.audioSettings;
-                
+
                 graph.timeline.forEach((tf: TimeFragment) => {
 
-                
-                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop, tf.css3Layers);
+              
+                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop,tf.useTransitions,tf.overlays);
                     this.timeFragments.push(_tf)
                 });
 
@@ -122,6 +123,7 @@ export namespace Demolished {
                     graph.effects.forEach((effect: Effect) => {
 
                         let textures = Promise.all(effect.textures.map((texture: any) => {
+                            
                             return new Promise((resolve, reject) => {
                                 let image = new Image();
                                 image.src = texture.url;
@@ -140,36 +142,37 @@ export namespace Demolished {
                                 this.onReady();
                                 this.resizeCanvas();
                             }
+
                         });
                     });
-                 //   this.resizeCanvas();
+                       this.resizeCanvas();
                 });
             });
         }
 
         onFrame(frame: any): void { }
+        onNext(frame: any):void {}
         onStart(): void { }
         onStop(): void { }
         onReady(): void { }
 
         // todo:Rename
         getAudioTracks(): any {
-
+            return;
 
             // let ms = this.audio["captureStream"](60)
             // return ms.getAudioTracks();
         }
-
-
-
         createAudio(src: string): Promise<AnalyserNode> {
             return new Promise((resolve, reject) => {
-                fetch(src).then((resp: Response) => {
+                loadResource(src).then((resp: Response) => {
                     return resp.arrayBuffer().then((buffer: ArrayBuffer) => {
-                        let audioCtx = new AudioContext();
-                        audioCtx.decodeAudioData(buffer, (audioData: AudioBuffer) => {
-                            let offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
 
+                        let audioCtx = new AudioContext();
+
+                        audioCtx.decodeAudioData(buffer, (audioData: AudioBuffer) => {
+                    
+                            let offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
 
                             var filteredSource = offlineCtx.createBufferSource();
                             filteredSource.buffer = audioData;                    // tell the source which sound to play
@@ -193,10 +196,9 @@ export namespace Demolished {
                             offlineCtx.startRendering().then((renderedBuffer: AudioBuffer) => {
                                 let audioCtx = new AudioContext();
 
-
-                                let audioEl = new Audio(); //document.createElement("audio");
+                                let audioEl = new Audio(); 
                                 audioEl.preload = "auto";
-                                audioEl.src = "assets/song.mp3";
+                                audioEl.src = src;
                                 audioEl.crossOrigin = "anonymous"
 
                                 const onLoad = () => {
@@ -208,26 +210,20 @@ export namespace Demolished {
                                     source.connect(analyser);
                                     analyser.connect(audioCtx.destination);
                                     resolve(analyser)
-
-
                                     window.addEventListener("load", onLoad, false);
                                 };
-                                onLoad();
+                                onLoad(); // ???
 
                                 let bufferSource = audioCtx.createBufferSource();
                                 bufferSource.buffer = renderedBuffer;
                                 let analyser = audioCtx.createAnalyser();
-                                //  analyser.connect(audioCtx.destination);
-                                // bufferSource.connect(analyser);
-                                // bufferSource.connect(audioCtx.destination);
-                                //  this.audio = bufferSource;
 
+                                // will remove...
                                 this.peaks = Utils.Audio.getPeaksAtThreshold(renderedBuffer.getChannelData(0),
                                     audioData.sampleRate, 0.21);
 
-                                this.parameters.bpm = (Utils.Array.average(Utils.Array.delta(this.peaks)) / audioData.sampleRate) * 1000;
-
-
+                                // bpm would be know?
+                                this.uniforms.bpm = (Utils.Array.average(Utils.Array.delta(this.peaks)) / audioData.sampleRate) * 1000;
 
                             });
                         });
@@ -238,16 +234,16 @@ export namespace Demolished {
         private addEventListeners() {
 
             document.addEventListener("mousemove", (evt: MouseEvent) => {
-                this.parameters.mouseX = evt.clientX / window.innerWidth;
-                this.parameters.mouseY = 1 - evt.clientY / window.innerHeight;
+                this.uniforms.mouseX = evt.clientX / window.innerWidth;
+                this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
             });
             window.addEventListener("resize", () => {
                 this.resizeCanvas();
             });
         }
         addEntity(name: string, textures: Array<EntityTexture>
-        ): EnityBase {
-            const entity = new EnityBase(this.gl, name, this.canvas.width, this.canvas.height, textures);
+        ): EntityBase {
+            const entity = new EntityBase(this.gl, name, this.canvas.width, this.canvas.height, textures);
 
             this.entitiesCache.push(entity);
             // attach to timeLine
@@ -270,31 +266,42 @@ export namespace Demolished {
             let timeFragment = this.timeFragments.find((tf: TimeFragment) => {
                 return time < tf.stop && time >= tf.start
             });
+            if (!timeFragment) return;
             if (timeFragment.hasLayers) {
 
-                timeFragment.css3Layers.forEach((cssLayer: CSS3Layer) => {
+                timeFragment.overlays.forEach((overlay: Overlay) => {
                     let layer = document.createElement("div");
-                    layer.id = cssLayer.name;
-
-                    cssLayer.classList.forEach ( (className:string) => {
-                            layer.classList.add(className);
+                    layer.id = overlay.name;
+                    overlay.classList.forEach((className: string) => {
+                        layer.classList.add(className);
                     });
+                    layer.innerHTML = overlay.markup;
 
-                    layer.innerHTML = cssLayer.markup;
-                
                     layer.classList.add("layer");
                     parent.appendChild(layer);
                 });
             }
 
+        
+            if(timeFragment)[
+                this.onNext({
+                d:  time - this.animationStartTime,
+                c: this.animationFrameCount,
+                t:  time - this.animationStartTime ,
+                fps: 1000 / (time  / this.animationFrameCount)
+            })
+            ]
+          
 
             return timeFragment;
         }
 
         start(time: number) {
+            this.animationFrameCount = 0;
             this.animationOffsetTime = time;
 
             this.currentTimeFragment = this.tryFindTimeFragment(time);
+          //  console.log("->", this.currentTimeFragment);
 
             this.animationStartTime = performance.now();
 
@@ -305,38 +312,6 @@ export namespace Demolished {
             this.onStart();
 
         }
-
-        autoCorrelateFloat(buf: Float32Array, sampleRate: number) {
-            var MIN_SAMPLES = 4;	// corresponds to an 11kHz signal
-            var MAX_SAMPLES = 1000; // corresponds to a 44Hz signal
-            var SIZE = 1000;
-            var best_offset = -1;
-            var best_correlation = 0;
-            var rms = 0;
-            if (buf.length < (SIZE + MAX_SAMPLES - MIN_SAMPLES))
-                return -1;  // Not enough data
-            for (var i = 0; i < SIZE; i++)
-                rms += buf[i] * buf[i];
-            rms = Math.sqrt(rms / SIZE);
-            for (var offset = MIN_SAMPLES; offset <= MAX_SAMPLES; offset++) {
-                var correlation = 0;
-                for (var i = 0; i < SIZE; i++) {
-                    correlation += Math.abs(buf[i] - buf[i + offset]);
-                }
-                correlation = 1 - (correlation / SIZE);
-                if (correlation > best_correlation) {
-                    best_correlation = correlation;
-                    best_offset = offset;
-                }
-            }
-            if ((rms > 0.1) && (best_correlation > 0.1)) {
-
-                //     console.log("f = " + sampleRate / best_offset + "Hz (rms: " + rms + " confidence: " + best_correlation + ")");
-                return sampleRate / best_offset;
-            } else return -1;
-            //   return sampleRate/best_offset;
-        }
-
 
         stop(): number {
             cancelAnimationFrame(this.animationFrameId);;
@@ -359,6 +334,7 @@ export namespace Demolished {
 
 
         private animate(time: number) {
+
             let animationTime = time - this.animationStartTime;
             this.animationFrameId = requestAnimationFrame((_time: number) => {
                 this.animate(_time);
@@ -371,27 +347,24 @@ export namespace Demolished {
                 this.audioAnalyser.getByteFrequencyData(freqArray);
                 this.updateTextureData(
                     this.fftTexture, 32, 32, freqArray);
-                this.parameters.freq = Utils.Array.average(freqArray);
-                // for debug-purpose
-                var fEl = document.querySelector("#freq");
-                fEl.textContent = Math.round(this.parameters.freq).toString();
+                this.uniforms.freq = Utils.Array.average(freqArray);
             }
 
-            // todo: Make this Entities an Map<EntityBase>
-            //  let entity: EnityBase = this.entities[this.currentEntity];
+         
+            if (this.currentTimeFragment) {
+                if (animationTime >= this.currentTimeFragment.stop) {
+                    this.currentTimeFragment = this.tryFindTimeFragment(time);
 
-            // if(!entity) throw "Could not find the entity " + this.currentEntity;
+                }
+                if( this.currentTimeFragment.transition){
+                     this.currentTimeFragment.transition.fadeIn(time);
+                    
+                }
 
-            if (animationTime >= this.currentTimeFragment.stop) {
-                this.currentTimeFragment = this.tryFindTimeFragment(time);
-
-                // is there css3 layers / 2d canvas elemets to set up?
-
-
+                this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
             }
-            this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
         }
-      
+
         private removeLayers(parent: Element) {
             let layers = document.querySelectorAll(".layer");
             for (let i = 0; i < layers.length; i++)
@@ -400,7 +373,7 @@ export namespace Demolished {
 
         private surfaceCorners() {
             if (this.gl) {
-                this.width = this.height * this.parameters.screenWidth / this.parameters.screenHeight;
+                this.width = this.height * this.uniforms.screenWidth / this.uniforms.screenHeight;
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.webGLbuffer);
                 this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
                     this.centerX - this.width, this.centerY - this.height,
@@ -428,16 +401,13 @@ export namespace Demolished {
             this.canvas.style.width = window.innerWidth + 'px';
             this.canvas.style.height = window.innerHeight + 'px';
 
-            this.parameters.screenWidth = width;
-            this.parameters.screenHeight = height;
+            this.uniforms.screenWidth = width;
+            this.uniforms.screenHeight = height;
 
             this.surfaceCorners();
-
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-
             let layers = document.querySelectorAll(".layer");
             for (var i = 0; i < layers.length; i++) {
-                //console.log(layers[i]);
                 let el = layers[i] as HTMLCanvasElement;
                 el.width = width;
                 el.height = height;
@@ -447,20 +417,22 @@ export namespace Demolished {
         }
 
 
-        renderEntities(ent: EnityBase, ts: number) {
+      
+        renderEntities(ent: EntityBase, ts: number) {
+
 
             let gl = this.gl;
 
-            this.parameters.time = ts; // Date.now() - this.parameters.startTime;
-
+            this.uniforms.time = ts; // Date.now() - this.parameters.startTime;
             gl.useProgram(ent.currentProgram);
+            gl.uniform1f(ent.uniformsCache.get('bpm'), this.uniforms.bpm);
+            gl.uniform1f(ent.uniformsCache.get("freq"), this.uniforms.freq);
+            gl.uniform1f(ent.uniformsCache.get("elapsedTime"),((this.uniforms.time - this.currentTimeFragment.start) / 1000  ) % 60);
 
-            gl.uniform1f(ent.uniformsCache.get('bpm'), this.parameters.bpm);
-            gl.uniform1f(ent.uniformsCache.get("freq"), this.parameters.freq);
 
-            gl.uniform1f(ent.uniformsCache.get('time'), this.parameters.time / 1000);
-            gl.uniform2f(ent.uniformsCache.get('mouse'), this.parameters.mouseX, this.parameters.mouseY);
-            gl.uniform2f(ent.uniformsCache.get('resolution'), this.parameters.screenWidth, this.parameters.screenHeight);
+            gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
+            gl.uniform2f(ent.uniformsCache.get('mouse'), this.uniforms.mouseX, this.uniforms.mouseY);
+            gl.uniform2f(ent.uniformsCache.get('resolution'), this.uniforms.screenWidth, this.uniforms.screenHeight);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
             gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
@@ -473,8 +445,9 @@ export namespace Demolished {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
 
-            // Should be fftSampler
             gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
+
+            gl.uniform1i(gl.getUniformLocation(ent.currentProgram,"backbuffer"),1);
 
             let offset = 2;
             ent.assets.forEach((asset: EntityTexture, index: number) => {
@@ -494,9 +467,15 @@ export namespace Demolished {
 
             ent.swapBuffers();
 
+            this.animationFrameCount ++;
+
+            let t = (this.uniforms.time - this.currentTimeFragment.start) / 1000 % 60 ;
+         
             this.onFrame({
-                ts: this.animationOffsetTime + ts,
-                raflId: this.animationFrameId
+                d: ts,
+                c: this.animationFrameCount,
+                t: t ,
+                fps: 1000 / (t  / this.animationFrameCount)
             });
 
         }

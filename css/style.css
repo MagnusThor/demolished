@@ -4,19 +4,12 @@
 		padding: 0;
 		overflow: hidden;
 		font-family: 'Roboto';
+		cursor: none;
 	}
-
-	input[type=checkbox],
-	input[type=radio] {
-		vertical-align: middle;
-		position: relative;
-		bottom: 1px;
-	}
-
-	input[type=radio] {
-		bottom: 2px;
-	}
-
+html{
+	cursor: none;
+}
+	
 	.hide {
 		display: none;
 	}
@@ -25,24 +18,7 @@
 		background: #fff;
 		opacity: 0.6;
 	}
-
-	audio {
-		position: absolute;
-		top: 50px;
-	}
-
-	mark {
-		position: absolute;
-		bottom: 10px;
-		left: 10px;
-		padding: 10px;
-	}
-
-	time {
-		position: absolute;
-		right: 100px;
-	}
-
+	
 	canvas {
 		display: block;
 		position: absolute;
@@ -50,16 +26,97 @@
 		left: 0;
 	}
 
-	#debug {
-		width: 300px;
-		height: 300px;
-		background-color: rgba(255, 255, 255, 0.5);
-		position: absolute;
-		top: 10px;
-		left: 10px;
-	}
+	.loader {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  -webkit-transform-origin: 50% 50%;
+          transform-origin: 50% 50%;
+  -webkit-transform: rotate(90deg) translate(-50%, 0%);
+          transform: rotate(90deg) translate(-50%, 0%);
+  font-size: 50px;
+  width: 1em;
+  height: 3em;
+  color: #fff;
+}
+.loader .paw {
+  width: 1em;
+  height: 1em;
+  -webkit-animation: 2050ms pawAnimation ease-in-out infinite;
+          animation: 2050ms pawAnimation ease-in-out infinite;
+  opacity: 0;
+}
+.loader .paw svg {
+  width: 100%;
+  height: 100%;
+}
+.loader .paw .icon {
+  fill: currentColor;
+}
+.loader .paw:nth-child(odd) {
+  -webkit-transform: rotate(-10deg);
+          transform: rotate(-10deg);
+}
+.loader .paw:nth-child(even) {
+  -webkit-transform: rotate(10deg) translate(125%, 0);
+          transform: rotate(10deg) translate(125%, 0);
+}
+.loader .paw:nth-child(1) {
+  -webkit-animation-delay: 1.25s;
+          animation-delay: 1.25s;
+}
+.loader .paw:nth-child(2) {
+  -webkit-animation-delay: 1s;
+          animation-delay: 1s;
+}
+.loader .paw:nth-child(3) {
+  -webkit-animation-delay: 0.75s;
+          animation-delay: 0.75s;
+}
+.loader .paw:nth-child(4) {
+  -webkit-animation-delay: 0.5s;
+          animation-delay: 0.5s;
+}
+.loader .paw:nth-child(5) {
+  -webkit-animation-delay: 0.25s;
+          animation-delay: 0.25s;
+}
+.loader .paw:nth-child(6) {
+  -webkit-animation-delay: 0s;
+          animation-delay: 0s;
+}
+.no-cssanimations .loader .paw {
+  opacity: 1;
+}
 
-	button#full-screen {
+@-webkit-keyframes pawAnimation {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes pawAnimation {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+
+
+
+	#full-screen {
 		position: absolute;
 		top: 50%;
 		right: 25%;
@@ -70,167 +127,58 @@
 		width: 50%;
 	}
 
-	.toolbar {
-		position: absolute;
-		top: 0px;
-		width: 100%;
-		z-index: 1000;
-		color: #fff;
-		background: rgba(255, 255, 255, 0.2);
-		padding: 10px;
-	}
-
-	#recording {
-		position: relative;
-		display: inline-block;
-		left: 20px;
-	}
-
-	.demolished-timeline {
-		position: absolute;
-		bottom: 0px;
-		height: 34px;
-		background: rgba(255, 255, 255, 0.5);
-		width: 100%;
-		margin: 0;
-		padding: 0;
-	}
-
-	.demolished-timeline input {
-		width: 100%;
-		height: 20px;
-		position: absolute;
-		z-index: 1000;
-		-webkit-appearance: none;
-		background: none;
-		top: 6px;
-	}
-
-	.timeline-entry {
-		float: left;
-		position: absolute;
-		z-index: 0;
-		height: 34px;
-		opacity: 0.4;
-		border-right: 1px solid #fff;
-	}
-
-	.timeline-callout:hover {
-		display: inherit;
-	}
-
-	.timeline-callout {
-		position: relative;
-		background: #876bd5;
-		border: 1px solid #d4d4d4;
-		top: -80px;
-		min-height: 40px;
-		margin: 10px;
-		color: #fff;
-	}
-
-	.timeline-callout:after,
-	.timeline-callout:before {
-		top: 100%;
-		left: 50%;
-		border: solid transparent;
-		content: " ";
-		height: 0;
-		width: 0;
-		position: absolute;
-		pointer-events: none;
-	}
-
-	.timeline-callout:after {
-		border-color: rgba(135, 107, 213, 0);
-		border-top-color: #876bd5;
-		border-width: 20px;
-		margin-left: -20px;
-	}
-
-	.timeline-callout:before {
-		border-color: rgba(212, 212, 212, 0);
-		border-top-color: #d4d4d4;
-		border-width: 21px;
-		margin-left: -21px;
-	}
-
-	.strobe {
-		width: 100%;
-		position: absolute;
-		z-index: 1000;
-		background: rgba(255, 255, 255, 0.99);
-		height: 100%;
-	}
-
-	#freq {
-		background: #d4d4d4;
-		opacity: 0.5;
-		color: #fff;
-		top: 60px;
-		right: 10px;
-		z-index: 1000;
-		position: absolute;
-		padding: 10px;
-		font-size: 100px;
-		min-width: 120px;
-		text-align: center;
-	}
-
 	div.layer {
 		width: 100%;
 		height: 100%;
 		position: absolute;
 		left: 0;
 		top: 0;
-		z-index: 1000;
 	}
+
 	/*
 	Layers
 	*/
-
-	.norrland {
-				
-		background-image: url('../assets/norrlandskt_vansinne.png');
-		background-size: cover;
-		/*animation: xfadeIn 0.5s 1;
-		animation-fill-mode: forwards;
-		animation-delay: 5s;*/
-		z-index: 100;
+	.vingette {
+		position: absolute;
+		left: 0px;
+		top: 0px;
+		z-index: 10000;
+		height: 100%;
+		width: 100%;
+		background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.5) 100%);
 	}
-
+	.seipa{
+		filter: sepia(100%)
+	}
 	.logo {
-				
-		background-image: url('../assets/logo.png');
+		/*background-image: url('../assets/logo.png');
 		background-size: cover;
-	
 		z-index: 100;
+		animation: xfadeIn 0.5s 1;	
+		animation-delay: 0.5s;
+		animation-fill-mode: forwards;*/
+		
 	}
 
-	.snow{
-		animation: fadeIt 5s 1;
-		animation-fill-mode: forwards;
-		animation-delay: 15s;
+	.logo p {
+		font-size: 48pt;
+		color: #fff;
+		text-align: center;
+		text-transform: uppercase;
+		font-weight: 300;
+		line-height: 1.4;
+		position: relative;
+		top: 50%;
+		transform: translateY(-50%);
 		z-index: 100;
-    }
+	}
 
 	@keyframes fadeIt {
-	0%   { background-color: #FFFFFF; }
-	50%  { background-color: #333333; }
-	100% { background-color: #FFFFFF; }
+		0%   { background-color: #FFFFFF; }
+		50%  { background-color: #333333; }
+		100% { background-color: #FFFFFF; }
 	}
 
-	.snus {
-		background-image: url('../assets/fueled.png');
-		background-size: cover;
-		z-index: 100;
-	}
-	.kvist {
-		background-image: url('../assets/overlay1.png');
-		background-size: cover;
-		z-index: 100;
-		filter :invert(100%);
-	}
 
 	.delay1s {
 		animation-delay: 1s;
@@ -248,39 +196,7 @@
 		animation-delay: 1s;
 	}
 
-	.forest p {
-		font-size: 48pt;
-		color: #fff;
-		text-align: center;
-		text-transform: uppercase;
-		font-weight: 300;
-		line-height: 1.4;
-		position: relative;
-		top: 50%;
-		transform: translateY(-50%);
-		/*animation: xfadeOut 0.5s 1;
-		animation-fill-mode: forwards;
-		animation-delay: 18s;*/
-		z-index: 100;
-	}
-
-	.vingette {
-		position: absolute;
-		left: 0px;
-		top: 0px;
-		z-index: 5;
-		height: 100%;
-		width: 100%;
-		background: -moz-radial-gradient(center, ellipse cover, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.5) 100%);
-		/* FF3.6-15 */
-		background: -webkit-radial-gradient(center, ellipse cover, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.5) 100%);
-		/* Chrome10-25,Safari5.1-6 */
-		background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.5) 100%);
-		/* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-	}
-	/*
-	Layers
-	*/
+	
 
 	@keyframes xfadeOut {
 		from {

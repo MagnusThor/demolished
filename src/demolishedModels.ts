@@ -1,11 +1,11 @@
 ;
-import { EnityBase} from './demolishedEntity'
+import { EntityBase} from './demolishedEntity'
+import { DemloshedTransitionBase } from "./demolishedTransitions";
 
 export class RenderTarget {
     constructor(public frameBuffer: WebGLFramebuffer, public renderBuffer: WebGLFramebuffer,
         public texture: WebGLTexture) { }
 }
-
 /**
  * 
  * 
@@ -18,9 +18,6 @@ export class Graph {
     name: string;
     timeline: Array<TimeFragment>;
 }
-
-
-
 /**
  * 
  * 
@@ -28,29 +25,38 @@ export class Graph {
  * @class TimeFragment
  */
 export class TimeFragment {
-    entityShader: EnityBase;
-    css3Layers: Array<CSS3Layer>;
+
+    entityShader: EntityBase;
+    overlays: Array<Overlay>; // overlays
+    useTransitions: boolean
+    transition: DemloshedTransitionBase;
+
     constructor(public entity: string, public start: number, public stop: number,
-     css3Layers?:Array<CSS3Layer>
+    useTransitions: boolean,
+     overlays?:Array<Overlay>,
     ) {
-        if(css3Layers instanceof Array) {
-            this.css3Layers = css3Layers;}
-            else this.css3Layers = new Array<CSS3Layer>();
+        this.useTransitions = useTransitions;
+        if(overlays instanceof Array) {
+            this.overlays = overlays;}
+            else this.overlays = new Array<Overlay>();
     }
-    setEntity(ent: EnityBase) {
+    setEntity(ent: EntityBase) {
         this.entityShader = ent;
+         if(this.useTransitions){
+
+                this.transition = new DemloshedTransitionBase(this.entityShader);
+        }
     }
     get hasLayers() {
-            return this.css3Layers.length > 0;
+            return this.overlays.length > 0;
     }
 }
 
-export class CSS3Layer{
+export class Overlay{
         markup:string
         constructor(public name:string,public classList: Array<string>){
         }
 }
-
 /**
  * Uniforms are global variables  passed to the shaders program's 
  * 
@@ -63,6 +69,8 @@ export class Uniforms {
     mouseY: number;
     screenWidth: number;
     screenHeight: number;
+
+    alpha:number;
     
     bpm: number;
     freq: number;

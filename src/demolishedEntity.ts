@@ -1,4 +1,5 @@
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './demolishedModels'
+import loadResource from './demolishedLoader'
 /**
  * 
  * 
@@ -10,15 +11,18 @@ export class EntityTexture {
     constructor(public image: any, public name: string, public width: number, public height: number, public assetType: number) { }
 }
 
-export class EnityBase {
+export class EntityBase {
 
     currentProgram: WebGLProgram
+
     vertexShader: string;
     fragmetShader: string
+    impl: string;
 
     buffer: WebGLBuffer;
     vertexPosition: number;
     positionAttribute: number;
+
 
     target: RenderTarget;
     backTarget: RenderTarget;
@@ -74,15 +78,16 @@ export class EnityBase {
         let urls = new Array<string>();
         urls.push("entities/" + this.name + "/fragment.glsl");
         urls.push("entities/" + this.name + "/vertex.glsl");
-
-        //  urls.push("entities/" + this.name + "/uniforms.json");
+       
         return Promise.all(urls.map((url: string) =>
-            fetch(url).then(resp => resp.text())
+            loadResource(url).then(resp => resp.text())
         )).then(result => {
             this.fragmetShader = result[0];
             this.vertexShader = result[1];
+            
             return true;
         }).catch((reason) => {
+           
             this.onError(reason);
             return false;
         });
@@ -125,6 +130,7 @@ export class EnityBase {
             let info = gl.getProgramInfoLog(this.currentProgram);
             this.onError(info);
         }
+        // todo: Refactor
 
         this.cacheUniformLocation('bpm');
         this.cacheUniformLocation('freq');
@@ -133,10 +139,14 @@ export class EnityBase {
         this.cacheUniformLocation("fft");
 
         this.cacheUniformLocation('time');
+        this.cacheUniformLocation("elapsedTime");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
 
-        this.positionAttribute = 0;// gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
+        this.cacheUniformLocation("backbuffer");
+
+        this.positionAttribute = 0; 
+        // gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
         gl.enableVertexAttribArray(this.positionAttribute);
 
         this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");

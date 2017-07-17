@@ -14,6 +14,9 @@ uniform float freq_data[32];
 uniform float freq_time[32];
 
 
+uniform sampler2D backbuffer;
+
+
 #define EPS 1e-3
 #define PI 3.1415
 #define INF 9e9
@@ -99,9 +102,6 @@ void main(void) {
 
 	vec3 lightPos = vec3(1.0);
 	
-	
- 
-
 	vec3 ro = vec3(sin(time),-.2,cos(time));
 	vec3 rd = normalize(rotate(vec3(uv,-1.), vec3(0.3,sin(time),0.0)));
 	

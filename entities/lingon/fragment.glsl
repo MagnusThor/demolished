@@ -52,7 +52,7 @@ void main(){
     float th = sin(time*0.1)*sin(time*0.13)*4.;
     float cs = cos(th), si = sin(th);
     uv *= mat2(cs, -si, si, cs);
-    
+
 
     vec3 sp = vec3(uv, 0); 
     vec3 ro = vec3(0, 0, -1); 
@@ -70,8 +70,6 @@ void main(){
     
     
     vec3 col = vec3(0);
-    
-    
     
     
     float f=0., fx=0., fy=0.;

@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var DemolishedRecorder = (function () {
     function DemolishedRecorder(videoTrack, audioTrack) {
         var _this = this;
@@ -6,7 +7,8 @@ var DemolishedRecorder = (function () {
         this.audioTrack = audioTrack;
         this.mediaStream = new MediaStream([videoTrack, audioTrack]);
         this.recorder = new MediaRecorder(this.mediaStream, {
-            mimeType: 'video/webm;codecs=vp9' });
+            mimeType: 'video/webm;codecs=vp9'
+        });
         this.recorder.ondataavailable = function (e) {
             _this.data.push(e.data);
             console.log(_this.data.length);

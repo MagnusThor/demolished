@@ -1,11 +1,7 @@
 "use strict";
-var demolishedModels_1 = require('./demolishedModels');
-/**
- *
- *
- * @export
- * @class EntityTexture
- */
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolishedModels_1 = require("./demolishedModels");
+var demolishedLoader_1 = require("./demolishedLoader");
 var EntityTexture = (function () {
     function EntityTexture(image, name, width, height, assetType) {
         this.image = image;
@@ -17,8 +13,8 @@ var EntityTexture = (function () {
     return EntityTexture;
 }());
 exports.EntityTexture = EntityTexture;
-var EnityBase = (function () {
-    function EnityBase(gl, name, x, y, assets) {
+var EntityBase = (function () {
+    function EntityBase(gl, name, x, y, assets) {
         var _this = this;
         this.gl = gl;
         this.name = name;
@@ -32,7 +28,7 @@ var EnityBase = (function () {
             _this.backTarget = _this.createRenderTarget(_this.x, _this.y);
         });
     }
-    EnityBase.prototype.createRenderTarget = function (width, height) {
+    EntityBase.prototype.createRenderTarget = function (width, height) {
         var gl = this.gl;
         var target = new demolishedModels_1.RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
         gl.bindTexture(gl.TEXTURE_2D, target.texture);
@@ -51,14 +47,13 @@ var EnityBase = (function () {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         return target;
     };
-    EnityBase.prototype.loadEntityShaders = function () {
+    EntityBase.prototype.loadEntityShaders = function () {
         var _this = this;
         var urls = new Array();
         urls.push("entities/" + this.name + "/fragment.glsl");
         urls.push("entities/" + this.name + "/vertex.glsl");
-        //  urls.push("entities/" + this.name + "/uniforms.json");
         return Promise.all(urls.map(function (url) {
-            return fetch(url).then(function (resp) { return resp.text(); });
+            return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });
         })).then(function (result) {
             _this.fragmetShader = result[0];
             _this.vertexShader = result[1];
@@ -68,10 +63,10 @@ var EnityBase = (function () {
             return false;
         });
     };
-    EnityBase.prototype.onError = function (err) {
+    EntityBase.prototype.onError = function (err) {
         console.error(err);
     };
-    EnityBase.prototype.createTextureFromData = function (width, height, image) {
+    EntityBase.prototype.createTextureFromData = function (width, height, image) {
         var gl = this.gl;
         var texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -82,7 +77,7 @@ var EnityBase = (function () {
         gl.bindTexture(gl.TEXTURE_2D, null);
         return texture;
     };
-    EnityBase.prototype.initShader = function () {
+    EntityBase.prototype.initShader = function () {
         var _this = this;
         var gl = this.gl;
         this.buffer = gl.createBuffer();
@@ -101,9 +96,11 @@ var EnityBase = (function () {
         this.cacheUniformLocation("sampleRate");
         this.cacheUniformLocation("fft");
         this.cacheUniformLocation('time');
+        this.cacheUniformLocation("elapsedTime");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
-        this.positionAttribute = 0; // gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
+        this.cacheUniformLocation("backbuffer");
+        this.positionAttribute = 0;
         gl.enableVertexAttribArray(this.positionAttribute);
         this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
         gl.enableVertexAttribArray(this.vertexPosition);
@@ -113,29 +110,27 @@ var EnityBase = (function () {
                     asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
                     break;
                 case 1:
-                    //  asset.texture = this.createTextureFromFloat32(32,32,new Float32Array(32*32*4));
                     break;
                 default:
                     throw "unknown asset type";
             }
         });
-        // this.createTextureFromFloat32(1,2,new Float32Array([255,0,0,255]));
         gl.useProgram(this.currentProgram);
     };
-    EnityBase.prototype.cacheUniformLocation = function (label) {
+    EntityBase.prototype.cacheUniformLocation = function (label) {
         this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
     };
-    EnityBase.prototype.swapBuffers = function () {
+    EntityBase.prototype.swapBuffers = function () {
         var tmp = this.target;
         this.target = this.backTarget;
         this.backTarget = tmp;
     };
-    EnityBase.prototype.createShader = function (gl, src, type) {
+    EntityBase.prototype.createShader = function (gl, src, type) {
         var shader = gl.createShader(type);
         gl.shaderSource(shader, src);
         gl.compileShader(shader);
         return shader;
     };
-    return EnityBase;
+    return EntityBase;
 }());
-exports.EnityBase = EnityBase;
+exports.EntityBase = EntityBase;

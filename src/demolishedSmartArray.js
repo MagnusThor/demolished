@@ -1,37 +1,44 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
 var SmartArray = (function (_super) {
     __extends(SmartArray, _super);
     function SmartArray(array) {
-        var _this = this;
-        _super.call(this);
-        this.take = function (n) { return _this.splice(_this.currentIndex, n); };
-        this.skip = function (x) { return _this.currentIndex = x; };
-        this.first = function () { return _this.dataArray[0]; };
-        this.add = function (x, y) { return x + y; };
-        this.sum = function (xs) { return xs.reduce(_this.add, 0); };
-        this.average = function (xs) { return xs[0] === undefined ? NaN : _this.sum(xs) / xs.length; };
-        this.delta = function (_a) {
+        var _this = _super.call(this) || this;
+        _this.take = function (n) { return _this.splice(_this.currentIndex, n); };
+        _this.skip = function (x) { return _this.currentIndex = x; };
+        _this.first = function () { return _this.dataArray[0]; };
+        _this.add = function (x, y) { return x + y; };
+        _this.sum = function (xs) { return xs.reduce(_this.add, 0); };
+        _this.average = function (xs) { return xs[0] === undefined ? NaN : _this.sum(xs) / xs.length; };
+        _this.delta = function (_a) {
             var x = _a[0], xs = _a.slice(1);
             return xs.reduce(function (_a, x) {
                 var acc = _a[0], last = _a[1];
                 return [
-                    acc.concat([x - last]), x
+                    acc.concat([x - last]),
+                    x
                 ];
             }, [
                 [], x
             ])[0];
         };
         if (array instanceof Array) {
-            this.dataArray = array;
+            _this.dataArray = array;
         }
         else
-            this.dataArray = new Array();
-        this.currentIndex = 0;
+            _this.dataArray = new Array();
+        _this.currentIndex = 0;
+        return _this;
     }
     Object.defineProperty(SmartArray.prototype, "mode", {
         get: function () {

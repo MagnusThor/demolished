@@ -1,5 +1,7 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 ;
+var demolishedTransitions_1 = require("./demolishedTransitions");
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -9,41 +11,33 @@ var RenderTarget = (function () {
     return RenderTarget;
 }());
 exports.RenderTarget = RenderTarget;
-/**
- *
- *
- * @export
- * @class Graph
- */
 var Graph = (function () {
     function Graph() {
     }
     return Graph;
 }());
 exports.Graph = Graph;
-/**
- *
- *
- * @export
- * @class TimeFragment
- */
 var TimeFragment = (function () {
-    function TimeFragment(entity, start, stop, css3Layers) {
+    function TimeFragment(entity, start, stop, useTransitions, overlays) {
         this.entity = entity;
         this.start = start;
         this.stop = stop;
-        if (css3Layers instanceof Array) {
-            this.css3Layers = css3Layers;
+        this.useTransitions = useTransitions;
+        if (overlays instanceof Array) {
+            this.overlays = overlays;
         }
         else
-            this.css3Layers = new Array();
+            this.overlays = new Array();
     }
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;
+        if (this.useTransitions) {
+            this.transition = new demolishedTransitions_1.DemloshedTransitionBase(this.entityShader);
+        }
     };
     Object.defineProperty(TimeFragment.prototype, "hasLayers", {
         get: function () {
-            return this.css3Layers.length > 0;
+            return this.overlays.length > 0;
         },
         enumerable: true,
         configurable: true
@@ -51,20 +45,14 @@ var TimeFragment = (function () {
     return TimeFragment;
 }());
 exports.TimeFragment = TimeFragment;
-var CSS3Layer = (function () {
-    function CSS3Layer(name, classList) {
+var Overlay = (function () {
+    function Overlay(name, classList) {
         this.name = name;
         this.classList = classList;
     }
-    return CSS3Layer;
+    return Overlay;
 }());
-exports.CSS3Layer = CSS3Layer;
-/**
- * Uniforms are global variables  passed to the shaders program's
- *
- * @export
- * @class Uniforms
- */
+exports.Overlay = Overlay;
 var Uniforms = (function () {
     function Uniforms(width, height) {
         this.screenWidth = width;
@@ -77,12 +65,6 @@ var Uniforms = (function () {
     return Uniforms;
 }());
 exports.Uniforms = Uniforms;
-/**
- *
- *
- * @export
- * @class Effect
- */
 var Effect = (function () {
     function Effect() {
         this.textures = new Array();
@@ -91,12 +73,6 @@ var Effect = (function () {
     return Effect;
 }());
 exports.Effect = Effect;
-/**
- *
- *
- * @export
- * @class AudioAnalyzerSettings
- */
 var AudioAnalyzerSettings = (function () {
     function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {
         this.fftSize = fftSize;
@@ -107,26 +83,9 @@ var AudioAnalyzerSettings = (function () {
     return AudioAnalyzerSettings;
 }());
 exports.AudioAnalyzerSettings = AudioAnalyzerSettings;
-/**
- *
- *
- * @export
- * @class AudioSettings
- */
 var AudioSettings = (function () {
     function AudioSettings() {
     }
     return AudioSettings;
 }());
 exports.AudioSettings = AudioSettings;
-//  "audioSettings": {
-//     "audioFile": "song.mp3",
-//     "audioAnalyzerSettings":{
-//         "fftSize": 8192,
-//         "smoothingTimeConstant": 0.85,
-//         "minDecibels": -100,
-//         "maxDecibels":-30
-//     },
-//     "duration": 211200,
-//     "bmp": 129
-// } 

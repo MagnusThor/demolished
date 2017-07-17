@@ -8,88 +8,49 @@
             "minDecibels": -30,
             "maxDecibels": -90
         },
-        "duration": 249600,
+        "duration": 133200,
         "bmp": 129
     },
-
     "timeline": [
         {
-            "css3Layers": [{
-                "classList": ["logo"],
+            "overlays": [{
                 "name": "logo",
-                "markup":""
-            }],
+                "classList" : ["logo"],
+                "markup": "<mark/>"
+            }
+            ],
+            "useTransitions":  false,
             "start": 0,
-            "stop": 2000,
-            "entity":"empty"
+            "stop": 2400,
+            "entity": "empty"
         },
-        
-        {
-            "css3Layers": [{
-                "classList": ["norrland"],
-                "name": "norrland",
-                "markup":""
-            },
-            {
-                "classList": ["vingette"],
-                "name": "vingette",
-                "markup":""
-            },
-            {
-                "classList": ["snow"],
-                "name": "snow",
-                "markup":""
-            }
+         {
+            "overlays": [],
+            "useTransitions":  false,
+            "start": 2400 ,
+            "stop": 49600,
+            "entity": "twister"
+        },
+         {
+            "overlays": [
+              
             ],
-            "entity": "norrland",
-            "start": 2000,
-            "stop": 20000
+            "useTransitions":  false,
+            "start": 49600,
+            "stop": 52100,
+            "entity": "empty"
         },
         {
-            "css3Layers": [{
-                "classList": ["snus"],
-                "name": "snus"
-            },{
-                "classList": ["vingette"],
-                "name": "vingette",
-                "markup":""
-            }
-            ],
-            "entity": "greensmoke",
-            "start": 20000,
-            "stop": 40000
-        },
-        {
-            "css3Layers": [{
-                "classList": ["kvist"],
-                "name": "kvist"
-            },{
-                "classList": ["vingette"],
-                "name": "vingette",
-                "markup":""
-            }
-            ],
-            "entity": "lingon",
-            "start": 40000,
-            "stop": 249600
-        }
-
+            "overlays": [],
+            "useTransitions":  false,
+            "start": 52100 ,
+            "stop": 133200,
+            "entity": "bridge"
+        } 
     ],
     "effects": [
-         {
+          {
             "name": "empty",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-         {
-            "name": "flakes",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-         {
-            "name": "bars",
             "description": "",
             "textures": [],
             "type:": 0
@@ -101,28 +62,23 @@
             "type:": 0
         },
         {
-            "name": "landscape",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-        {
-            "name": "aurora",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-         {
-            "name": "greensmoke",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },{
             "name": "lingon",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        }
+            "description": "shane's Shadertoy magic.",
+            "textures" : [],
+            "type" : 0
+        },
 
+         {
+            "name": "twister",
+            "description": "",
+            "textures" : [],
+            "type" : 0
+        },
+           {
+            "name": "bridge",
+            "description": "Someones magic",
+            "textures" : [],
+            "type" : 0
+        }
     ]
 }

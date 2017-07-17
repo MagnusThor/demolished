@@ -3,8 +3,10 @@ precision mediump float;
 #endif
 
 uniform float time;
+uniform float elapsedTime;
 uniform vec2 mouse;
 uniform vec2 resolution;
+uniform sampler2D backbuffer;
 
 float field(in vec3 p,float s) {
 	float strength = 7. + .03 * log(1.e-6 + fract(sin(time) * 99373.11));

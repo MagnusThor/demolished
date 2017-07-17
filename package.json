@@ -1,16 +1,27 @@
 {
   "name": "demolished",
   "version": "1.0.0",
-  "description": "",
-  "scripts": {
-    "server": "python -m SimpleHTTPServer",
-    "bundle": "webpack --w --config webpack.config.js",
-    "start": "npm run server && npm run bundle"
+  "description": "A demo created for the compo at High Coast Summer Hack  (HCH 2017) 2017",
+  "main": "main.js",
+  "author": {
+    "name": "Magnus Thor",
+    "email": "magnus.thor74@gmail.com"
   },
-  "author": "",
-  "license": "ISC",
+  "scripts": {
+    "bundle": "webpack --w --config webpack.config.js",
+    "debug": "./node_modules/.bin/electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "highcoasthack.demolished"
+  },
+  "license": "MIT",
   "devDependencies": {
+    "electron": "^1.6.11",
+    "electron-builder": "^19.13.0",
     "express": "^4.15.3",
     "webpack": "^2.4.1"
-  }
+  },
+  "dependencies": {}
 }
