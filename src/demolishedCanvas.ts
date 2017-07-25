@@ -20,7 +20,6 @@ export class DemolishedCanvas{
 
     public ctx:CanvasRenderingContext2D
 
-
     private entities: Array<BaseEntity2D>;
 
     constructor(public canvas:HTMLCanvasElement){

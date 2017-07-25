@@ -1,7 +1,7 @@
 {
   "name": "demolished",
   "version": "1.0.0",
-  "description": "A demo created for the compo at High Coast Summer Hack  (HCH 2017) 2017",
+  "description": "A demo created for the compo at High Coast Summer Hack npm tun (HCH 2017) 2017",
   "main": "main.js",
   "author": {
     "name": "Magnus Thor",
@@ -11,7 +11,7 @@
     "bundle": "webpack --w --config webpack.config.js",
     "debug": "./node_modules/.bin/electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder deb"
   },
   "build": {
     "appId": "highcoasthack.demolished"

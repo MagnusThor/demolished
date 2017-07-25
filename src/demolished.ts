@@ -3,6 +3,7 @@ import { SmartArray } from './demolishedSmartArray';
 import { EntityBase, EntityTexture } from './demolishedEntity'
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, Overlay, AudioSettings } from './demolishedModels'
 import loadResource from './demolishedLoader'
+import { DemolishedCanvas } from "./demolishedCanvas";
 
 export namespace Demolished {
 
@@ -71,11 +72,11 @@ export namespace Demolished {
                 return response.json();
             }).then((graph: Graph) => {
                 return graph;
-            })
+            });
         }
 
         constructor(public canvas: HTMLCanvasElement,
-            public timelineFile: string, ) {
+            public timelineFile: string,public simpleCanvas?:DemolishedCanvas ) {
 
             this.gl = this.getRendringContext();
 
@@ -118,8 +119,7 @@ export namespace Demolished {
                     this.audioAnalyser.smoothingTimeConstant = audioSettings.audioAnalyzerSettings.smoothingTimeConstant;
                     this.audioAnalyser.fftSize = audioSettings.audioAnalyzerSettings.fftSize
                     this.audioAnalyser.maxDecibels = audioSettings.audioAnalyzerSettings.minDecibels;
-                    this.audioAnalyser.minDecibels = audioSettings.audioAnalyzerSettings.maxDecibels;
-
+                    this.audioAnalyser.minDecibels = audioSettings.audioAnalyzerSettings.maxDecibels
                     graph.effects.forEach((effect: Effect) => {
 
                         let textures = Promise.all(effect.textures.map((texture: any) => {
@@ -130,6 +130,7 @@ export namespace Demolished {
                                 image.onload = () => {
                                     resolve(image);
                                 }
+                                console.log(texture);
                                 image.onerror = (err) => resolve(err);
                             }).then((image: HTMLImageElement) => {
                                 return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
@@ -362,6 +363,10 @@ export namespace Demolished {
                 }
 
                 this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
+                // is there any 2d  objets to render?
+
+
+
             }
         }
 

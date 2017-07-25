@@ -63,56 +63,11 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 6);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolished_1 = __webpack_require__(5);
-var demolishedCanvas_1 = __webpack_require__(1);
-var scroller_1 = __webpack_require__(4);
-var ExampleDemo = (function () {
-    function ExampleDemo() {
-        var _this = this;
-        var webGlCanvas = document.querySelector("#gl");
-        var canavs2d = document.querySelector("#canvas2d");
-        this.canvasRendering = new demolishedCanvas_1.DemolishedCanvas(canavs2d);
-        this.canvasRendering.addEntity(new scroller_1.Scroller2D(this.canvasRendering.ctx, "This is a scroller.... old and gold.."));
-        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, "entities/graph.json");
-        this.webGlrendering.onReady = function () {
-            _this.onReady();
-            window.setTimeout(function () {
-                document.querySelector(".loader").classList.add("hide");
-                _this.webGlrendering.start(0);
-                _this.canvasRendering.start(0);
-            }, 3000);
-        };
-        this.webGlrendering.onStop = function () {
-        };
-        this.webGlrendering.onStart = function () {
-        };
-        this.webGlrendering.onNext = function (frameInfo) {
-        };
-        window.onerror = function () {
-            _this.webGlrendering.stop();
-        };
-    }
-    ExampleDemo.prototype.onReady = function () { };
-    return ExampleDemo;
-}());
-exports.ExampleDemo = ExampleDemo;
-document.addEventListener("DOMContentLoaded", function () {
-    var demo = new ExampleDemo();
-});
-
-
-/***/ }),
-/* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -175,7 +130,7 @@ exports.DemolishedCanvas = DemolishedCanvas;
 
 
 /***/ }),
-/* 2 */
+/* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -261,14 +216,14 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
-var demolishedTransitions_1 = __webpack_require__(7);
+var demolishedTransitions_1 = __webpack_require__(8);
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -359,7 +314,7 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -375,7 +330,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedCanvas_1 = __webpack_require__(1);
+var demolishedCanvas_1 = __webpack_require__(0);
 var Scroller2D = (function (_super) {
     __extends(Scroller2D, _super);
     function Scroller2D(ctx, text) {
@@ -384,21 +339,17 @@ var Scroller2D = (function (_super) {
         _this.textWidth = 0;
         _this.y = 10;
         _this.x = 0;
-        _this.font = "12px Arial";
+        _this.font = "64px 'DoubletwoStudiosXXIIBlackmetalWarrior'";
         _this.x = ctx.canvas.width;
         ctx.fillStyle = "#FFFFFF";
-        _this.textWidth = ctx.measureText(_this.text).width;
+        _this.velocity = 3;
+        _this.textWidth = (ctx.measureText(_this.text).width);
         _this.active = true;
-        _this.y = ctx.canvas.height - 48;
+        _this.y = ctx.canvas.height - 24;
         return _this;
     }
     Scroller2D.prototype.update = function (time) {
-        if (this.textWidth + this.x < 0) {
-            this.x = this.ctx.canvas.width;
-        }
-        else {
-            this.x--;
-        }
+        this.x -= this.velocity;
         this.ctx.font = this.font;
         this.ctx.fillText(this.text, this.x, this.y);
     };
@@ -408,23 +359,65 @@ exports.Scroller2D = Scroller2D;
 
 
 /***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var DemolishedTrans = (function () {
+    function DemolishedTrans(parentEl, graph) {
+        this.parentEl = parentEl;
+        this.graph = graph;
+        this.parent = document.querySelector(parentEl);
+    }
+    DemolishedTrans.prototype.createTimeout = function (name, start, classes) {
+        var _this = this;
+        var i = setTimeout(function () {
+            classes.forEach(function (cssClass) {
+                _this.parent.classList.add(cssClass);
+            });
+            _this.parent.addEventListener("animationend", function () {
+                _this.parent.classList.remove(classes);
+            });
+        }, start);
+    };
+    DemolishedTrans.prototype.start = function (n) {
+        var _this = this;
+        this.graph.timeLine.forEach(function (el, i) {
+            _this.createTimeout(el.name, el.start, el.classes);
+        });
+    };
+    return DemolishedTrans;
+}());
+exports.DemolishedTrans = DemolishedTrans;
+var Trans = (function () {
+    function Trans() {
+    }
+    return Trans;
+}());
+exports.Trans = Trans;
+
+
+/***/ }),
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedUtils_1 = __webpack_require__(8);
-var demolishedEntity_1 = __webpack_require__(6);
-var demolishedModels_1 = __webpack_require__(3);
-var demolishedLoader_1 = __webpack_require__(2);
+var demolishedUtils_1 = __webpack_require__(9);
+var demolishedEntity_1 = __webpack_require__(7);
+var demolishedModels_1 = __webpack_require__(2);
+var demolishedLoader_1 = __webpack_require__(1);
 var Demolished;
 (function (Demolished) {
     var Rendering = (function () {
-        function Rendering(canvas, timelineFile) {
+        function Rendering(canvas, timelineFile, simpleCanvas) {
             var _this = this;
             this.canvas = canvas;
             this.timelineFile = timelineFile;
+            this.simpleCanvas = simpleCanvas;
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
@@ -462,6 +455,7 @@ var Demolished;
                                 image.onload = function () {
                                     resolve(image);
                                 };
+                                console.log(texture);
                                 image.onerror = function (err) { return resolve(err); };
                             }).then(function (image) {
                                 return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
@@ -760,8 +754,90 @@ var Demolished;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedModels_1 = __webpack_require__(3);
-var demolishedLoader_1 = __webpack_require__(2);
+var demolished_1 = __webpack_require__(5);
+var demolishedCanvas_1 = __webpack_require__(0);
+var scroller_1 = __webpack_require__(3);
+var demolihedTrans_1 = __webpack_require__(4);
+var scrollText = "This is fucking it, we love and support sami terrorism but hate everyting else, maybe we can save an artic fox just because it is evil. Barbie is fucking wasted on norrlaendskt haembrant and russian krokodil.  Speedfisters is going to die by our knife. Norrland is filling our souls with the deepest insanity and hate towards everything that can die. Spraeng bort allt soeder om Dalaelven! Djaevla mesar!   Fuck this shit! It's time to go out in the northern wilderness and become one with all the fucking insane bears and wolves. All that will be left is bloody corpses, ready for nature to fuck with all it's satanic evil.  btw, fuck a raindeer.  spitvaelling and blodkams!        ";
+var HCHDemo = (function () {
+    function HCHDemo() {
+        var _this = this;
+        this.transitions = new demolihedTrans_1.DemolishedTrans("#trans", { timeLine: [
+                {
+                    name: "intro",
+                    classes: ["elk",],
+                    start: 12500
+                },
+                {
+                    name: "skog",
+                    classes: ["elk"],
+                    start: 28500
+                },
+                {
+                    name: "blod",
+                    classes: ["elk"],
+                    start: 42500
+                },
+                {
+                    name: "ren",
+                    classes: ["elk"],
+                    start: 55750
+                },
+                {
+                    name: "hund",
+                    classes: ["elk"],
+                    start: 87500
+                }
+            ]
+        });
+        var webGlCanvas = document.querySelector("#webgl");
+        var canavs2d = document.querySelector("#simpleCanvas");
+        this.canvasRendering = new demolishedCanvas_1.DemolishedCanvas(canavs2d);
+        this.canvasRendering.addEntity(new scroller_1.Scroller2D(this.canvasRendering.ctx, scrollText));
+        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, "entities/graph.json", this.canvasRendering);
+        this.webGlrendering.onReady = function () {
+            _this.onReady();
+            window.setTimeout(function () {
+                document.querySelector(".loader").classList.add("hide");
+                _this.webGlrendering.start(0);
+                window.setTimeout(function () {
+                    _this.canvasRendering.start(0);
+                }, 105 * 1000);
+                _this.transitions.start(0);
+            }, 2000);
+        };
+        this.webGlrendering.onStop = function () {
+        };
+        this.webGlrendering.onStart = function () {
+        };
+        this.webGlrendering.onNext = function (frameInfo) {
+        };
+        window.onerror = function () {
+            _this.webGlrendering.stop();
+        };
+        document.addEventListener("keyup", function (e) {
+            if (e.keyCode === 13)
+                console.log(_this.webGlrendering.uniforms);
+        });
+    }
+    HCHDemo.prototype.onReady = function () { };
+    return HCHDemo;
+}());
+exports.HCHDemo = HCHDemo;
+document.addEventListener("DOMContentLoaded", function () {
+    var demo = new HCHDemo();
+});
+
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolishedModels_1 = __webpack_require__(2);
+var demolishedLoader_1 = __webpack_require__(1);
 var EntityTexture = (function () {
     function EntityTexture(image, name, width, height, assetType) {
         this.image = image;
@@ -897,7 +973,7 @@ exports.EntityBase = EntityBase;
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -919,7 +995,7 @@ exports.DemloshedTransitionBase = DemloshedTransitionBase;
 
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

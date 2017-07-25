@@ -13,369 +13,313 @@ uniform vec2 mouse;
 uniform vec2 resolution;
 
 uniform sampler2D fft;
-uniform float bpm;
-uniform float freq;
-
-
 uniform sampler2D iChannel0;
 uniform sampler2D iChannel1;
-
-float freqs[4];
-
-vec4 textureLod(  sampler2D   s, vec2 c, float b)          { return texture2DLodEXT(s,c,b); }
-vec4 textureGrad( sampler2D   s, vec2 c, vec2 dx, vec2 dy) { return texture2DGradEXT(s,c,dx,dy); }
-	
-float FAR;    
-
-
-// Frequencies and amplitudes of the "path" function, used to shape the tunnel and guide the camera.
-const float freqA = 0.15/3.75;
-const float freqB = 0.25/2.75;
-const float ampA = 20.0;
-const float ampB = 4.0;
-
-mat2 rot2( float th ){ vec2 a = sin(vec2(1.5707963, 0) + th); return mat2(a, -a.y, a.x); }
-
-float hash( float n ){ return fract(cos(n)*45758.5453); }
-float hash( vec3 p ){ return fract(sin(dot(p, vec3(7, 157, 113)))*45758.5453); }
-
-float getGrey(vec3 p){ return dot(p, vec3(0.299, 0.587, 0.114)); }
-
-
-float smaxP(float a, float b, float s){
+/*
+    Abstract Corridor
+    -------------------
     
-    float h = clamp( 0.5 + 0.5*(a-b)/s, 0., 1.);
-    return mix(b, a, h) + h*(1.0-h)*s;
+    Using Shadertoy user Nimitz's triangle noise idea and his curvature function to fake an abstract, 
+	flat-shaded, point-lit, mesh look.
+
+	It's a slightly trimmed back, and hopefully, much quicker version my previous tunnel example... 
+	which is not interesting enough to link to. :)
+
+*/
+
+#define PI 3.1415926535898
+#define FH 1.0 // Floor height. Set it to 2.0 to get rid of the floor.
+
+// Grey scale.
+float getGrey(vec3 p){ return p.x*0.299 + p.y*0.587 + p.z*0.114; }
+
+// Non-standard vec3-to-vec3 hash function.
+vec3 hash33(vec3 p){ 
+    
+    float n = sin(dot(p, vec3(7, 157, 113)));    
+    return fract(vec3(2097152, 262144, 32768)*n); 
 }
 
-vec2 path(in float z){ 
-    return vec2(ampA*sin(z * freqA), ampB*cos(z * freqB) + 3.*(sin(z*0.025)  - 1.)); 
+// 2x2 matrix rotation.
+mat2 rot2(float a){
+    
+    float c = cos(a); float s = sin(a);
+	return mat2(c, s, -s, c);
 }
 
-float map(in vec3 p){
-    
-    float tx = textureLod(iChannel0, p.xz/16. + p.xy/80., 0.0).x;
-  
-    vec3 q = p*0.25;
-    float h = dot(sin(q)*cos(q.yzx), vec3(.222)) + dot(sin(q*1.5)*cos(q.yzx*1.5), vec3(.111));
-    
-    
-    float d = p.y + h*6.;
-  
-    q = sin(p*0.5 + h);
-    h = q.x*q.y*q.z;
-      p.xy -= path(p.z);
-    float tnl = 1.5 - length(p.xy*vec2(.33, .66)) + h + (1. - tx)*.25;
-   return smaxP(d, tnl, 2.) - tx*.5 + tnl*.8; 
-
-}
-
-
-
-float logBisectTrace(in vec3 ro, in vec3 rd){
-
-
-    float t = 0., told = 0., mid, dn;
-    float d = map(rd*t + ro);
-    float sgn = sign(d);
-
-    for (int i=0; i<96; i++){
-        if (sign(d) != sgn || d < 0.001 || t > FAR) break;
- 
-        told = t;
-        
-        t += step(d, 1.)*(log(abs(d) + 1.1) - d) + d;
-        
-        d = map(rd*t + ro);
-    }
-    if (sign(d) != sgn){
-    
-
-        dn = sign(map(rd*told + ro));
-        
-        vec2 iv = vec2(told, t); // Near, Far
-
-        for (int ii=0; ii<8; ii++){ 
-            mid = dot(iv, vec2(.5));
-            float d = map(rd*mid + ro);
-            if (abs(d) < 0.001)break;
-            iv = mix(vec2(iv.x, mid), vec2(mid, iv.y), step(0.0, d*dn));
-        }
-
-        t = mid; 
-        
-    }
-    
-    //if (abs(d) < PRECISION) t += d;
-
-    return min(t, FAR);
-}
-
-
-// Tetrahedral normal, courtesy of IQ.
-vec3 normal(in vec3 p)
-{  
-    vec2 e = vec2(-1., 1.)*0.001;   
-	return normalize(e.yxx*map(p + e.yxx) + e.xxy*map(p + e.xxy) + 
-					 e.xyx*map(p + e.xyx) + e.yyy*map(p + e.yyy) );   
-}
-
-
-// Tri-Planar blending function. Based on an old Nvidia writeup:
-// GPU Gems 3 - Ryan Geiss: http://http.developer.nvidia.com/GPUGems3/gpugems3_ch01.html
+// Tri-Planar blending function. Based on an old Nvidia tutorial.
 vec3 tex3D( sampler2D tex, in vec3 p, in vec3 n ){
-   
-    n = max(n*n, 0.001);
+  
+    n = max((abs(n) - 0.2)*7., 0.001); // max(abs(n), 0.001), etc.
     n /= (n.x + n.y + n.z );  
     
 	return (texture2D(tex, p.yz)*n.x + texture2D(tex, p.zx)*n.y + texture2D(tex, p.xy)*n.z).xyz;
 }
 
+// The triangle function that Shadertoy user Nimitz has used in various triangle noise demonstrations.
+// See Xyptonjtroz - Very cool. Anyway, it's not really being used to its full potential here.
+vec3 tri(in vec3 x){return abs(x-floor(x)-.5);} // Triangle function.
 
+// The function used to perturb the walls of the cavern: There are infinite possibities, but this one is 
+// just a cheap...ish routine - based on the triangle function - to give a subtle jaggedness. Not very fancy, 
+// but it does a surprizingly good job at laying the foundations for a sharpish rock face. Obviously, more 
+// layers would be more convincing. However, this is a GPU-draining distance function, so the finer details 
+// are bump mapped.
+float surfFunc(in vec3 p){
+    
+	return dot(tri(p*0.5 + tri(p*0.25).yzx), vec3(0.666));
+}
+
+
+// The path is a 2D sinusoid that varies over time, depending upon the frequencies, and amplitudes.
+vec2 path(in float z){ float s = sin(z/24.)*cos(z/12.); return vec2(s*12., 0.); }
+
+// Standard tunnel distance function with some perturbation thrown into the mix. A floor has been 
+// worked in also. A tunnel is just a tube with a smoothly shifting center as you traverse lengthwise. 
+// The walls of the tube are perturbed by a pretty cheap 3D surface function.
+float map(vec3 p){
+
+    // Square tunnel.
+    // For a square tunnel, use the Chebyshev(?) distance: max(abs(tun.x), abs(tun.y))
+    vec2 tun = abs(p.xy - path(p.z))*vec2(0.5, 0.7071);
+    float n = 1.- max(tun.x, tun.y) + (0.5-surfFunc(p));
+    return min(n, p.y + FH);
+
+/*    
+    // Round tunnel.
+    // For a round tunnel, use the Euclidean distance: length(tun.y)
+    vec2 tun = (p.xy - path(p.z))*vec2(0.5, 0.7071);
+    float n = 1.- length(tun) + (0.5-surfFunc(p));
+    return min(n, p.y + FH);  
+*/
+    
+/*
+    // Rounded square tunnel using Minkowski distance: pow(pow(abs(tun.x), n), pow(abs(tun.y), n), 1/n)
+    vec2 tun = abs(p.xy - path(p.z))*vec2(0.5, 0.7071);
+    tun = pow(tun, vec2(4.));
+    float n =1.-pow(tun.x + tun.y, 1.0/4.) + (0.5-surfFunc(p));
+    return min(n, p.y + FH);
+*/
+ 
+}
+
+// Texture bump mapping. Four tri-planar lookups, or 12 texture lookups in total.
 vec3 doBumpMap( sampler2D tex, in vec3 p, in vec3 nor, float bumpfactor){
    
     const float eps = 0.001;
-    vec3 grad = vec3( getGrey(tex3D(tex, vec3(p.x-eps, p.y, p.z), nor)),
-                      getGrey(tex3D(tex, vec3(p.x, p.y-eps, p.z), nor)),
-                      getGrey(tex3D(tex, vec3(p.x, p.y, p.z-eps), nor)));
-    
-    grad = (grad - getGrey(tex3D(tex,  p , nor)))/eps; 
-            
+    float ref = getGrey(tex3D(tex,  p , nor));                 
+    vec3 grad = vec3( getGrey(tex3D(tex, vec3(p.x-eps, p.y, p.z), nor))-ref,
+                      getGrey(tex3D(tex, vec3(p.x, p.y-eps, p.z), nor))-ref,
+                      getGrey(tex3D(tex, vec3(p.x, p.y, p.z-eps), nor))-ref )/eps;
+             
     grad -= nor*dot(nor, grad);          
                       
     return normalize( nor + grad*bumpfactor );
 	
 }
-float softShadow(in vec3 ro, in vec3 rd, in float start, in float end, in float k){
 
-    float shade = 1.0;
-    const int maxIterationsShad = 10; 
+// Surface normal.
+vec3 getNormal(in vec3 p) {
+	
+	const float eps = 0.001;
+	return normalize(vec3(
+		map(vec3(p.x+eps,p.y,p.z))-map(vec3(p.x-eps,p.y,p.z)),
+		map(vec3(p.x,p.y+eps,p.z))-map(vec3(p.x,p.y-eps,p.z)),
+		map(vec3(p.x,p.y,p.z+eps))-map(vec3(p.x,p.y,p.z-eps))
+	));
 
-    float dist = start;
-    float stepDist = end/float(maxIterationsShad);
+}
 
-    for (int i=0; i<maxIterationsShad; i++){
-        float h = map(ro + rd*dist);
-        shade = min(shade, smoothstep(0.0, 1.0, k*h/dist));
-        dist += clamp(h, 0.2, stepDist*2.);
-        
-        if (abs(h)<0.001 || dist > end) break; 
+// Based on original by IQ.
+float calculateAO(vec3 p, vec3 n){
+
+    const float AO_SAMPLES = 5.0;
+    float r = 0.0, w = 1.0, d;
+    
+    for (float i=1.0; i<AO_SAMPLES+1.1; i++){
+        d = i/AO_SAMPLES;
+        r += w*(d - map(p + n*d));
+        w *= 0.5;
     }
-    return min(max(shade, 0.) + 0.1, 1.0); 
+    
+    return 1.0-clamp(r,0.0,1.0);
 }
 
-float calculate§( in vec3 p, in vec3 n, float maxDist )
-{
-	float ao = 0.0, l;
-	const float nbIte = 6.0;
-	//const float falloff = 0.9;
-    for( float i=1.; i< nbIte+.5; i++ ){
-    
-        l = (i + hash(i))*.5/nbIte*maxDist;
-        
-        ao += (l - map( p + n*l ))/(1.+ l);
-    }
-	
-    return clamp( 1.-ao/nbIte, 0., 1.);
-}
-float noise3D(in vec3 p){
-    
-	const vec3 s = vec3(7, 157, 113);
-	
-	vec3 ip = floor(p); 
-    vec4 h = vec4(0., s.yz, s.y + s.z) + dot(ip, s);
-    
-	p -= ip; 
-	
-    p = p*p*(3. - 2.*p);
-    
-    h = mix(fract(sin(h)*43758.5453), fract(sin(h + s.x)*43758.5453), p.x);
-	
-    h.xy = mix(h.xz, h.yw, p.y);
-    
-    return mix(h.x, h.y, p.z); // Range: [0, 1].
-	
-}
+// Cool curve function, by Shadertoy user, Nimitz.
+//
+// I wonder if it relates to the discrete finite difference approximation to the 
+// continuous Laplace differential operator? Either way, it gives you a scalar 
+// curvature value for an object's signed distance function, which is pretty handy.
+//
+// From an intuitive sense, the function returns a weighted difference between a surface 
+// value and some surrounding values. Almost common sense... almost. :) If anyone 
+// could provide links to some useful articles on the function, I'd be greatful.
+//
+// Original usage (I think?) - Cheap curvature: https://www.shadertoy.com/view/Xts3WM
+// Other usage: Xyptonjtroz: https://www.shadertoy.com/view/4ts3z2
+float curve(in vec3 p, in float w){
 
-float fbm(in vec3 p){    
-    return 0.5333*noise3D( p ) + 0.2667*noise3D( p*2.02 ) + 0.1333*noise3D( p*4.03 ) + 0.0667*noise3D( p*8.03 );
-}
-
-
-vec3 getSky(in vec3 ro, in vec3 rd, vec3 sunDir){
-
-
-	float sun = max(dot(rd, sunDir),(freq / 20.0)); // * (freqs[0] * 2.0);
-
-	float horiz = pow(1.0-max(rd.y, 0.0), 1.)*(.15) ; 
-	vec3 col = mix(vec3(.25, .35, .5), vec3(.4, .375, .35), sun);
-	col = mix(col, vec3(1, .9, .7), horiz * (.75));
-    
-  	col += 0.25*vec3(1, .7, .4)*pow(sun, 5.0);
-	col += 0.25*vec3(1, .8, .6)*pow(sun, 64.0);
-	col += 0.2*vec3(1, .9, .7)*max(pow(sun, 512.0), .3);
-    col = clamp(col + hash(rd)*0.05 - 0.025, 0., 1.);
-
-	vec3 sc = ro + rd*FAR*100.; 
-    sc.y *= 3.;
-    
-	return mix( col, vec3(1.0,0.95,1.0), 0.5*smoothstep(0.5, 1.0, fbm(.001*sc)) * clamp(rd.y*4., 0., 1.) );
-	
-
-}
-float curve(in vec3 p){
-
-    const float eps = 0.05, amp = 4.0, ampInit = 0.5;
-
-    vec2 e = vec2(-1., 1.)*eps; //0.05->3.5 - 0.04->5.5 - 0.03->10.->0.1->1.
+    vec2 e = vec2(-1., 1.)*w;
     
     float t1 = map(p + e.yxx), t2 = map(p + e.xxy);
     float t3 = map(p + e.xyx), t4 = map(p + e.yyy);
     
-    return clamp((t1 + t2 + t3 + t4 - 4.*map(p))*amp + ampInit, 0., 1.);
+    return 0.125/(w*w) *(t1 + t2 + t3 + t4 - 4.*map(p));
 }
 
+float freqs[4];
 
 
+void main(){
 
-void main(){	
-
-  
-   freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
+    freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
 	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
 	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
 	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;
-
-
-    // Set FAR
-
-    FAR =  65.0 ;
-
+	
 	// Screen coordinates.
-	vec2 u = (gl_FragCoord.xy - resolution.xy*0.5)/resolution.y;
+	vec2 uv = (gl_FragCoord.xy - resolution.xy*0.5)/resolution.y;
 	
 	// Camera Setup.
-	vec3 lookAt = vec3(0.0, 0.0, time*8.);  // "Look At" position.
-	vec3 ro = lookAt + vec3(0.0, 0.0, -0.1); // Camera position, doubling as the ray origin.
+	vec3 camPos = vec3(0.0, 0.0, time*5.); // Camera position, doubling as the ray origin.
+	vec3 lookAt = camPos + vec3(0.0, 0.1, 0.5);  // "Look At" position.
  
+    // Light positioning. One is a little behind the camera, and the other is further down the tunnel.
+ 	vec3 light_pos = camPos + vec3(0.0, 0.125, -0.125);// Put it a bit in front of the camera.
+	vec3 light_pos2 = camPos + vec3(0.0, 0.0, 6.0);// Put it a bit in front of the camera.
+
 	// Using the Z-value to perturb the XY-plane.
-	// Sending the camera and "look at" vectors down the tunnel. The "path" function is 
-	// synchronized with the distance function.
-	lookAt.xy += path(lookAt.z) ;//+ (mouse.xy/2.0);
- 
-	ro.xy += path(ro.z);
+	// Sending the camera, "look at," and two light vectors down the tunnel. The "path" function is 
+	// synchronized with the distance function. Change to "path2" to traverse the other tunnel.
+	lookAt.xy += path(lookAt.z);
+	camPos.xy += path(camPos.z);
+	light_pos.xy += path(light_pos.z);
+	light_pos2.xy += path(light_pos2.z);
 
     // Using the above to produce the unit ray-direction vector.
-    float FOV = 3.14159/3.; // FOV - Field of view.
-    vec3 forward = normalize(lookAt-ro);
+    float FOV = PI/3.; // FOV - Field of view.
+    vec3 forward = normalize(lookAt-camPos);
     vec3 right = normalize(vec3(forward.z, 0., -forward.x )); 
-
     vec3 up = cross(forward, right);
 
     // rd - Ray direction.
-    vec3 rd = normalize(forward + FOV*u.x*right + FOV*u.y*up);
+    vec3 rd = normalize(forward + FOV*uv.x*right + FOV*uv.y*up);
     
-    // Swiveling the camera about the XY-plane (from left to right) when turning corners.
-    // Naturally, it's synchronized with the path in some kind of way.
-	rd.xy = rot2( path(lookAt.z).x/64. )*rd.xy;
-    	
-    // Usually, you'd just make this a unit directional light, and be done with it, but I
-    // like some of the angular subtleties of point lights, so this is a point light a
-    // long distance away. Fake, and probably not advisable, but no one will notice.
-    vec3 lp = vec3(FAR*0.5, FAR, FAR) + vec3(0, 0, ro.z);
- 
-	// Raymarching, using Nimitz's "Log Bisection" method. Very handy on stubborn surfaces. :)
-	float t = logBisectTrace(ro, rd);
-    
-    // Standard sky routine. Worth learning. For outdoor scenes, you render the sky, then the
-    // terrain, then mix together with a fog falloff. Pretty straight forward.
-    vec3 sky = getSky(ro, rd, normalize(lp - ro));
-    
-    // The terrain color. Can't remember why I set it to sky. I'm sure I had my reasons.
-    vec3 col = sky;
-    
-    // If we've hit the ground, color it up.
-    if (t < FAR){
-    
-        vec3 sp = ro+t*rd; // Surface point.
-        vec3 sn = normal( sp ); // Surface normal.
-
-        // Light direction vector. From the sun to the surface point. We're not performing
-        // light distance attenuation, since it'll probably have minimal effect.
-        vec3 ld = lp-sp;
-        ld /= max(length(ld), 0.001); // Normalize the light direct vector.
-
-        
-        // Texture scale factor.        
-        const float tSize1 = 1./6.;
-        
-        // Bump mapping with the sandstone texture to provide a bit of gritty detailing.
-        // This might seem counter intuitive, but I've turned off mip mapping and set the
-        // texture to linear, in order to give some grainyness. I'm dividing the bump
-        // factor by the distance to smooth it out a little. Mip mapped textures without
-        // anisotropy look too smooth at certain viewing angles.
-        sn = doBumpMap(iChannel1, sp*tSize1, sn, .007/(1. + t/FAR));//max(1.-length(fwidth(sn)), .001)*hash(sp)/(1.+t/FAR)
-        
-        float shd = softShadow(sp, ld, 0.05, FAR, 8.); // Shadows.
-        float curv = curve(sp)*.9 +.1; // Surface curvature.
-        float ao = calculateAO(sp, sn, 4.); // Ambient occlusion.
-        
-        float dif = max( dot( ld, sn ), 0.0); // Diffuse term.
-        float spe = pow(max( dot( reflect(-ld, sn), -rd ), 0.0 ), 5.); // Specular term.
-        float fre = clamp(1.0 + dot(rd, sn), 0.0, 1.0); // Fresnel reflection term.
-
-       
-
-        // Schlick approximation. I use it to tone down the specular term. It's pretty subtle,
-        // so could almost be aproximated by a constant, but I prefer it. Here, it's being
-        // used to give a hard clay consistency... It "kind of" works.
-		float Schlick = pow( 1. - max(dot(rd, normalize(rd + ld)), 0.), 5.0);
-		float fre2 = mix(.2, 1., Schlick);  //F0 = .2 - Hard clay... or close enough.
-       
-        // Overal global ambience. Without it, the cave sections would be pretty dark. It's made up,
-        // but I figured a little reflectance would be in amongst it... Sounds good, anyway. :)
-        float amb = fre*fre2 + .1;
-        
-        // Coloring the soil - based on depth. Based on a line from Dave Hoskins's "Skin Peeler."
-        col = clamp(mix(vec3(.8, 0.5,.3), vec3(.5, 0.25, 0.125),(sp.y+1.)*.15), vec3(.5, 0.25, 0.125), vec3(1.));
-        
-        // Give the soil a bit of a sandstone texture. This line's made up.
-        col =  smoothstep(-.5, 1., tex3D(iChannel1, sp*tSize1, sn))*(col + .25);
-        
-        // Tweaking the curvature value a bit, then using it to color in the crevices with a 
-        // brownish color... in a lame attempt to make the surface look dirt-like.
-        curv = smoothstep(0., .7, curv);
-        col *= vec3(curv, curv*0.95, curv*0.85);
- 
-        
-        // A bit of sky reflection. Not really accurate, but I've been using fake physics since the 90s. :)
-        col += getSky(sp, reflect(rd, sn), ld)*fre*fre2*.5;
-        
-        
-        // Combining all the terms from above. Some diffuse, some specular - both of which are
-        // shadowed and occluded - plus some global ambience. Not entirely correct, but it's
-        // good enough for the purposes of this demonstation.        
-        col = (col*(dif + .1) + fre2*spe)*shd*ao + amb*col;
-       
-    }
-    
-    
-    // Combine the terrain with the sky using some distance fog. This one is designed to fade off very
-    // quickly a few units out from the horizon. Account for the clouds, change "FAR - 15." to zero, and 
-    // the fog will be way more prominent. You could also use "1./(1 + t*scale)," etc.
-    col = mix(col, sky, sqrt(smoothstep(FAR - 15., FAR, t)));
-    
-
-    //col = pow(col*1.1, vec3(1.1));
-
-    
-    // Standard way to do a square vignette. Note that the maxium value value occurs at "pow(0.5, 4.) = 1./16," 
-    // so you multiply by 16 to give it a zero to one range. This one has been toned down with a power
-    // term to give it more subtlety.
-    u = gl_FragCoord.xy / resolution.xy;
+    // Swiveling the camera from left to right when turning corners.
+    rd.xy = rot2( path(lookAt.z).x/32. )*rd.xy;
+		
+    // Standard ray marching routine. I find that some system setups don't like anything other than
+    // a "break" statement (by itself) to exit. 
+	float t = 0.0, dt;
+	for(int i=0; i<128; i++){
+		dt = map(camPos + rd*t);
+		if(dt<0.005 || t>150.){ break; } 
+		t += dt*0.75;
+	}
 	
-    col *= pow( 16.0*u.x*u.y*(1.0-u.x)*(1.0-u.y) , .0625);
+    // The final scene color. Initated to black.
+	vec3 sceneCol = vec3(0.);
+	
+	// The ray has effectively hit the surface, so light it up.
+	if(dt<0.005){
+	
+	    // The ray marching loop (above) exits when "dt" is less than a certain threshold, which in this 
+        // case, is hardcoded to "0.005." However, the distance is still "dt" from the surface? By my logic, 
+	    // adding the extra "dt" after breaking would gain a little more accuracy and effectively reduce 
+	    // surface popping? Would that be correct? I tend to do this, but could be completely wrong, so if 
+	    // someone could set me straight, it'd be appreciated. 
+	    t += dt;
+    	
+    	// Surface position and surface normal.
+	    vec3 sp = t * rd+camPos;
+	    vec3 sn = getNormal(sp);
+        
+        // Texture scale factor.
+        const float tSize0 = 1./1.; 
+        const float tSize1 = 1./4.;
+    	
+    	// Texture-based bump mapping.
+	    if (sp.y<-(FH-0.005)) sn = doBumpMap(iChannel1, sp*tSize1, sn, 0.025); // Floor.
+	    else sn = doBumpMap(iChannel0, sp*tSize0, sn, 0.025); // Walls.
+	    
+	    // Ambient occlusion.
+	    float ao = calculateAO(sp, sn);
+    	
+    	// Light direction vectors.
+	    vec3 ld = light_pos-sp;
+	    vec3 ld2 = light_pos2-sp;
 
-    // Done.
-	gl_FragColor = vec4(clamp(col, 0., 1.), 1.0 );
+        // Distance from respective lights to the surface point.
+	    float distlpsp = max(length(ld), 0.001);
+	    float distlpsp2 = max(length(ld2), 0.001);
+    	
+    	// Normalize the light direction vectors.
+	    ld /= distlpsp;
+	    ld2 /= distlpsp2;
+	    
+	    // Light attenuation, based on the distances above. In case it isn't obvious, this
+        // is a cheap fudge to save a few extra lines. Normally, the individual light
+        // attenuations would be handled separately... No one will notice, nor care. :)
+	    float atten = min(1./(distlpsp) + 1./(distlpsp2), 1.);
+    	
+    	// Ambient light.
+	    float ambience = 0.25; //+ * (5.* freqs[0]); 
+    	
+    	// Diffuse lighting.
+	    float diff = max( dot(sn, ld), 0.0);
+	    float diff2 = max( dot(sn, ld2), 0.0);
+    	
+    	// Specular lighting.
+	    float spec = pow(max( dot( reflect(-ld, sn), -rd ), 0.0 ), 8.);
+	    float spec2 = pow(max( dot( reflect(-ld2, sn), -rd ), 0.0 ), 8.);
+    	
+    	// Curvature.
+	    float crv = clamp(curve(sp, 0.125)*0.5+0.5, .0, 1.);
+	    
+	    // Fresnel term. Good for giving a surface a bit of a reflective glow.
+        float fre = pow( clamp(dot(sn, rd) + 1., .0, 1.), 1.);
+        
+        // Obtaining the texel color. If the surface point is above the floor
+        // height use the wall texture, otherwise use the floor texture.
+        vec3 texCol;
+        if (sp.y<-(FH-0.005)) texCol = tex3D(iChannel1, sp*tSize1, sn); // Floor.
+ 	    else texCol = tex3D(iChannel0, sp*tSize0, sn); // Walls.
+       
+        // Shadertoy doesn't appear to have anisotropic filtering turned on... although,
+        // I could be wrong. Texture-bumped objects don't appear to look as crisp. Anyway, 
+        // this is just a very lame, and not particularly well though out, way to sparkle 
+        // up the blurry bits. It's not really that necessary.
+        //vec3 aniso = (0.5-hash33(sp))*fre*0.35;
+	    //texCol = clamp(texCol + aniso, 0., 1.);
+    	
+    	// Darkening the crevices. Otherwise known as cheap, scientifically-incorrect shadowing.	
+	    float shading =  crv*0.5+0.5; 
+    	
+    	// Combining the above terms to produce the final color. It was based more on acheiving a
+        // certain aesthetic than science.
+        //
+        // Glow.
+        sceneCol = getGrey(texCol)*((diff+diff2)*0.75 + ambience*0.25) + (spec+spec2)*texCol*2. + fre*crv*texCol.zyx*2.;
+        //
+        // Other combinations:
+        //
+        // Shiny.
+        //sceneCol = texCol*((diff+diff2)*vec3(1.0, 0.95, 0.9) + ambience + fre*fre*texCol) + (spec+spec2);
+        // Abstract pen and ink?
+        //float c = getGrey(texCol)*((diff+diff2)*1.75 + ambience + fre*fre) + (spec+spec2)*0.75;
+        //sceneCol = vec3(c*c*c, c*c, c);
+
+	    
+        // Shading.
+        sceneCol *= atten*shading*ao;
+        
+        // Drawing the lines on the walls. Comment this out and change the first texture to
+        // granite for a granite corridor effect.
+        sceneCol *= clamp(1.-abs(curve(sp, 0.0125)), .0, 1.);        
+	   
+	
+	}
+	
+	gl_FragColor = vec4(clamp(sceneCol, 0., 1.), 1.0);
+	
 }

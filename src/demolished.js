@@ -7,10 +7,11 @@ var demolishedLoader_1 = require("./demolishedLoader");
 var Demolished;
 (function (Demolished) {
     var Rendering = (function () {
-        function Rendering(canvas, timelineFile) {
+        function Rendering(canvas, timelineFile, simpleCanvas) {
             var _this = this;
             this.canvas = canvas;
             this.timelineFile = timelineFile;
+            this.simpleCanvas = simpleCanvas;
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
@@ -48,6 +49,7 @@ var Demolished;
                                 image.onload = function () {
                                     resolve(image);
                                 };
+                                console.log(texture);
                                 image.onerror = function (err) { return resolve(err); };
                             }).then(function (image) {
                                 return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height, 0);

@@ -1,0 +1,11 @@
+@font-face {
+	font-family: 'DoubletwoStudiosXXIIBlackmetalWarrior';
+	src: url('./DoubletwoStudiosXXIIBlackmetalWarrior.eot');
+	src: local('DoubletwoStudiosXXIIBlackmetalWarrior'), url('./DoubletwoStudiosXXIIBlackmetalWarrior.woff') format('woff'), url('./DoubletwoStudiosXXIIBlackmetalWarrior.ttf') format('truetype');
+}
+/* use this class to attach this font to any element i.e. <p class="fontsforweb_fontid_21650">Text with this font applied</p> */
+.fontsforweb_fontid_21650 {
+	font-family: 'DoubletwoStudiosXXIIBlackmetalWarrior' !important;
+}
+
+/* Font downloaded from FontsForWeb.com */

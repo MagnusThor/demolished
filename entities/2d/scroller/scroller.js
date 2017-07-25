@@ -19,21 +19,17 @@ var Scroller2D = (function (_super) {
         _this.textWidth = 0;
         _this.y = 10;
         _this.x = 0;
-        _this.font = "12px Arial";
+        _this.font = "64px 'DoubletwoStudiosXXIIBlackmetalWarrior'";
         _this.x = ctx.canvas.width;
         ctx.fillStyle = "#FFFFFF";
-        _this.textWidth = ctx.measureText(_this.text).width;
+        _this.velocity = 3;
+        _this.textWidth = (ctx.measureText(_this.text).width);
         _this.active = true;
-        _this.y = ctx.canvas.height - 48;
+        _this.y = ctx.canvas.height - 24;
         return _this;
     }
     Scroller2D.prototype.update = function (time) {
-        if (this.textWidth + this.x < 0) {
-            this.x = this.ctx.canvas.width;
-        }
-        else {
-            this.x--;
-        }
+        this.x -= this.velocity;
         this.ctx.font = this.font;
         this.ctx.fillText(this.text, this.x, this.y);
     };

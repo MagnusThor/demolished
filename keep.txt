@@ -1,0 +1,94 @@
+     
+     
+     1 -->
+     
+     {
+            "overlays": [
+            {
+                "name": "logo",
+                "classList" : ["logo"],
+                "markup": "<img src='assets/Logo2.png' class='pulse animated delay3s'>"
+            }
+            ],
+            "useTransitions":  false,
+            "start": 0,
+            "stop": 198000,
+            "entity": "bridge"
+        }
+
+
+    2 -->
+
+    {
+            "overlays": [{
+                "name": "logo",
+                "classList" : ["vansinne"],
+                "markup": "<div class='animated fadeIn delay5s'></div>"
+            }],
+            "useTransitions":  false,
+            "start": 0 ,
+            "stop": 198000,
+            "entity": "norrland"
+
+        }
+
+    3 --> 
+
+      {
+            "overlays": [{
+                "name": "fueled",
+                "classList" : ["fueled","animated"],
+                "markup": "<div id='bruno' class='animated fadeIn delay1s'></div><div id='tage' class='animated fadeIn delay2s'></div><div id='rutger' class='animated fadeIn delay3s'></div><div id='gunnar' class='animated fadeIn delay4s'></div><div id='kors' class='animated fadeIn delay5s'></div>"
+            }
+            ],
+            "useTransitions":  false,
+            "start": 0,
+            "stop": 198000,
+            "entity": "cells"
+        }
+
+
+        4 --> 
+          {
+            "overlays": [{
+                "name": "credits",
+                "classList" : ["credits","animated","fadeIn"],
+                "markup": "<div class='credits'><h1 class='animated fadeIn delay1s'>CODE<small class='animated fadeIn delay1_5s'>vargtask</small></h1><h2 class='animated fadeIn delay2s'>artwork<small class='animated fadeIn delay2_5s'>barbie</small></h2><h3 class='animated fadeIn delay3s'>audio<small class='animated fadeIn delay3_5s'>oban</small></h3></div>"
+            }
+            ],
+            "useTransitions":  false,
+            "start": 0,
+            "stop": 198000,
+            "entity": "greensmoke"
+        }
+
+
+        5 -->
+
+          {
+            "overlays": [{
+                "name": "rudolf",
+                "classList" : ["rudolf"],
+                "markup": "<div class='weed'></div>"
+            }
+            ],
+            "useTransitions":  false,
+            "start": 0,
+            "stop": 198000,
+            "entity": "lingon"
+        }
+   
+    6 -->
+    {
+            "overlays": [{
+                "name": "winter",
+                "classList" : ["winter"],
+                "markup": ""
+            }
+            ],
+            "useTransitions":  false,
+            "start": 0,
+            "stop": 198000,
+            "entity": "desert"
+        }
+   

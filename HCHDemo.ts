@@ -8,36 +8,89 @@ import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Eff
 
 import { DemolishedCanvas, BaseEntity2D } from './src/demolishedCanvas'
 
-import { Scroller2D } from "./entities/2d/scroller/scroller";
+/* Simple Canvas effects ( such as scrollers, faders etc  ) */
 
-export class ExampleDemo {
+import { Scroller2D } from "./entities/2d/scroller/scroller";
+import { DemolishedTrans } from "./src/demolihedTrans";
+
+const scrollText = "This is fucking it, we love and support sami terrorism but hate everyting else, maybe we can save an artic fox just because it is evil. Barbie is fucking wasted on norrlaendskt haembrant and russian krokodil.  Speedfisters is going to die by our knife. Norrland is filling our souls with the deepest insanity and hate towards everything that can die. Spraeng bort allt soeder om Dalaelven! Djaevla mesar!   Fuck this shit! It's time to go out in the northern wilderness and become one with all the fucking insane bears and wolves. All that will be left is bloody corpses, ready for nature to fuck with all it's satanic evil.  btw, fuck a raindeer.  spitvaelling and blodkams!        ";
+
+export class HCHDemo {
 
     webGlrendering: Demolished.Rendering;
     canvasRendering: DemolishedCanvas;
+    transitions: DemolishedTrans;
 
     onReady(): void { }
+
+
+    
+
     constructor() {
 
-        let webGlCanvas = document.querySelector("#gl") as HTMLCanvasElement;
+        this.transitions = new DemolishedTrans("#trans",
+       { timeLine: [
+           {
+           
+                    name: "intro",
+                    classes: ["elk",],
+                    start: 12500
+                },
+                {
+                    name: "skog",
+                    classes: ["elk"],
+                    start: 28500
+                   
+                },
+                {
+                    name: "blod",
+                    classes: ["elk"],
+                    start: 42500
+                },
+                 {
+                    name: "ren",
+                    classes: ["elk"],
+                    start: 55750
+                },
+                {
+                    name: "hund",
+                    classes: ["elk"],
+                    start: 87500
+                }
+            ]
+        }
 
+        
+        );
 
-        let canavs2d = document.querySelector("#canvas2d") as HTMLCanvasElement;
+        let webGlCanvas = document.querySelector("#webgl") as HTMLCanvasElement;
+
+        let canavs2d = document.querySelector("#simpleCanvas") as HTMLCanvasElement;
 
         this.canvasRendering = new DemolishedCanvas(canavs2d);
-        
-        this.canvasRendering.addEntity(
-            new Scroller2D(this.canvasRendering.ctx, "This is a scroller.... old and gold..")
-            );
 
-        this.webGlrendering = new Demolished.Rendering(webGlCanvas, "entities/graph.json");
+
+
+        this.canvasRendering.addEntity(
+            new Scroller2D(this.canvasRendering.ctx, scrollText));            
+
+        this.webGlrendering = new Demolished.Rendering(webGlCanvas, "entities/graph.json",this.canvasRendering);
 
         this.webGlrendering.onReady = () => {
             this.onReady();
+          //  document.querySelector(".loader").classList.add("hide");
             window.setTimeout(() => {
                 document.querySelector(".loader").classList.add("hide");
+                
                 this.webGlrendering.start(0);
-                this.canvasRendering.start(0);
-            }, 3000);
+                window.setTimeout(  () => {
+                        this.canvasRendering.start(0);
+                },105 * 1000);
+                
+                
+                this.transitions.start(0);
+
+            }, 2000);
         }
         this.webGlrendering.onStop = () => {
         }
@@ -52,12 +105,18 @@ export class ExampleDemo {
             this.webGlrendering.stop();
         }
 
+        document.addEventListener("keyup", (e:KeyboardEvent) => {
+                if(e.keyCode === 13)
+                console.log(this.webGlrendering.uniforms);
+        });
+     
+
     }
 }
 
 
 document.addEventListener("DOMContentLoaded", () => {
-    let demo = new ExampleDemo();
+    let demo = new HCHDemo();
 
 });
 
