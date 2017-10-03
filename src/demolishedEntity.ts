@@ -1,28 +1,47 @@
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './demolishedModels'
 import loadResource from './demolishedLoader'
-/**
- * 
- * 
- * @export
- * @class EntityTexture
- */
+
 export class EntityTexture {
     texture: WebGLTexture;
     constructor(public image: any, public name: string, public width: number, public height: number, public assetType: number) { }
 }
 
-export class EntityBase {
-
+export interface IEntity{
+    render()
+    currentProgram:WebGLProgram;
+    assets: Array<EntityTexture>;
+    swapBuffers():void;
+    buffer:WebGLBuffer;
+    vertexPosition: number;
+    positionAttribute: number;
+    target: RenderTarget;
+    backTarget: RenderTarget;
+    onError(err:any):void;
+        uniformsCache: Map<string, WebGLUniformLocation>;
+}
+export class EntityBase{
+     
     currentProgram: WebGLProgram
+    uniformsCache: Map<string, WebGLUniformLocation>;
 
+    constructor(public gl: WebGLRenderingContext){
+
+    }
+
+        cacheUniformLocation(label: string) {
+        this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
+    }
+}
+
+export class ShaderEntity  extends EntityBase implements IEntity {
+    render(){
+        throw "Not yet implemented";
+    }
     vertexShader: string;
     fragmetShader: string
-    impl: string;
-
     buffer: WebGLBuffer;
     vertexPosition: number;
     positionAttribute: number;
-
 
     target: RenderTarget;
     backTarget: RenderTarget;
@@ -32,9 +51,11 @@ export class EntityBase {
     constructor(public gl: WebGLRenderingContext, public name: string, public x: number, public y: number,
         public assets: Array<EntityTexture>
     ) {
+        super(gl);
+        
         this.uniformsCache = new Map<string, WebGLUniformLocation>()
 
-        this.loadEntityShaders().then(() => {
+        this.loadShaders().then(() => {
             this.initShader();
             this.target = this.createRenderTarget(this.x, this.y);
             this.backTarget = this.createRenderTarget(this.x, this.y);
@@ -42,12 +63,8 @@ export class EntityBase {
     }
 
     private createRenderTarget(width: number, height: number): RenderTarget {
-
         let gl = this.gl;
-
         let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
-
-
         gl.bindTexture(gl.TEXTURE_2D, target.texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
@@ -73,7 +90,7 @@ export class EntityBase {
         return target;
     }
 
-    loadEntityShaders(): Promise<boolean> {
+    private loadShaders(): Promise<boolean> {
 
         let urls = new Array<string>();
         urls.push("entities/" + this.name + "/fragment.glsl");
@@ -84,20 +101,27 @@ export class EntityBase {
         )).then(result => {
             this.fragmetShader = result[0];
             this.vertexShader = result[1];
-            
             return true;
         }).catch((reason) => {
-           
             this.onError(reason);
             return false;
         });
+    }
+
+
+    public reCompile(fs:string,vs?:string){
+        if(vs){
+            this.vertexShader = vs;
+        }
+        this.fragmetShader = fs;
+        this.initShader();
     }
 
     onError(err) {
         console.error(err)
     }
 
-    createTextureFromData(width: number, height: number, image: HTMLImageElement) {
+    private createTextureFromData(width: number, height: number, image: HTMLImageElement) {
         let gl = this.gl;
         let texture = gl.createTexture()
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -111,10 +135,10 @@ export class EntityBase {
         return texture;
     }
 
-    initShader() {
+  
 
+    private initShader() {
         let gl = this.gl;
-
         this.buffer = gl.createBuffer();
         this.currentProgram = gl.createProgram();
 
@@ -128,22 +152,18 @@ export class EntityBase {
 
         if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
             let info = gl.getProgramInfoLog(this.currentProgram);
+            let error = gl.getProgramParameter(this.currentProgram,gl.VALIDATE_STATUS);
             this.onError(info);
         }
-        // todo: Refactor
-
-        this.cacheUniformLocation('bpm');
-        this.cacheUniformLocation('freq');
-
-        this.cacheUniformLocation("sampleRate");
-        this.cacheUniformLocation("fft");
-
+      
+        this.cacheUniformLocation('fft');
         this.cacheUniformLocation('time');
-        this.cacheUniformLocation("elapsedTime");
+        this.cacheUniformLocation('frame');
+        this.cacheUniformLocation("timeTotal");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
 
-        this.cacheUniformLocation("backbuffer");
+       this.cacheUniformLocation("backbuffer");
 
         this.positionAttribute = 0; 
         // gl.getAttribLocation(this.currentProgram, "surfacePosAttrib");
@@ -153,28 +173,9 @@ export class EntityBase {
         gl.enableVertexAttribArray(this.vertexPosition);
 
         this.assets.forEach((asset: EntityTexture) => {
-
-            switch (asset.assetType) {
-                case 0:
-                    asset.texture = this.createTextureFromData(asset.width, asset.height,
-                        asset.image);
-                    break;
-                case 1:
-                    //  asset.texture = this.createTextureFromFloat32(32,32,new Float32Array(32*32*4));
-                    break;
-                default:
-                    throw "unknown asset type"
-            }
-
+                asset.texture = this.createTextureFromData(asset.width, asset.height,asset.image);
         });
-
-        // this.createTextureFromFloat32(1,2,new Float32Array([255,0,0,255]));
-
         gl.useProgram(this.currentProgram);
-
-    }
-    cacheUniformLocation(label: string) {
-        this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
     }
 
     swapBuffers() {
@@ -182,7 +183,7 @@ export class EntityBase {
         this.target = this.backTarget;
         this.backTarget = tmp;
     }
-    createShader(gl: WebGLRenderingContext, src: string, type: number): WebGLShader {
+    private createShader(gl: WebGLRenderingContext, src: string, type: number): WebGLShader {
         let shader: WebGLShader = gl.createShader(type);
         gl.shaderSource(shader, src);
         gl.compileShader(shader);

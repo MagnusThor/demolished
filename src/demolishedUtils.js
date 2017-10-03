@@ -52,3 +52,59 @@ var Utils = (function () {
     return Utils;
 }());
 exports.Utils = Utils;
+var ShaderError = (function () {
+    function ShaderError(line, error) {
+        this.line = line;
+        this.error = error;
+    }
+    return ShaderError;
+}());
+exports.ShaderError = ShaderError;
+var ShaderCompiler = (function () {
+    function ShaderCompiler() {
+        this.canvas = document.createElement("canvas");
+        this.gl = this.canvas.getContext("webgl");
+    }
+    ShaderCompiler.prototype.toErrorLines = function (error) {
+        var index = 0;
+        var indexEnd = 0;
+        var lineNum = 0;
+        var errorLines = new Array();
+        while (index >= 0) {
+            index = error.indexOf("ERROR: 0:", index);
+            if (index < 0) {
+                break;
+            }
+            index += 9;
+            indexEnd = error.indexOf(':', index);
+            if (indexEnd > index) {
+                lineNum = parseInt(error.substring(index, indexEnd));
+                if ((!isNaN(lineNum)) && (lineNum > 0)) {
+                    index = indexEnd + 1;
+                    indexEnd = error.indexOf("ERROR: 0:", index);
+                    var lineError = (indexEnd > index) ? error.substring(index, indexEnd) : error.substring(index);
+                    errorLines.push(new ShaderError(lineNum, lineError));
+                }
+            }
+        }
+        return errorLines;
+    };
+    ShaderCompiler.prototype.compile = function (fs) {
+        var gl = this.gl;
+        var compileResults = this.createShader(fs, gl.FRAGMENT_SHADER);
+        return compileResults;
+    };
+    ShaderCompiler.prototype.createShader = function (src, type) {
+        var gl = this.gl;
+        var shader = gl.createShader(type);
+        gl.shaderSource(shader, src);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            return this.toErrorLines(gl.getShaderInfoLog(shader));
+        }
+        else
+            return new Array();
+    };
+    return ShaderCompiler;
+}());
+exports.ShaderCompiler = ShaderCompiler;

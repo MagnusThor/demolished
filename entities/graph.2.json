@@ -1,0 +1,52 @@
+{
+    "name": "nine-lives",
+    "audioSettings": {
+        "audioFile": "assets/nine-lives.mp3",
+        "audioAnalyzerSettings": {
+            "fftSize": 8192,
+            "smoothingTimeConstant": 0.85,
+            "minDecibels": -100,
+            "maxDecibels": -100
+        },
+        "duration": 386400,
+        "bmp": 129
+    },
+    "timeline": [
+        
+         {
+            "overlays": [],
+            "useTransitions":  false,
+            "start": 0,
+            "stop": 386400,
+            "entity": "empty"
+        }
+    ],
+    "effects": [
+        {
+        "name": "nine-lives",
+        "description": "",
+         "textures":  [
+            {
+                "url": "assets/texture_eye.png",
+                "uniform": "textureA",
+                "width": 512,
+                "height": 512
+            },
+            {
+            "url": "assets/iChannel0.png",
+            "uniform": "textureB",
+            "width": 512,
+            "height": 512
+        },
+        {
+            "url": "assets/iChannel1.jpg",
+            "uniform": "textureC",
+            "width": 512,
+            "height": 512
+        }
+    ]
+         
+        }
+      
+    ]
+}

@@ -1,5 +1,5 @@
 ;
-import { EntityBase} from './demolishedEntity'
+import { ShaderEntity} from './demolishedEntity'
 import { DemloshedTransitionBase } from "./demolishedTransitions";
 
 export class RenderTarget {
@@ -26,7 +26,7 @@ export class Graph {
  */
 export class TimeFragment {
 
-    entityShader: EntityBase;
+    entityShader: ShaderEntity;
     overlays: Array<Overlay>; // overlays
     useTransitions: boolean
     transition: DemloshedTransitionBase;
@@ -40,7 +40,7 @@ export class TimeFragment {
             this.overlays = overlays;}
             else this.overlays = new Array<Overlay>();
     }
-    setEntity(ent: EntityBase) {
+    setEntity(ent: ShaderEntity) {
         this.entityShader = ent;
          if(this.useTransitions){
 
@@ -56,6 +56,9 @@ export class Overlay{
         markup:string
         constructor(public name:string,public classList: Array<string>){
         }
+        loadMarkup(){
+                throw "Not yet implemented";
+        }
 }
 /**
  * Uniforms are global variables  passed to the shaders program's 
@@ -65,16 +68,12 @@ export class Overlay{
  */
 export class Uniforms {
     time: number;
+    timeTotal: number
     mouseX: number;
     mouseY: number;
     screenWidth: number;
-    screenHeight: number;
-
+    screenHeight: number;    
     alpha:number;
-    
-    bpm: number;
-    freq: number;
-
     constructor(width: number, height: number) {
         this.screenWidth = width;
         this.screenHeight = height;

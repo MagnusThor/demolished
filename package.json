@@ -1,7 +1,7 @@
 {
   "name": "demolished",
   "version": "1.0.0",
-  "description": "A demo created for the compo at High Coast Summer Hack npm tun (HCH 2017) 2017",
+  "description": "...",
   "main": "main.js",
   "author": {
     "name": "Magnus Thor",
@@ -23,5 +23,7 @@
     "express": "^4.15.3",
     "webpack": "^2.4.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "codemirror": "^5.30.0"
+  }
 }

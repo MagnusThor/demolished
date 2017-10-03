@@ -15,17 +15,12 @@ uniform vec2 resolution;
 void main( void ) {
 
 	vec2 uv = ( gl_FragCoord.xy / resolution.xy ) + mouse / 4.0;
-	
-	float alpha =  sin(time) ;
-	
-	vec3 col;
-	
-	if(elapsedTime < 2.559){
-		 col = vec3(alpha);
-	}else{
-		 col = vec3(1.0,0.,0.0);
-	}		
 
-	gl_FragColor = vec4( col, 1.0 );
+	float color = 3.0 - (3.*length(2.*uv));
+	
+	vec3 coord = vec3(atan(sin(time),uv.y)/6.2832+.5, length(uv)*.4, .5);
+	
+	
+	gl_FragColor = vec4(coord,0.);
 
 }

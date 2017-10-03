@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolishedModels_1 = require("./demolishedModels");
 var demolishedLoader_1 = require("./demolishedLoader");
@@ -14,21 +24,36 @@ var EntityTexture = (function () {
 }());
 exports.EntityTexture = EntityTexture;
 var EntityBase = (function () {
-    function EntityBase(gl, name, x, y, assets) {
-        var _this = this;
+    function EntityBase(gl) {
         this.gl = gl;
-        this.name = name;
-        this.x = x;
-        this.y = y;
-        this.assets = assets;
-        this.uniformsCache = new Map();
-        this.loadEntityShaders().then(function () {
+    }
+    EntityBase.prototype.cacheUniformLocation = function (label) {
+        this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
+    };
+    return EntityBase;
+}());
+exports.EntityBase = EntityBase;
+var ShaderEntity = (function (_super) {
+    __extends(ShaderEntity, _super);
+    function ShaderEntity(gl, name, x, y, assets) {
+        var _this = _super.call(this, gl) || this;
+        _this.gl = gl;
+        _this.name = name;
+        _this.x = x;
+        _this.y = y;
+        _this.assets = assets;
+        _this.uniformsCache = new Map();
+        _this.loadShaders().then(function () {
             _this.initShader();
             _this.target = _this.createRenderTarget(_this.x, _this.y);
             _this.backTarget = _this.createRenderTarget(_this.x, _this.y);
         });
+        return _this;
     }
-    EntityBase.prototype.createRenderTarget = function (width, height) {
+    ShaderEntity.prototype.render = function () {
+        throw "Not yet implemented";
+    };
+    ShaderEntity.prototype.createRenderTarget = function (width, height) {
         var gl = this.gl;
         var target = new demolishedModels_1.RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
         gl.bindTexture(gl.TEXTURE_2D, target.texture);
@@ -47,7 +72,7 @@ var EntityBase = (function () {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         return target;
     };
-    EntityBase.prototype.loadEntityShaders = function () {
+    ShaderEntity.prototype.loadShaders = function () {
         var _this = this;
         var urls = new Array();
         urls.push("entities/" + this.name + "/fragment.glsl");
@@ -63,10 +88,17 @@ var EntityBase = (function () {
             return false;
         });
     };
-    EntityBase.prototype.onError = function (err) {
+    ShaderEntity.prototype.reCompile = function (fs, vs) {
+        if (vs) {
+            this.vertexShader = vs;
+        }
+        this.fragmetShader = fs;
+        this.initShader();
+    };
+    ShaderEntity.prototype.onError = function (err) {
         console.error(err);
     };
-    EntityBase.prototype.createTextureFromData = function (width, height, image) {
+    ShaderEntity.prototype.createTextureFromData = function (width, height, image) {
         var gl = this.gl;
         var texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -77,7 +109,7 @@ var EntityBase = (function () {
         gl.bindTexture(gl.TEXTURE_2D, null);
         return texture;
     };
-    EntityBase.prototype.initShader = function () {
+    ShaderEntity.prototype.initShader = function () {
         var _this = this;
         var gl = this.gl;
         this.buffer = gl.createBuffer();
@@ -89,14 +121,13 @@ var EntityBase = (function () {
         gl.linkProgram(this.currentProgram);
         if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
             var info = gl.getProgramInfoLog(this.currentProgram);
+            var error = gl.getProgramParameter(this.currentProgram, gl.VALIDATE_STATUS);
             this.onError(info);
         }
-        this.cacheUniformLocation('bpm');
-        this.cacheUniformLocation('freq');
-        this.cacheUniformLocation("sampleRate");
-        this.cacheUniformLocation("fft");
+        this.cacheUniformLocation('fft');
         this.cacheUniformLocation('time');
-        this.cacheUniformLocation("elapsedTime");
+        this.cacheUniformLocation('frame');
+        this.cacheUniformLocation("timeTotal");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
         this.cacheUniformLocation("backbuffer");
@@ -105,32 +136,21 @@ var EntityBase = (function () {
         this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
         gl.enableVertexAttribArray(this.vertexPosition);
         this.assets.forEach(function (asset) {
-            switch (asset.assetType) {
-                case 0:
-                    asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
-                    break;
-                case 1:
-                    break;
-                default:
-                    throw "unknown asset type";
-            }
+            asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
         });
         gl.useProgram(this.currentProgram);
     };
-    EntityBase.prototype.cacheUniformLocation = function (label) {
-        this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
-    };
-    EntityBase.prototype.swapBuffers = function () {
+    ShaderEntity.prototype.swapBuffers = function () {
         var tmp = this.target;
         this.target = this.backTarget;
         this.backTarget = tmp;
     };
-    EntityBase.prototype.createShader = function (gl, src, type) {
+    ShaderEntity.prototype.createShader = function (gl, src, type) {
         var shader = gl.createShader(type);
         gl.shaderSource(shader, src);
         gl.compileShader(shader);
         return shader;
     };
-    return EntityBase;
-}());
-exports.EntityBase = EntityBase;
+    return ShaderEntity;
+}(EntityBase));
+exports.ShaderEntity = ShaderEntity;

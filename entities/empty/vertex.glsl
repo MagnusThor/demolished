@@ -1,3 +1,4 @@
+
 #ifdef GL_OES_standard_derivatives
 #extension GL_OES_standard_derivatives : enable
 #endif
@@ -7,13 +8,12 @@ precision highp float;
 precision highp int;
 #endif
 
+attribute float vertexId;
 attribute vec3 position;
 attribute vec2 surfacePosAttrib;
 varying vec2 surfacePosition;
 
 void main() {
-
 				surfacePosition = surfacePosAttrib;
-				gl_Position = vec4( position,1.0 );
-				
+				gl_Position = vec4( position,1.0 );				
 }

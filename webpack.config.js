@@ -5,7 +5,7 @@ module.exports = {
    fs: "empty"
   },
   watch: true,
-  entry: './HCHDemo.js',
+  entry: './index.js',
   output: {
     filename: 'bundle.js'
   },

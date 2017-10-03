@@ -7,8 +7,6 @@ uniform vec2 mouse;
 uniform vec2 resolution;
 uniform sampler2D fft;
 
-float freqs[4];
-
 
 
 vec2 rotate(vec2 p, float a)

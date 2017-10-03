@@ -1,171 +1,41 @@
 {
-    "name": "HCHDemo",
+    "name": "nine-lives",
     "audioSettings": {
-        "audioFile": "assets/song.mp3",
+        "audioFile": "assets/nine-lives.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
-            "minDecibels": -30,
-            "maxDecibels": -90
+            "minDecibels": -100,
+            "maxDecibels": -100
         },
-        "duration": 998000,
+        "duration": 386400,
         "bmp": 129
     },
     "timeline": [
-   
-      {
-            "overlays": [
-            {
-                "name": "logo",
-                "classList" : ["logo"],
-                "markup": "<img src='assets/Logo2.png' class='pulse animated delay3s'>"
-            }
-            ],
+        
+         {
+            "overlays": [],
             "useTransitions":  false,
             "start": 0,
-            "stop": 15000,
-            "entity": "bridge"
-        },
-          {
-            "overlays": [{
-                "name": "logo",
-                "classList" : ["vansinne"],
-                "markup": "<div class='animated fadeIn delay5s'></div>"
-            }],
-            "useTransitions":  false,
-            "start": 15000 ,
-            "stop": 30000,
-            "entity": "norrland"
-
-        }, 
-         {
-            "overlays": [{
-                "name": "fueled",
-                "classList" : ["fueled","animated"],
-                "markup": "<div id='bruno' class='animated fadeIn xdelay1s'></div><div id='tage' class='animated fadeIn xdelay2s'></div><div id='rutger' class='animated fadeIn xdelay3s'></div><div id='gunnar' class='animated fadeIn xdelay4s'></div><div id='kors' class='animated fadeIn xdelay5s'></div>"
-            }
-            ],
-            "useTransitions":  false,
-            "start": 30000,
-            "stop": 60000,
+            "stop": 386400,
             "entity": "cells"
-        },
-          {
-            "overlays": [{
-                "name": "rudolf",
-                "classList" : ["rudolf"],
-                "markup": "<mark></mark>"
-            }
-            ],
-            "useTransitions":  false,
-            "start": 60000,
-            "stop": 90000,
-            "entity": "lingon"
-        },
-       
-         {
-            "overlays": [{
-                "name": "credits",
-                "classList" : ["credits","animated","fadeIn"],
-                "markup": "<div class='credits'><h1 class='animated fadeIn delay1s'>KODE<small class='animated fadeIn delay1_5s'>vargtask</small></h1><h2 class='animated fadeIn delay2s'>gfx<small class='animated fadeIn delay2_5s'>barbie</small></h2><h3 class='animated fadeIn delay3s'>music<small class='animated fadeIn delay3_5s'>IGP</small></h3></div>"
-            }
-            ],
-            "useTransitions":  false,
-            "start": 90000,
-            "stop": 105000,
-            "entity": "greensmoke"
-        },
-
-       {
-            "overlays": [{
-                "name": "winter",
-                "classList" : ["winter"],
-                "markup": ""
-            }
-            ],
-            "useTransitions":  false,
-            "start": 105000,
-            "stop": 998000,
-            "entity": "desert"
         }
-
-        
     ],
     "effects": [
-          {
-            "name": "voronoi",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-          {
-            "name": "empty",
-            "description": "",
-            "textures": [],
-            "type:": 0
+        {
+        "name": "empty",
+        "description": "",
+         "textures":  [  
+        ]
+         
         },
         {
-            "name": "norrland",
-            "description": "",
-            "textures": [],
-            "type:": 0
-        },
-        {
-            "name": "lingon",
-            "description": "",
-            "textures" : [],
-            "type" : 0
-        },
-
-         {
-            "name": "greensmoke",
-            "description": "",
-            "textures" : [],
-            "type" : 0
-        },
-           {
-            "name": "bridge",
-            "description": "",
-            "textures" : [],
-            "type" : 0
-        },
-        {
-            "name": "empty",
-            "description": "",
-            "textures" : [],
-            "type" : 0
-        },
-           {
-            "name": "desert",
-            "description": "",
-            "textures" : [
-                 {
-                    "url" :"assets/iChannel1.jpg",
-                    "uniform": "iChannel1",
-                    "width" : 1024,
-                    "height": 1024
-                },
-                {
-                    "url" :"assets/iChannel1.jpg",
-                    "uniform": "iChannel1",
-                    "width" : 512,
-                    "height": 512
-                
-                    
-                }
-            ],
-            "type" : 0
-        },
-
-       {
             "name": "cells",
             "description": "",
-            "textures" : [
-               
-            ],
-            "type" : 0
-
-        }
-        
+             "textures":  [  
+            ]
+             
+            }
+      
     ]
 }

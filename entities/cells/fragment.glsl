@@ -7,9 +7,7 @@ uniform vec2 mouse;
 uniform vec2 resolution;
 /**
  Just fooling around basicly. Some sort of bloodstream. 
- 
  source :https://www.shadertoy.com/view/4ttXzj
-
 */
 
 
@@ -27,6 +25,7 @@ float cells(vec2 uv){  // Trimmed down.
 
 
 const float BEAT = 4.0;
+
 float fbm(vec2 uv)
 {
     

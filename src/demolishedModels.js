@@ -50,6 +50,9 @@ var Overlay = (function () {
         this.name = name;
         this.classList = classList;
     }
+    Overlay.prototype.loadMarkup = function () {
+        throw "Not yet implemented";
+    };
     return Overlay;
 }());
 exports.Overlay = Overlay;
