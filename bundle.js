@@ -14516,6 +14516,9 @@ var DemoEd = (function () {
             _this.webGlrendering.uniforms.time = 0;
             _this.webGlrendering.resetClock(0);
         });
+        document.querySelector("#btn-showconsole").addEventListener("click", function () {
+            document.querySelector(".immediate").classList.toggle("hide");
+        });
         this.webGlrendering.onFrame = function (frame) {
             timeLine.value = parseInt(frame.ms).toString();
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
@@ -14549,6 +14552,7 @@ var DemoEd = (function () {
                 lineWrapping: true,
                 autofocus: true
             });
+            var immediate = document.querySelector(".immediate");
             var isCompile = false;
             editor.on("change", function (cm) {
                 if (isCompile)
@@ -14559,20 +14563,30 @@ var DemoEd = (function () {
                     isCompile = true;
                     var fs = cm.getValue();
                     var vs = _this.webGlrendering.currentTimeFragment.entityShader.vertexShader;
-                    var compleErrors = _this.compiler.compile(fs);
+                    var shaderErrors = _this.compiler.compile(fs);
                     lastCompile = performance.now();
-                    if (compleErrors.length === 0) {
-                        console.log("set new fs");
+                    if (shaderErrors.length === 0) {
+                        immediate.innerHTML = "";
                         _this.webGlrendering.currentTimeFragment.entityShader.reCompile(fs);
+                        if (!immediate.classList.contains("hide"))
+                            immediate.classList.add("hide");
                     }
                     document.querySelectorAll(".error-info").forEach(function (e) {
                         e.classList.remove("error-info");
                     });
-                    compleErrors.forEach(function (err) {
+                    shaderErrors.forEach(function (err) {
                         var errNode = document.createElement("abbr");
                         errNode.classList.add("error-info");
                         errNode.title = err.error;
                         editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
+                        var p = document.createElement("p");
+                        var m = document.createElement("mark");
+                        var s = document.createElement("span");
+                        s.textContent = err.error;
+                        m.textContent = err.line.toString();
+                        p.appendChild(m);
+                        p.appendChild(s);
+                        immediate.appendChild(p);
                     });
                     isCompile = false;
                 }

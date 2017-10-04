@@ -66,9 +66,31 @@
 		position: absolute;
 	}
 
+	.immediate{
+		   
+    position: absolute;
+    width: 100%;
+    height: 200;
+    z-index: 10000;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    bottom: 0;
+    overflow: auto;
+    padding: 1em;
+
+	}
+
+	p > mark{
+		width: 100px;
+		background: transparent;
+		color: #fff;
+		font-weight: 700;
+		margin-right: 10px;
+	}
+
 	#btn-showconsole{
 		position: absolute;
-		z-index: 1000;
+		z-index: 10000;
 		right: 100px;
 		top: 1em;
 		height: 2em;
@@ -114,7 +136,7 @@
 		right:1em;
 		top:1em;
 		color: #fff;
-	
+		z-index: 10000;
 		background: rgba(255,255,255,0.4);
 		padding: 4px;
 	

@@ -38,6 +38,13 @@ var DemolishedSIDMusic = (function (_super) {
     DemolishedSIDMusic.prototype.getFrequenceData = function () {
         return this.sid.getFreqByteData();
     };
+    Object.defineProperty(DemolishedSIDMusic.prototype, "duration", {
+        get: function () {
+            return 0;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(DemolishedSIDMusic.prototype, "currentTime", {
         get: function () {
             return this.sid._currentPlaytime;
@@ -90,6 +97,13 @@ var DemolishedStreamingMusic = (function (_super) {
     DemolishedStreamingMusic.prototype.stop = function () {
         this.audio.stop();
     };
+    Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
+        get: function () {
+            return this.audio.duration;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(DemolishedStreamingMusic.prototype, "currentTime", {
         get: function () {
             return this.audio.currentTime;

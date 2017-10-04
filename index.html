@@ -4,25 +4,17 @@
 	<title>demlolished - electron</title>
 	<script src="libs/scriptProcessor.js"></script>
 	<script src="libs/tinysid.js"></script>
-	<!-- <script src="lib/codemirror/lib/codemirror.js"></script>
-	<script src="lib/codemirror/mode/javascript/javascript.js"></script> -->
-
-
-
-
-	<link rel="stylesheet" href="lib/codemirror/lib/codemirror.css" type="text/css">
-	<link rel="stylesheet" href="lib/codemirror/theme/monokai.css" type="text/css">
+	<link href="css/codemirror.css" rel="stylesheet" type="text/css">
+	<link href="css/monokai.css" rel="stylesheet" type="text/css">
 	<link href="css/style.css" rel="stylesheet" type="text/css">
-	<link href="css/animate.css" rel="stylesheet">
-	<link href="css/font.css" rel="stylesheet">
 </head>
 
 <body>
 	<button id="btn-showconsole" class="btn">
-		console
+		Immediate
 	</button>
 	<time class="time">00.00</time>
-	
+
 	<form id="editor">
 
 		<textarea id="fragment" col="10" rows="10">
@@ -36,11 +28,11 @@
 		<canvas id="webgl" class=""></canvas>
 
 	</div>
-	<div class="immediate">
-		>
+	<div class="immediate hide">
+
 	</div>
 	<div class="tools">
-			<input type="range" min="0" max="100" value="10" id="current-time" />		
+		<input type="range" min="0" max="100" value="10" id="current-time" />
 	</div>
 	<script src="bundle.js"></script>
 </body>

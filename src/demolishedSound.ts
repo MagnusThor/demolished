@@ -25,7 +25,7 @@ export interface IDemolisedAudioContext {
     currentTime: number;
     getFrequenceData(): Uint8Array
     textureSize: number 
-
+    duration: number;
 }
 declare var SIDBackendAdapter: any;
 
@@ -38,6 +38,7 @@ declare var SIDBackendAdapter: any;
  * @implements {IDemolisedAudioContext}
  */
 export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
+  
     private sid: any;
     get textureSize(){
         return 16;
@@ -45,6 +46,7 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
 
     constructor() {
         super();
+      
     }
     play() {
         this.sid.play();
@@ -56,6 +58,10 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
         return this.sid.getFreqByteData();
     }
 
+
+    get duration(): number{
+        return 0;
+    }
     get currentTime(): number {
         return this.sid._currentPlaytime;
     }
@@ -87,6 +93,7 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
  * @implements {IDemolisedAudioContext}
  */
 export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
+  
     constructor() {
         super();
     }
@@ -106,6 +113,12 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
     stop() {
         this.audio.stop();
     }
+
+    get duration(): number{
+        return this.audio.duration;
+    }
+
+
     get currentTime(): number {
         return this.audio.currentTime;
     }

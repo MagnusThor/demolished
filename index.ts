@@ -33,16 +33,12 @@ import { DemolishedStreamingMusic, DemolishedSIDMusic } from "./src/demolishedSo
 export class DemoEd {
 
     webGlrendering: Demolished.Rendering;
-
-
-    compiler: ShaderCompiler;
-
+    shaderCompiler: ShaderCompiler;
     onReady(): void { }
-
     constructor() {
 
 
-        this.compiler = new ShaderCompiler();
+        this.shaderCompiler = new ShaderCompiler();
 
         let webGlCanvas = document.querySelector("#webgl") as HTMLCanvasElement;
 
@@ -59,6 +55,10 @@ export class DemoEd {
                this.webGlrendering.resetClock(0);
         });
 
+        document.querySelector("#btn-showconsole").addEventListener("click", () => {
+                document.querySelector(".immediate").classList.toggle("hide");
+        });
+
         this.webGlrendering.onFrame = (frame) =>{
             timeLine.value = parseInt(frame.ms).toString();
             
@@ -70,6 +70,7 @@ export class DemoEd {
         this.webGlrendering.onReady = () => {
             this.onReady();
    
+        
             timeLine.setAttribute("max","386400");
          
             window.setTimeout( () => {
@@ -106,48 +107,62 @@ export class DemoEd {
             }
             );
 
-
+            let immediate = document.querySelector(".immediate");
             var isCompile = false;
 
             editor.on("change", (cm:CodeMirror) => {
                 if(isCompile) return;
-                
-                console.clear();
-                console.log(-(lastCompile - performance.now())  / 1000 , -(lastCompile - performance.now())  / 1000  > 5.);
                 if( -(lastCompile - performance.now())  / 1000  > 0.5){
 
                     isCompile = true;
                     let fs = cm.getValue();
                     let vs = this.webGlrendering.currentTimeFragment.entityShader.vertexShader;
 
-                    let compleErrors = this.compiler.compile(fs);
+                    let shaderErrors = this.shaderCompiler.compile(fs);
 
                     lastCompile = performance.now();
 
 
-                    if(compleErrors.length === 0){
-                        console.log("set new fs");
+                    if(shaderErrors.length === 0){
+
+                        immediate.innerHTML = "";
+                     
                         this.webGlrendering.currentTimeFragment.entityShader.reCompile(
                             fs
                         );
+                     if(!immediate.classList.contains("hide")) immediate.classList.add("hide");
                     }
                    
                     document.querySelectorAll(".error-info").forEach( e => {
                         e.classList.remove("error-info");
+
+                       
+
                      });
 
-                    compleErrors.forEach ( (err:ShaderError) => {
+                   
+                    shaderErrors.forEach ( (err:ShaderError) => {
 
                         let errNode = document.createElement("abbr");
 
                         errNode.classList.add("error-info");
                         errNode.title = err.error;
-
-    
-
-                  //      editor.addLineClass(err.line-1, "background", "highlighted-line");
-
                         editor.setGutterMarker(err.line -1, "note-gutter", errNode);
+
+
+                        let p = document.createElement("p");
+                        let m = document.createElement("mark");
+                        let s = document.createElement("span");
+                        s.textContent = err.error;
+                        m.textContent = err.line.toString();
+                      
+                        p.appendChild(m);
+                              
+                        p.appendChild(s);
+
+                        immediate.appendChild(p);
+
+                        
                      
                       //  editor.setMarker(err.line - 1, '<abbr title="' + err.error + '">' + err.line + '</abbr>', "errorMarker");
                         
