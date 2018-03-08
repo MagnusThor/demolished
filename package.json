@@ -1,6 +1,6 @@
 {
   "name": "demolished",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "...",
   "main": "main.js",
   "author": {
@@ -14,7 +14,7 @@
     "dist": "electron-builder deb"
   },
   "build": {
-    "appId": "highcoasthack.demolished"
+    "appId": "dev.demolished"
   },
   "license": "MIT",
   "devDependencies": {
@@ -24,6 +24,7 @@
     "webpack": "^2.4.1"
   },
   "dependencies": {
-    "codemirror": "^5.30.0"
+    "codemirror": "^5.30.0",
+    "reflect-metadata": "^0.1.12"
   }
 }

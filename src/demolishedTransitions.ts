@@ -1,6 +1,6 @@
 import { ShaderEntity } from "./demolishedEntity";
 
-export class DemloshedTransitionBase {
+export class DemlolishedTransitionBase {
     constructor(public entity: ShaderEntity){
     }
     fadeIn(time:number):Promise<true>{

@@ -1,14 +1,25 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolishedEntity_1 = require("./demolishedEntity");
 var demolishedModels_1 = require("./demolishedModels");
 var demolishedLoader_1 = require("./demolishedLoader");
+var demolishedProperties_1 = require("./demolishedProperties");
 var Demolished;
 (function (Demolished) {
     var Rendering = (function () {
-        function Rendering(canvas, timelineFile, audio, simpleCanvas) {
+        function Rendering(canvas, parent, timelineFile, audio, simpleCanvas) {
             var _this = this;
             this.canvas = canvas;
+            this.parent = parent;
             this.timelineFile = timelineFile;
             this.audio = audio;
             this.simpleCanvas = simpleCanvas;
@@ -17,7 +28,8 @@ var Demolished;
             this.centerX = 0;
             this.centerY = 0;
             this.gl = this.getRendringContext();
-            this.uniforms = new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height);
+            var proxy = new demolishedProperties_1.DemoishedProperty(new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height));
+            this.uniforms = proxy.getObserver();
             this.uniforms.time = 0;
             this.uniforms.timeTotal = 0;
             this.uniforms.mouseX = 0.5;
@@ -30,7 +42,7 @@ var Demolished;
             this.loadGraph(this.timelineFile).then(function (graph) {
                 var audioSettings = graph.audioSettings;
                 graph.timeline.forEach(function (tf) {
-                    var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.useTransitions, tf.overlays);
+                    var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.useTransitions);
                     _this.timeFragments.push(_tf);
                 });
                 _this.timeFragments.sort(function (a, b) {
@@ -53,11 +65,10 @@ var Demolished;
                             _this.addEntity(effect.name, assets);
                             if (_this.entitiesCache.length === graph.effects.length) {
                                 _this.onReady();
-                                _this.resizeCanvas();
                             }
                         });
                     });
-                    _this.resizeCanvas();
+                    _this.resizeCanvas(_this.parent);
                 });
             });
         }
@@ -101,9 +112,6 @@ var Demolished;
                 _this.uniforms.mouseX = evt.clientX / window.innerWidth;
                 _this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
             });
-            window.addEventListener("resize", function () {
-                _this.resizeCanvas();
-            });
         };
         Rendering.prototype.addEntity = function (name, textures) {
             var entity = new demolishedEntity_1.ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
@@ -117,34 +125,9 @@ var Demolished;
             return entity;
         };
         Rendering.prototype.tryFindTimeFragment = function (time) {
-            var parent = document.querySelector("#main");
-            this.removeLayers(parent);
-            var timeFragment = this.timeFragments.find(function (tf) {
+            return this.timeFragments.find(function (tf) {
                 return time < tf.stop && time >= tf.start;
             });
-            if (!timeFragment)
-                return;
-            if (timeFragment.hasLayers) {
-                timeFragment.overlays.forEach(function (overlay) {
-                    var layer = document.createElement("div");
-                    layer.id = overlay.name;
-                    overlay.classList.forEach(function (className) {
-                        layer.classList.add(className);
-                    });
-                    layer.innerHTML = overlay.markup;
-                    layer.classList.add("layer");
-                    parent.appendChild(layer);
-                });
-            }
-            if (timeFragment) {
-                this.onNext({
-                    d: time - this.animationStartTime,
-                    c: this.animationFrameCount,
-                    t: time - this.animationStartTime,
-                    fps: 1000 / (time / this.animationFrameCount)
-                });
-            }
-            return timeFragment;
         };
         Rendering.prototype.resetClock = function (time) {
             this.uniforms.timeTotal = time;
@@ -159,16 +142,36 @@ var Demolished;
             this.animationOffsetTime = time;
             this.currentTimeFragment = this.tryFindTimeFragment(time);
             this.animationStartTime = performance.now();
-            this.audio.play();
             this.animate(time);
             this.audio.currentTime = (time / 1000) % 60;
-            this.onStart();
+            this.audio.play();
+            if (!this.isPaused)
+                this.onStart();
         };
         Rendering.prototype.stop = function () {
+            this.audio.stop();
             cancelAnimationFrame(this.animationFrameId);
             ;
             this.onStop();
             return this.animationFrameId;
+        };
+        Rendering.prototype.mute = function () {
+            this.isSoundMuted = !this.isSoundMuted;
+            this.audio.mute(this.isSoundMuted);
+        };
+        Rendering.prototype.pause = function () {
+            if (!this.isPaused) {
+                this.isPaused = true;
+                this.stop();
+            }
+            else {
+                this.isPaused = false;
+                this.resume(this.uniforms.time);
+            }
+            return this.uniforms.time;
+        };
+        Rendering.prototype.resume = function (time) {
+            this.start(time);
         };
         Rendering.prototype.updateTextureData = function (texture, size, bytes) {
             var gl = this.gl;
@@ -195,7 +198,8 @@ var Demolished;
                 if (animationTime >= this.currentTimeFragment.stop) {
                     this.currentTimeFragment = this.tryFindTimeFragment(time);
                 }
-                this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
+                this.currentTimeFragment ?
+                    this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0);
             }
             this.onFrame({
                 frame: this.animationFrameCount,
@@ -203,11 +207,6 @@ var Demolished;
                 min: Math.floor(animationTime / 60000) % 60,
                 sec: Math.floor((animationTime / 1000) % 60),
             });
-        };
-        Rendering.prototype.removeLayers = function (parent) {
-            var layers = document.querySelectorAll(".layer");
-            for (var i = 0; i < layers.length; i++)
-                parent.removeChild(layers[i]);
         };
         Rendering.prototype.surfaceCorners = function () {
             if (this.gl) {
@@ -226,13 +225,13 @@ var Demolished;
         Rendering.prototype.setViewPort = function (width, height) {
             this.gl.viewport(0, 0, width, height);
         };
-        Rendering.prototype.resizeCanvas = function () {
-            var width = window.innerWidth / 2;
-            var height = window.innerHeight / 2;
+        Rendering.prototype.resizeCanvas = function (parent, resolution) {
+            var width = parent.clientWidth;
+            var height = parent.clientHeight;
             this.canvas.width = width;
             this.canvas.height = height;
-            this.canvas.style.width = window.innerWidth + 'px';
-            this.canvas.style.height = window.innerHeight + 'px';
+            this.canvas.style.width = parent.clientWidth + 'px';
+            this.canvas.style.height = parent.clientHeight + 'px';
             this.uniforms.screenWidth = width;
             this.uniforms.screenHeight = height;
             this.surfaceCorners();
@@ -242,8 +241,8 @@ var Demolished;
                 var el = layers[i];
                 el.width = width;
                 el.height = height;
-                el.style.width = window.innerWidth + 'px';
-                el.style.height = window.innerHeight + 'px';
+                el.style.width = parent.clientWidth + 'px';
+                el.style.height = parent.clientHeight + 'px';
             }
         };
         Rendering.prototype.renderEntities = function (ent, ts) {
@@ -280,6 +279,10 @@ var Demolished;
             ent.swapBuffers();
             this.animationFrameCount++;
         };
+        __decorate([
+            demolishedProperties_1.Observe(true),
+            __metadata("design:type", demolishedModels_1.Uniforms)
+        ], Rendering.prototype, "uniforms", void 0);
         return Rendering;
     }());
     Demolished.Rendering = Rendering;

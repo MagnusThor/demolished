@@ -2,6 +2,7 @@ import {
     Demolished
 } from './src/demolished'
 
+
 import * as CodeMirror from 'codemirror'
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
@@ -22,61 +23,117 @@ import 'codemirror/mode/clike/clike.js';
 import 'codemirror/keymap/sublime';
 
 
-import { Utils,ShaderCompiler,ShaderError } from './src/demolishedUtils'
+import { Utils, ShaderCompiler, ShaderError } from './src/demolishedUtils'
 import { SmartArray } from './src/demolishedSmartArray';
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './src/demolishedModels'
 
-import { Scroller2D } from "./entities/2d/scroller/scroller";
 import { DemolishedStreamingMusic, DemolishedSIDMusic } from "./src/demolishedSound";
+import { DemolishedDialogBuilder } from './src/demolishedProperties';
+import { DemoishedEditorHelper } from './src/ui/editor/demoishedEditorHelper';
 
 
-export class DemoEd {
+
+export class DemolishedEd {
+
+    static getIntance(){
+        return new DemolishedEd();
+    }
+
 
     webGlrendering: Demolished.Rendering;
     shaderCompiler: ShaderCompiler;
-    onReady(): void { }
+    onReady(): void { 
+        this.select(".loader").classList.add("hide");
+    }
+
+    private select(query:string,parent?:Element):Element{
+           return  parent ? parent.querySelector(query) : document.querySelector(query);
+    }
+
     constructor() {
 
+      
 
+       
+
+    
         this.shaderCompiler = new ShaderCompiler();
 
         let webGlCanvas = document.querySelector("#webgl") as HTMLCanvasElement;
-
+     
         let music = new DemolishedStreamingMusic();
 
         this.webGlrendering = new Demolished.Rendering(webGlCanvas,
-         "entities/graph.json",music);
+            this.select("#shader-view"),
+            "entities/graph.json", music);
 
-         var timeEl = document.querySelector(".time");
+       // DemolishedDialogBuilder.render(this.webGlrendering,this.select("#dlg > .prop-content"));
 
-        timeEl.addEventListener("click", () =>
-        {
-               this.webGlrendering.uniforms.time = 0;
-               this.webGlrendering.resetClock(0);
+        var timeEl = document.querySelector(".time");
+
+        timeEl.addEventListener("click", () => {
+            this.webGlrendering.uniforms.time = 0;
+            this.webGlrendering.resetClock(0);
         });
 
-        document.querySelector("#btn-showconsole").addEventListener("click", () => {
-                document.querySelector(".immediate").classList.toggle("hide");
+        this.select("#btn-showconsole").addEventListener("click", () => {
+            this.select(".immediate").classList.toggle("hide");
         });
 
-        this.webGlrendering.onFrame = (frame) =>{
-            timeLine.value = parseInt(frame.ms).toString();
+        let playback = this.select("#toogle-playback");
+        let sound = this.select("#toggle-sound");
+        let fullscreen = this.select("#btn-fullscreen");
+
+        fullscreen.addEventListener("click", ()=>{
+            let view = this.select("#webgl");
+            view.webkitRequestFullscreen();
+           
+        });
+
+        document.addEventListener("webkitfullscreenchange",(evt) => {
+            let target = document.webkitFullscreenElement;
+            if(target){
+             
+                target.classList.add("shader-fullscreen");
+                this.webGlrendering.resizeCanvas(document.body);
             
+            }else{
+                target = this.select("#shader-view");
+                target.classList.remove("shader-fullscreen");
+                this.webGlrendering.resizeCanvas(target);
+            }
+        });
+
+        playback.addEventListener("click",() => {   
+            playback.classList.toggle("fa-play");
+            playback.classList.toggle("fa-pause")
+            this.webGlrendering.pause();
+        });
+
+        sound.addEventListener("click",() => {
+                sound.classList.toggle("fa-volume-up");
+                sound.classList.toggle("fa-volume-off");
+                this.webGlrendering.mute();
+        });
+
+
+        this.webGlrendering.onFrame = (frame) => {
+            timeLine.value = parseInt(frame.ms).toString();
+
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
 
-        let timeLine = document.querySelector("#current-time") as HTMLInputElement;
+        let timeLine = this.select("#current-time") as HTMLInputElement;
 
         this.webGlrendering.onReady = () => {
             this.onReady();
-   
-        
-            timeLine.setAttribute("max","386400");
-         
-            window.setTimeout( () => {
+
+            timeLine.setAttribute("max", "386400");
+
+            window.setTimeout(() => {
                 this.webGlrendering.start(0);
-            },2000);        
-          
+            }, 2000);
+
         }
         this.webGlrendering.onStop = () => {
         }
@@ -84,89 +141,80 @@ export class DemoEd {
 
             let shader = this.webGlrendering.currentTimeFragment.entityShader.fragmetShader;
 
-            let mirror = document.querySelector("#fragment") as HTMLDivElement;
+            let mirror = this.select("#fragment") as HTMLDivElement;
 
             mirror.textContent = shader;
 
 
             let lastCompile = performance.now();
-            let editor = CodeMirror.fromTextArea(document.querySelector("#fragment"),
-            {
-                gutters: ["note-gutter", "CodeMirror-linenumbers"],
-                viewportMargin: Infinity,
-                lineNumbers:true,
-                matchBrackets: true,
-                mode: 'x-shader/x-fragment',
-                keyMap: 'sublime',
-                autoCloseBrackets: true,
-                showCursorWhenSelecting: true,
-                theme:"monokai",
-                indentUnit: 4,
-                lineWrapping: true,
-                autofocus: true
-            }
+            let editor = CodeMirror.fromTextArea(this.select("#fragment"),
+                {
+                    gutters: ["note-gutter", "CodeMirror-linenumbers"],
+                    viewportMargin: Infinity,
+                    lineNumbers: true,
+                    matchBrackets: true,
+                    mode: 'x-shader/x-fragment',
+                    keyMap: 'sublime',
+                    autoCloseBrackets: true,
+                    showCursorWhenSelecting: true,
+                    theme: "monokai",
+                    indentUnit: 4,
+                    lineWrapping: true,
+                    autofocus: true
+                }
             );
 
-            let immediate = document.querySelector(".immediate");
+            //let wrapper = document.querySelector(".wrapper");
+
+            let helpers = new DemoishedEditorHelper(editor);
+
+            let immediate = this.select(".immediate");
             var isCompile = false;
 
-            editor.on("change", (cm:CodeMirror) => {
-                if(isCompile) return;
-                if( -(lastCompile - performance.now())  / 1000  > 0.5){
+            editor.on("change", (cm: CodeMirror) => {
+                if (isCompile) return;
 
+                if (-(lastCompile - performance.now()) / 1000 > 0.5) {
                     isCompile = true;
                     let fs = cm.getValue();
                     let vs = this.webGlrendering.currentTimeFragment.entityShader.vertexShader;
-
                     let shaderErrors = this.shaderCompiler.compile(fs);
-
                     lastCompile = performance.now();
-
-
-                    if(shaderErrors.length === 0){
-
+                    if (shaderErrors.length === 0) {
                         immediate.innerHTML = "";
-                     
-                        this.webGlrendering.currentTimeFragment.entityShader.reCompile(
-                            fs
-                        );
-                     if(!immediate.classList.contains("hide")) immediate.classList.add("hide");
+                        this.webGlrendering.currentTimeFragment.entityShader.reCompile(fs);
+                        if (!immediate.classList.contains("hide")) immediate.classList.add("hide");
                     }
-                   
-                    document.querySelectorAll(".error-info").forEach( e => {
-                        e.classList.remove("error-info");
 
-                       
+                    let errInfo = document.querySelectorAll(".error-info");
+                    for (var i = 0; i < errInfo.length; i++) {
+                        errInfo[i].classList.remove("error-info");
+                    }
 
-                     });
+                  
+                 
 
-                   
-                    shaderErrors.forEach ( (err:ShaderError) => {
+                    
+                    shaderErrors.length === 0 ? this.select("#btn-showconsole").classList.remove("red") : this.select("#btn-showconsole").classList.add("red");
+
+                    shaderErrors.forEach((err: ShaderError) => {
 
                         let errNode = document.createElement("abbr");
 
                         errNode.classList.add("error-info");
                         errNode.title = err.error;
-                        editor.setGutterMarker(err.line -1, "note-gutter", errNode);
+                        editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
 
-
+                        // todo: refactor
                         let p = document.createElement("p");
                         let m = document.createElement("mark");
                         let s = document.createElement("span");
                         s.textContent = err.error;
                         m.textContent = err.line.toString();
-                      
                         p.appendChild(m);
-                              
                         p.appendChild(s);
 
                         immediate.appendChild(p);
-
-                        
-                     
-                      //  editor.setMarker(err.line - 1, '<abbr title="' + err.error + '">' + err.line + '</abbr>', "errorMarker");
-                        
-                       // editor.setLineClass(err.line, "errorLine");
                     });
                     isCompile = false;
                 }
@@ -177,34 +225,12 @@ export class DemoEd {
         };
         window.onerror = () => {
             this.webGlrendering.stop();
-        }   
+        }
     }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    let demo = new DemoEd();
-
-
-    window["demoEd"] = demo;
-
-    // // output shader code - > #define triggerX time:float
-    // let tmCount = 0;
-    // document.addEventListener("keyup", (e:any) => {
-       
-    //     if(e.keyCode == 84){
-
-       
-    //     let tm = demo.webGlrendering.uniforms.time / 1000.;
-    //     console.log("#define trigger%s %f",tmCount,tm.toFixed(2));
-    //     tmCount++
-    //     }else if(e.keyCode ==83){
-    //         demo.webGlrendering.uniforms.time = 0;
-    //         demo.webGlrendering.resetClock(0);
-    //     }
-    // });
-
-   
-
+     DemolishedEd.getIntance();
 });
 
 

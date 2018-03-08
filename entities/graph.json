@@ -12,30 +12,31 @@
         "bmp": 129
     },
     "timeline": [
-        
-         {
-            "overlays": [],
-            "useTransitions":  false,
+        {
+            "useTransitions": false,
             "start": 0,
             "stop": 386400,
-            "entity": "cells"
+            "entity": "empty"
         }
     ],
     "effects": [
         {
-        "name": "empty",
-        "description": "",
-         "textures":  [  
-        ]
-         
-        },
-        {
-            "name": "cells",
+            "name": "empty",
             "description": "",
-             "textures":  [  
+            "textures": [
+                {
+                    "url": "assets/iChannel0.png",
+                    "uniform": "texture0",
+                    "width": 512,
+                    "height": 512
+                },
+                {
+                    "url": "assets/iChannel1.jpg",
+                    "uniform": "texture1",
+                    "width": 512,
+                    "height": 512
+                }
             ]
-             
-            }
-      
+        }
     ]
 }

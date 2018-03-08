@@ -13,6 +13,34 @@
 	
 	}
 
+	p > mark{
+		width: 100px;
+		background: transparent;
+		color: #fff;
+		font-weight: 700;
+		margin-right: 10px;
+	}
+
+	input[type=range]::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		border: 1px solid #000000;
+		height: 36px;
+		width: 16px;
+		border-radius: 3px;
+		background: #ffffff;
+		cursor: pointer;
+		margin-top: -14px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+		box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d; /* Add cool effects to your sliders! */
+	  }
+	  
+
+
+	.red{
+		color:red;
+	}
+
+	
+
 	.hide {
 		display: none;
 	}
@@ -20,13 +48,6 @@
 	.debug {
 		background: #fff;
 		opacity: 0.6;
-	}
-
-	canvas {
-		display: block;
-		position: absolute;
-		top: 0;
-		left: 0;
 	}
 
 	#fragment{
@@ -79,24 +100,15 @@
     padding: 1em;
 
 	}
-
-	p > mark{
-		width: 100px;
-		background: transparent;
-		color: #fff;
-		font-weight: 700;
-		margin-right: 10px;
-	}
-
 	#btn-showconsole{
 		position: absolute;
-		z-index: 10000;
-		right: 100px;
+		z-index: 1090;
+		right: 20px;
 		top: 1em;
 		height: 2em;
 		margin-top: 2px;
 		border: 0;
-		background: rgba(255,255,255,0.4);
+		background: rgba(255,255,255,0.9);
 	}
 	.tools{
 		position: absolute;
@@ -117,58 +129,334 @@
 		top: 6px;
 	}
 
-	input[type=range]::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		border: 1px solid #000000;
-		height: 36px;
-		width: 16px;
-		border-radius: 3px;
-		background: #ffffff;
-		cursor: pointer;
-		margin-top: -14px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
-		box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d; /* Add cool effects to your sliders! */
-	  }
-	  
-
-	.time{
+	.loader{
 		position: absolute;
-		
-		right:1em;
-		top:1em;
-		color: #fff;
-		z-index: 10000;
-		background: rgba(255,255,255,0.4);
-		padding: 4px;
-	
+		top: 0px;
+		left: 0px;
+		background: #fff;
+		z-index: 1100;
+		width: 100%;
+		height: 100%;
+		color:#000;
+		text-align: center;
 	}
+	.loader > i{
+		position:relative;
+		top: calc(50% - 10px);
+		color:#000;
+	}
+
 
 	#editor{
 		
 		position: absolute;
 		left:0;
 		top:0;
-		z-index: 1000;
 		height: 100%;
 		width: 100%;
 		background: rgba(255, 255, 255, 0.1);
 	}
 
-	div.layer {
+
+
+	
+
+	:root {
+		--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+		/* -- font-family: 'Montserrat'; */
+		--editor-font-family: 'Source Code Pro', monospace;
+		--ui-base-color: #2f302b;
+		--ui-component-color: #2e3033;
+		--ui-element-color: #3a3c40;
+		--ui-active-color: #171e22;
+		--ui-highlight-color: #B3E5FC;
+		--ui-component-text-color: #eefafa;
+		--ui-link-text-color: #e1eeee;
+		--ui-subtext-color: #c0c6c6;
+		--ui-border-color: #999ca0;
+		--modal-shadow: 0 0 0 5px rgba(0,0,0,0.2), 0 4px 8px 0 rgba(0,0,0,0.25);
+	
+		/* Z-INDEX SCALE */
+		--z-editor: 100;
+		--z-shader-ghost: 199;
+		--z-shader: 200;
+		--z-divider: 250;
+		--z-menu: 300;
+		--z-helpers: 1000;
+	}
+
+
+
+
+	.ge_modal {
+		box-sizing: border-box;
+		position: absolute;
+		z-index: var(--z-helpers); /* z-index will be modified by Greensock Draggable when dragging */
+		user-select: none;
+		box-shadow: var(--modal-shadow);
+		font-family: Helvetica, Geneva, sans-serif;
+		font-weight: 100;
+	}
+	
+	.ge_export_modal {
+		overflow: hidden;
+		color: var(--ui-component-text-color);
+		background-color: var(--ui-base-color);
+		/*box-shadow: var(--modal-shadow);*/
+		box-shadow: 0 5px 5px 5px rgba(0,0,0,.2),0 5px 0px 0px rgba(0,0,0,.25);
+		user-select: none;
+		cursor: pointer;
+		margin: 0px;
+		padding-right: 10px;
+		padding-left: 10px;
+		padding-top: 5px;
+		padding-bottom: 5px;
+		list-style-type: none;
+	}
+	
+	.ge_tooltip_modal {
+		padding: 10px;
+		padding-top: 0px;
+		padding-bottom: 0px;
+		background-color: var(--ui-component-color);
+		font-size: 14px;
+	}
+	
+	.ge_tooltip_modal a {
+		text-decoration: none;
+		color: var(--ui-highlight-color);
+	}
+	
+	.ge_tooltip_modal p {
+		color: var(--ui-subtext-color);
+		margin: 6px;
+	}
+
+	.ge_picker_modal {
+		box-sizing: border-box;
+		position: absolute;
+		padding: 0px;
+		background-color: var(--ui-component-color);
+		overflow: hidden;
+		box-shadow: var(--modal-shadow);
+		user-select: none;
+		z-index: var(--z-helpers); /* z-index will be modified by Greensock Draggable when dragging */
+	}
+	
+	.ge_picker_modal * {
+		box-sizing: border-box;
+	}
+	
+	.ge_picker_canvas {
 		width: 100%;
 		height: 100%;
+		cursor: crosshair;
+	}
+	
+	.ge_colorpicker_patch {
 		position: absolute;
 		left: 0;
 		top: 0;
+		width: 100%;
+		height: 50px;
 	}
-	/*
-	Layers
-	*/
-	.vingette {
+	
+	.ge_colorpicker_hsv-map {
+		position: relative;
+		height: 200px;
+		width: 100%;
+		top: 50px;
+	}
+	
+	.ge_colorpicker_disc-cover {
+		opacity: 0;
+		background-color: #000;
 		position: absolute;
-		left: 0px;
-		top: 0px;
-		z-index: 10000;
+		top: 0;
+		left: 0;
+		width: 200px;
+		height: 200px;
+		border-radius: 50%;
+		cursor: crosshair;
+	}
+	
+	.ge_colorpicker_disc-cover::after {
+		content: '';
+		background-color: transparent;
+		position: absolute;
+		top: -1px;
+		left: -1px;
+		width: 202px;
+		height: 202px;
+		border: 3px solid var(--ui-component-color);
+		border-radius: 50%;
+		opacity: 1;
+		pointer-events: none;
+		box-sizing: border-box;
+	}
+	
+	.ge_colorpicker_bar-bg,
+	.ge_colorpicker_bar-white {
+		position: absolute;
+		right: 0;
+		top: 0;
+		width: 25px;
+		height: 200px;
+	}
+	
+	.ge_colorpicker_bar-white {
+		background-color: #fff;
+	}
+	
+	.ge_colorpicker_disc-cursor {
+		position: absolute;
+		border: 1px solid #eee;
+		border-radius: 50%;
+		width: 9px;
+		height: 9px;
+		margin: -5px;
+		cursor: crosshair;
+	}
+	
+	.ge_colorpicker_dark .ge_colorpicker_disc-cursor {
+		border-color: #333;
+	}
+	
+	/*.ge_colorpicker_no-cursor,
+	.ge_colorpicker_no-cursor .ge_colorpicker_patch,
+	.ge_colorpicker_no-cursor .ge_colorpicker_disc-cursor,
+	.ge_colorpicker_no-cursor .ge_colorpicker_disc-cover {
+		cursor: none;
+	}*/
+	
+	.ge_colorpicker_bar-luminance {
+		position: absolute;
+		right: 0;
+		top: 0;
+	}
+	
+	.ge_colorpicker_bar-cursors {
+		position: absolute;
+		right: 0;
+		width: 25px;
+		top: 0;
+		height: 200px;
+		overflow: hidden;
+	}
+	.ge_colorpicker_bar-cursor-left,
+	.ge_colorpicker_bar-cursor-right {
+		position: absolute;
+		width: 0;
+		height: 0;
+		border: 4px solid transparent;
+		margin-top: -4px;
+	}
+	.ge_colorpicker_bar-cursor-left {
+		left: 0;
+		border-left: 4px solid #eee;
+	}
+	.ge_colorpicker_bar-cursor-right {
+		right: 0;
+		border-right: 4px solid #eee;
+	}
+	
+	.ge_colorpicker_dark .ge_colorpicker_bar-cursor-left {
+		border-left-color: #333;
+	}
+	.ge_colorpicker_dark .ge_colorpicker_bar-cursor-right {
+		border-right-color: #333;
+	}
+	
+	.ge_colorpicker_link-button {
+		position: absolute;
+		bottom: 5px;
+		left: 5px;
+		color: #85CCC4; /*white;*/
+		font-family: Helvetica, Arial, sans-serif;;
+		font-size: 20px;
+		font-weight: 100;
+		cursor: pointer;
+	}
+
+	#shader-fullscreen{
+		position: absolute;
+		top:0px;
+		left:0px;
 		height: 100%;
 		width: 100%;
-		background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.8) 100%);
+	}
+	
+	#shader-win {
+		background-color: rgb(1, 1, 1);
+		width: 450px;
+		position: absolute;
+		z-index: 1001;
+		right: 20px;
+		bottom: 80px;
+		border: 1px solid #dddddd;
+	}
+
+	#shader-win-tb {
+		cursor: move;
+		height: 28px;
+		line-height: 28px;
+		color: #fff;
+		text-align: right;
+		background: #000;
+		padding: 4px;
+		
+	}
+	#shader-win-tb i {
+		margin: auto 10px; 
+		cursor: pointer
+	}
+
+	#shader-win .time {
+		color: #fff;
+		font-style: none;
+	}
+
+
+	#shader-view {
+		height: 225px;
+		width: 450px;
+
+	}
+
+	.prop-box {
+		position: absolute;
+		top: 50px;
+		right: 20px;
+		min-width: 300px;
+		min-height: 300px;
+		background: rgba(255, 255, 255, 0.6);
+		z-index: 1001;
+		border: 1px solid #ffffff;
+	}
+
+	.prop-content {
+		padding: 10px;
+	}
+
+	.prop-content label {
+		line-height: 18px;
+		color: #fff
+	}
+
+	.prop-content input {
+		display: block;
+		width: 100%;
+	}
+
+	.prop-header {
+		text-align: center;
+		background: #000;
+		color: #fff;
+		line-height: 22px;
+		padding: 10px;
+	}
+
+	.prop-footer {
+		text-align: right;
+		padding: 10px;
 	}

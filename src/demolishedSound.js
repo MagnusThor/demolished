@@ -35,6 +35,9 @@ var DemolishedSIDMusic = (function (_super) {
     DemolishedSIDMusic.prototype.stop = function () {
         this.sid.pause();
     };
+    DemolishedSIDMusic.prototype.mute = function (ismuted) {
+        throw "not implemented";
+    };
     DemolishedSIDMusic.prototype.getFrequenceData = function () {
         return this.sid.getFreqByteData();
     };
@@ -95,7 +98,10 @@ var DemolishedStreamingMusic = (function (_super) {
         this.audio.play();
     };
     DemolishedStreamingMusic.prototype.stop = function () {
-        this.audio.stop();
+        this.audio.pause();
+    };
+    DemolishedStreamingMusic.prototype.mute = function (ismuted) {
+        this.audio.muted = ismuted;
     };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
         get: function () {
@@ -120,7 +126,6 @@ var DemolishedStreamingMusic = (function (_super) {
             demolishedLoader_1.default(audioSettings.audioFile).then(function (resp) {
                 return resp.arrayBuffer().then(function (buffer) {
                     var audioCtx = new AudioContext();
-                    console.log("streaming music loaded ", buffer);
                     audioCtx.decodeAudioData(buffer, function (audioData) {
                         var offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
                         var filteredSource = offlineCtx.createBufferSource();

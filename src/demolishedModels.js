@@ -1,7 +1,17 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
 var demolishedTransitions_1 = require("./demolishedTransitions");
+var demolishedProperties_1 = require("./demolishedProperties");
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -18,53 +28,59 @@ var Graph = (function () {
 }());
 exports.Graph = Graph;
 var TimeFragment = (function () {
-    function TimeFragment(entity, start, stop, useTransitions, overlays) {
+    function TimeFragment(entity, start, stop, useTransitions) {
         this.entity = entity;
         this.start = start;
         this.stop = stop;
         this.useTransitions = useTransitions;
-        if (overlays instanceof Array) {
-            this.overlays = overlays;
-        }
-        else
-            this.overlays = new Array();
     }
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;
         if (this.useTransitions) {
-            this.transition = new demolishedTransitions_1.DemloshedTransitionBase(this.entityShader);
+            this.transition = new demolishedTransitions_1.DemlolishedTransitionBase(this.entityShader);
         }
     };
-    Object.defineProperty(TimeFragment.prototype, "hasLayers", {
-        get: function () {
-            return this.overlays.length > 0;
-        },
-        enumerable: true,
-        configurable: true
-    });
     return TimeFragment;
 }());
 exports.TimeFragment = TimeFragment;
-var Overlay = (function () {
-    function Overlay(name, classList) {
-        this.name = name;
-        this.classList = classList;
-    }
-    Overlay.prototype.loadMarkup = function () {
-        throw "Not yet implemented";
-    };
-    return Overlay;
-}());
-exports.Overlay = Overlay;
 var Uniforms = (function () {
     function Uniforms(width, height) {
         this.screenWidth = width;
         this.screenHeight = height;
+        this.alpha = 0;
     }
     Uniforms.prototype.setScreen = function (w, h) {
         this.screenWidth = w;
         this.screenWidth = h;
     };
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "time", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "timeTotal", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "mouseX", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "mouseY", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "screenWidth", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "screenHeight", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "alpha", void 0);
     return Uniforms;
 }());
 exports.Uniforms = Uniforms;

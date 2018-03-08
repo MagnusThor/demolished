@@ -49,7 +49,6 @@ float col;
     uv = rotate2d(sin(time*0.023)* PI) * uv;
     uv += vec2(0.5);
 	
-	
     vec2 z;
 	
     z.x = 3.0 * (uv.x - 0.5);
@@ -70,9 +69,7 @@ float col;
 	vec3 color = vec3(getCol(col));
 	
 	color = getCol(color);
-	
-	
 
-   gl_FragColor = vec4(color,1.0) /100.;
+       gl_FragColor = vec4(color,1.0) /100.;
 
 }

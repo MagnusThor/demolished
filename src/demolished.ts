@@ -1,10 +1,11 @@
 import { Utils } from './demolishedUtils'
 import { SmartArray } from './demolishedSmartArray';
 import { ShaderEntity, EntityTexture, IEntity } from './demolishedEntity'
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, Overlay, AudioSettings } from './demolishedModels'
+import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings } from './demolishedModels'
 import loadResource from './demolishedLoader'
 import { DemolishedCanvas } from "./demolishedCanvas";
 import { IDemolisedAudioContext } from "./demolishedSound";
+import { DemoishedProperty, Observe } from './demolishedProperties';
 
 export namespace Demolished {
 
@@ -18,22 +19,24 @@ export namespace Demolished {
         animationStartTime: number;
         animationFrameId: number;
         animationOffsetTime: number;
-    //  audio: HTMLAudioElement;// AudioBufferSourceNode;
         entitiesCache: Array<ShaderEntity>;i
         timeFragments: Array<TimeFragment>;
         currentTimeFragment: TimeFragment;
 
+        isPaused:boolean;
+        isSoundMuted: boolean;
+
         webGLbuffer: WebGLBuffer
         fftTexture: WebGLTexture;
-
+       
+        
         width: number = 1;
         height: number = 1;
         centerX: number = 0;
         centerY: number = 0;
 
+        @Observe(true)
         uniforms: Uniforms;
-
-        peaks: Array<any>;
 
         private getRendringContext(): WebGLRenderingContext {
 
@@ -48,6 +51,7 @@ export namespace Demolished {
                 this.canvas.getContext('webgl', contextAttributes) ||
                 this.canvas.getContext('experimental-webgl', contextAttributes);
 
+            // todo: refactor    
             renderingContext.getExtension('OES_standard_derivatives');
             renderingContext.getExtension("OES_texture_float");
             renderingContext.getExtension("OES_texture_half_float");
@@ -75,11 +79,15 @@ export namespace Demolished {
         }
 
         constructor(public canvas: HTMLCanvasElement,
+            public parent: Element,
             public timelineFile: string,public audio:IDemolisedAudioContext ,public simpleCanvas?:DemolishedCanvas) {
 
             this.gl = this.getRendringContext();
+            
+            let proxy = new DemoishedProperty<Uniforms>( new Uniforms(this.canvas.width, this.canvas.height));
+            
+            this.uniforms = proxy.getObserver();
 
-           this.uniforms = new Uniforms(this.canvas.width, this.canvas.height);
 
             this.uniforms.time = 0;
             this.uniforms.timeTotal = 0;
@@ -97,53 +105,38 @@ export namespace Demolished {
             // load and add the entities
             this.loadGraph(this.timelineFile).then((graph: Graph) => {
 
-             //   console.log(graph);
-
                 let audioSettings: AudioSettings = graph.audioSettings;
 
                 graph.timeline.forEach((tf: TimeFragment) => {
-                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop,tf.useTransitions,tf.overlays);
+                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop,tf.useTransitions);
                     this.timeFragments.push(_tf)
                 });
-
-                // sort the fragments by start time....
                 this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
                     return a.start - b.start;
                 });
-                // todo: pick audio file from graph
-                // this.createAudio(audioSettings.audioFile).then((analyzer: AnalyserNode) => {
-
                     this.audio.createAudio(audioSettings).then((state: boolean) => {
-
                     graph.effects.forEach((effect: Effect) => {
-
                         let textures = Promise.all(effect.textures.map((texture: any) => {
-                            
                             return new Promise((resolve, reject) => {
                                 let image = new Image();
                                 image.src = texture.url;
                                 image.onload = () => {
                                     resolve(image);
                                 }
-                               
                                 image.onerror = (err) => resolve(err);
                             }).then((image: HTMLImageElement) => {
                                 return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
                             });
-
                         })).then((assets: Array<EntityTexture>) => {
                             this.addEntity(effect.name, assets);
-
-                        
-
                             if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still
                                 this.onReady();
-                                this.resizeCanvas();
+                               // this.resizeCanvas(this.parent);
                             }
 
                         });
                     });
-                       this.resizeCanvas();
+                       this.resizeCanvas(this.parent);
                 });
             });
         }
@@ -156,19 +149,17 @@ export namespace Demolished {
 
         // todo:Rename
         private addEventListeners() {
-
             document.addEventListener("mousemove", (evt: MouseEvent) => {
                 this.uniforms.mouseX = evt.clientX / window.innerWidth;
                 this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
             });
-            window.addEventListener("resize", () => {
-                this.resizeCanvas();
-            });
+            // window.addEventListener("resize", () => {
+            //     this.resizeCanvas(this.parent);
+            // });
         }
         addEntity(name: string, textures: Array<EntityTexture>
         ): ShaderEntity {
             const entity = new ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
-
             this.entitiesCache.push(entity);
             // attach to timeLine
             let tf = this.timeFragments.filter((pre: TimeFragment) => {
@@ -182,39 +173,9 @@ export namespace Demolished {
             return entity;
         }
         private tryFindTimeFragment(time: number): TimeFragment {
-            let parent = document.querySelector("#main");
-            this.removeLayers(parent);
-            let timeFragment = this.timeFragments.find((tf: TimeFragment) => {
+           return this.timeFragments.find((tf: TimeFragment) => {
                 return time < tf.stop && time >= tf.start
             });
-            if (!timeFragment) return;
-            if (timeFragment.hasLayers) {
-
-                timeFragment.overlays.forEach((overlay: Overlay) => {
-                    let layer = document.createElement("div");
-                    layer.id = overlay.name;
-                    overlay.classList.forEach((className: string) => {
-                        layer.classList.add(className);
-                    });
-                    layer.innerHTML = overlay.markup;
-
-                    layer.classList.add("layer");
-                    parent.appendChild(layer);
-                });
-            }
-
-        
-            if(timeFragment){
-                this.onNext({
-                d:  time - this.animationStartTime,
-                c: this.animationFrameCount,
-                t:  time - this.animationStartTime ,
-                fps: 1000 / (time  / this.animationFrameCount)
-            })
-          }
-          
-
-            return timeFragment;
         }
 
 
@@ -224,31 +185,54 @@ export namespace Demolished {
         this.animationOffsetTime = time;
         this.animationStartTime= performance.now();
         this.audio.currentTime = (time / 1000) % 60;
-  
        } 
 
         start(time: number) {
             this.uniforms.timeTotal = time;
             this.animationFrameCount = 0;
             this.animationOffsetTime = time;
-
             this.currentTimeFragment = this.tryFindTimeFragment(time);
-        
             this.animationStartTime = performance.now();
-
-             this.audio.play();
             this.animate(time);
-            this.audio.currentTime = (time / 1000) % 60
-
-            
-            this.onStart();
-
+           
+            this.audio.currentTime = (time / 1000) % 60    
+            this.audio.play();
+            if(!this.isPaused)        
+                this.onStart();
         }
 
         stop(): number {
+         
+            this.audio.stop();
             cancelAnimationFrame(this.animationFrameId);;
             this.onStop();
             return this.animationFrameId;
+        }
+
+        mute(){
+            this.isSoundMuted = !this.isSoundMuted;
+             this.audio.mute(this.isSoundMuted);
+        }
+
+        pause():number{
+            if(!this.isPaused){
+                this.isPaused = true;
+            
+                this.stop();
+            }else{
+                this.isPaused = false;
+      
+                   this.resume( this.uniforms.time); 
+            }
+           
+            return this.uniforms.time;
+        }
+
+
+
+        resume(time:number){
+          
+            this.start(time);
         }
 
         updateTextureData(texture: WebGLTexture, size: number, bytes: Uint8Array): void {
@@ -266,6 +250,7 @@ export namespace Demolished {
 
         private animate(time: number) {
             let animationTime = time - this.animationStartTime;
+
             this.animationFrameId = requestAnimationFrame((_time: number) => {
                 this.animate(_time);
             });
@@ -277,13 +262,16 @@ export namespace Demolished {
                  this.updateTextureData(
                     this.fftTexture, this.audio.textureSize, new Uint8Array(1024));
             }
+            
             if (this.currentTimeFragment) {
                 if (animationTime >= this.currentTimeFragment.stop) {
                     this.currentTimeFragment = this.tryFindTimeFragment(time);
 
                 }
-                this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
+                this.currentTimeFragment ?
+                    this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0)
             }
+
             this.onFrame({
                 frame: this.animationFrameCount,
                 ms: animationTime,
@@ -291,12 +279,6 @@ export namespace Demolished {
                 sec: Math.floor((animationTime/1000) % 60),
                 
             });
-        }
-
-        private removeLayers(parent: Element) {
-            let layers = document.querySelectorAll(".layer");
-            for (let i = 0; i < layers.length; i++)
-                parent.removeChild(layers[i]);
         }
 
         private surfaceCorners() {
@@ -318,16 +300,16 @@ export namespace Demolished {
             this.gl.viewport(0, 0, width, height);
         }
 
-        resizeCanvas() {
+        resizeCanvas(parent:Element,resolution?:number) {
 
-            let width = window.innerWidth / 2
-            let height = window.innerHeight / 2;
+            let width = parent.clientWidth ;// 2
+            let height = parent.clientHeight; // 2;
 
             this.canvas.width = width;
             this.canvas.height = height;
 
-            this.canvas.style.width = window.innerWidth + 'px';
-            this.canvas.style.height = window.innerHeight + 'px';
+            this.canvas.style.width = parent.clientWidth + 'px';
+            this.canvas.style.height = parent.clientHeight + 'px';
 
             this.uniforms.screenWidth = width;
             this.uniforms.screenHeight = height;
@@ -339,8 +321,8 @@ export namespace Demolished {
                 let el = layers[i] as HTMLCanvasElement;
                 el.width = width;
                 el.height = height;
-                el.style.width = window.innerWidth + 'px';
-                el.style.height = window.innerHeight + 'px'
+                el.style.width = parent.clientWidth + 'px';
+                el.style.height = parent.clientHeight + 'px'
             }
         }
       

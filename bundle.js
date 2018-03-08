@@ -14244,6 +14244,13 @@ var DemolishedSIDMusic = (function (_super) {
     DemolishedSIDMusic.prototype.getFrequenceData = function () {
         return this.sid.getFreqByteData();
     };
+    Object.defineProperty(DemolishedSIDMusic.prototype, "duration", {
+        get: function () {
+            return 0;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(DemolishedSIDMusic.prototype, "currentTime", {
         get: function () {
             return this.sid._currentPlaytime;
@@ -14296,6 +14303,13 @@ var DemolishedStreamingMusic = (function (_super) {
     DemolishedStreamingMusic.prototype.stop = function () {
         this.audio.stop();
     };
+    Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
+        get: function () {
+            return this.audio.duration;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(DemolishedStreamingMusic.prototype, "currentTime", {
         get: function () {
             return this.audio.currentTime;
@@ -14507,7 +14521,7 @@ var demolishedSound_1 = __webpack_require__(20);
 var DemoEd = (function () {
     function DemoEd() {
         var _this = this;
-        this.compiler = new demolishedUtils_1.ShaderCompiler();
+        this.shaderCompiler = new demolishedUtils_1.ShaderCompiler();
         var webGlCanvas = document.querySelector("#webgl");
         var music = new demolishedSound_1.DemolishedStreamingMusic();
         this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, "entities/graph.json", music);
@@ -14557,13 +14571,11 @@ var DemoEd = (function () {
             editor.on("change", function (cm) {
                 if (isCompile)
                     return;
-                console.clear();
-                console.log(-(lastCompile - performance.now()) / 1000, -(lastCompile - performance.now()) / 1000 > 5.);
                 if (-(lastCompile - performance.now()) / 1000 > 0.5) {
                     isCompile = true;
                     var fs = cm.getValue();
                     var vs = _this.webGlrendering.currentTimeFragment.entityShader.vertexShader;
-                    var shaderErrors = _this.compiler.compile(fs);
+                    var shaderErrors = _this.shaderCompiler.compile(fs);
                     lastCompile = performance.now();
                     if (shaderErrors.length === 0) {
                         immediate.innerHTML = "";
@@ -14571,9 +14583,9 @@ var DemoEd = (function () {
                         if (!immediate.classList.contains("hide"))
                             immediate.classList.add("hide");
                     }
-                    document.querySelectorAll(".error-info").forEach(function (e) {
-                        e.classList.remove("error-info");
-                    });
+                    var errInfo = document.querySelectorAll(".error-info");
+                    for (var i = 0; i < errInfo.length; i++)
+                        errInfo[i].classList.remove("error-info");
                     shaderErrors.forEach(function (err) {
                         var errNode = document.createElement("abbr");
                         errNode.classList.add("error-info");

@@ -75,14 +75,10 @@ void main(){
 	
 //	float fov  = tan(4. * 0.17453292 * sin(time*.05));
 	
-	
 	vec3 dir = vec3(tx.x * fov, tx.y * fov * aspect_ratio, 1.);
-	
 	
 	dir.xy = vec2(dir.x * ca - dir.y * sa,dir.x * sa + dir.y * ca);
 	dir.xz = vec2(dir.x * ca - dir.z * sa, dir.x  * sa + dir.z * ca); 
-	
-		
 	
 	vec3 col = raymarch(cam,dir);
 	

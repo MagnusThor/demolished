@@ -350,7 +350,7 @@ void main(){
         // certain aesthetic than science.
         //
         // Glow.
-        sceneCol = getGrey(texCol)*((diff+diff2)*0.75 + ambience*0.25) + (spec+spec2)*texCol*2. + fre*crv*texCol.zyx*2.;
+        sceneCol = getGrey(texCol)*((diff+cur)*0.75 + ambience*0.25) + (spec+spec2)*texCol*2. + fre*crv*texCol.zyx*2.;
         //
         // Other combinations:
         //

@@ -1,32 +1,64 @@
 <html>
-
 <head>
-	<title>demlolished - electron</title>
+	<title>demlolished - Editor 0.1</title>
 	<script src="libs/scriptProcessor.js"></script>
 	<script src="libs/tinysid.js"></script>
+	<link href="css/fontawesome-all.min.css" rel="stylesheet" type="text/css">	
 	<link href="css/codemirror.css" rel="stylesheet" type="text/css">
 	<link href="css/monokai.css" rel="stylesheet" type="text/css">
 	<link href="css/style.css" rel="stylesheet" type="text/css">
+
 </head>
 
 <body>
-	<button id="btn-showconsole" class="btn">
-		Immediate
-	</button>
-	<time class="time">00.00</time>
 
-	<form id="editor">
 
-		<textarea id="fragment" col="10" rows="10">
 
-	</textarea>
-	</form>
-	<div id="main">
-		<div class="">
+<!--
+	<div class="prop-box" id="dlg">
+		<div class="prop-header">
+			Uniforms
+		</div>
+		<div class="prop-content">
 
 		</div>
-		<canvas id="webgl" class=""></canvas>
+		<div class="prop-footer">
+			<button>Hide</button>
+		</div>
+	</div>
+-->	
 
+	<div class="loader">
+		<i class="fa fa-spinner fa-4x fa-spin"></i>
+	</div>
+
+
+	<button id="btn-showconsole" class="btn">
+		<i class="fa fa-exclamation-circle"></i>
+		Errors
+	</button>
+
+	<div class="wrapper">
+		<form id="editor">
+
+			<textarea id="fragment" col="10" rows="10">
+
+	</textarea>
+		</form>
+	</div>
+	<div id="shader-win">
+		<div id="shader-win-tb">
+			<i class="fa fa-desktop" id="btn-fullscreen"></i>
+			<i class="fa fa-volume-off" id="toggle-sound"></i>
+			<i class="fa fa-play" id="toogle-playback"></i>
+			<i class="fa fa-circle red"></i>
+			<i class="time">00.00</span>
+		</div>
+		<div id="shader-view">
+
+			<canvas id="webgl"></canvas>
+
+		</div>
 	</div>
 	<div class="immediate hide">
 
@@ -34,7 +66,7 @@
 	<div class="tools">
 		<input type="range" min="0" max="100" value="10" id="current-time" />
 	</div>
-	<script src="bundle.js"></script>
+	<script src="demoBundle.js"></script>
 </body>
 
 </html>

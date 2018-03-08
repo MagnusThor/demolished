@@ -1,15 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var DemloshedTransitionBase = (function () {
-    function DemloshedTransitionBase(entity) {
+var DemlolishedTransitionBase = (function () {
+    function DemlolishedTransitionBase(entity) {
         this.entity = entity;
     }
-    DemloshedTransitionBase.prototype.fadeIn = function (time) {
+    DemlolishedTransitionBase.prototype.fadeIn = function (time) {
         return null;
     };
-    DemloshedTransitionBase.prototype.fadeOut = function (time) {
+    DemlolishedTransitionBase.prototype.fadeOut = function (time) {
         return;
     };
-    return DemloshedTransitionBase;
+    return DemlolishedTransitionBase;
 }());
-exports.DemloshedTransitionBase = DemloshedTransitionBase;
+exports.DemlolishedTransitionBase = DemlolishedTransitionBase;

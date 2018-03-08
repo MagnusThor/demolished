@@ -1,5 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+RegExp.prototype.execAll = function (string) {
+    var match = null;
+    var matches = [];
+    while (match = this.exec(string)) {
+        var matchArray = [];
+        for (var i in match) {
+            if (parseInt(i) == i) {
+                matchArray.push(match[i]);
+            }
+        }
+        matchArray.index = match.index;
+        matches.push(matchArray);
+    }
+    return matches;
+};
 var Utils = (function () {
     function Utils() {
     }

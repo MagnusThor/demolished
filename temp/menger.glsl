@@ -95,25 +95,25 @@ float kaliSet( vec3 p )
 
 float mengerSponge(in vec3 z)
 {
-	orb = vec4(1000.);
-	vec3 op = z;
-	z  = abs(1.0-mod(z,2.));
-	float d = 1000.0;
-	for (int n = 0; n < 7; n++) {
-		op = -1.0 + 2.0*fract(0.5*op+0.5);
-		float r2 = dot(op,op);
-        	orb = min( orb, vec4(abs(op),r2) ); 
-		//z.xy = rotate(z.xy,4.0+2.0*cos( time/16.0));
-		z = abs(z);
-		if (z.x<z.y){ z.xy = z.yx;}
-		if (z.x< z.z){ z.xz = z.zx;}
-		if (z.y<z.z){ z.yz = z.zy;}
-		z = 3.0*z-Offset*(3.0-1.0);
-		if( z.z<-0.5*Offset.z*(3.0-1.0))  z.z+=Offset.z*(3.0-1.0);
-		d = min(d, length(z) * pow(3.0, float(-n)-1.0));
-	}
-	
-	return d-0.0001;
+		orb = vec4(1000.);
+		vec3 op = z;
+		z  = abs(1.0-mod(z,2.));
+		float d = 1000.0;
+		for (int n = 0; n < 7; n++) {
+			op = -1.0 + 2.0*fract(0.5*op+0.5);
+			float r2 = dot(op,op);
+				orb = min( orb, vec4(abs(op),r2) ); 
+			//z.xy = rotate(z.xy,4.0+2.0*cos( time/16.0));
+			z = abs(z);
+			if (z.x<z.y){ z.xy = z.yx;}
+			if (z.x< z.z){ z.xz = z.zx;}
+			if (z.y<z.z){ z.yz = z.zy;}
+			z = 3.0*z-Offset*(3.0-1.0);
+			if( z.z<-0.5*Offset.z*(3.0-1.0))  z.z+=Offset.z*(3.0-1.0);
+			d = min(d, length(z) * pow(3.0, float(-n)-1.0));
+		}
+		
+		return d-0.0001;
 }
 
 
@@ -209,9 +209,7 @@ vec4 rayMarch(in vec3 from, in vec3 dir, in vec2 fragCoord) {
 	vec3 pos;
 	for (int i=0; i < MaxSteps; i++) {
 		pos = from + totalDistance * dir;
-		
-		distance = map(pos)*FudgeFactor;
-		
+		distance = map(pos)*FudgeFactor;	
 		totalDistance += distance;
 		
 		if (distance < MinimumDistance) break;

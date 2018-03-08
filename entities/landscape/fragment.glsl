@@ -18,29 +18,18 @@ float hash( float n )
 {
     return fract(sin(n)*43758.5453123);
 }
-
-
-float noise( in vec3 x )
-{
+float noise( in vec3 x ){
     vec3 p = floor(x);
     vec3 f = fract(x);
-
     f = f*f*(3.0-2.0*f);
-
     float n = p.x + p.y*57.0 + 113.0*p.z;
-
     float res = mix(mix(mix( hash(n+  0.0), hash(n+  1.0),f.x),
                         mix( hash(n+ 57.0), hash(n+ 58.0),f.x),f.y),
                     mix(mix( hash(n+113.0), hash(n+114.0),f.x),
                         mix( hash(n+170.0), hash(n+171.0),f.x),f.y),f.z);
     return res;
 }
-
-
-
-
-vec3 noised( in vec2 x )
-{
+vec3 noised( in vec2 x ){
     vec2 p = floor(x);
     vec2 f = fract(x);
 
@@ -308,22 +297,18 @@ void main(void)
 		vec3 brdf  = 2.0*vec3(0.17,0.19,0.20)*clamp(nor.y,0.0,1.0);
 		     brdf += 6.0*vec3(1.00,0.95,0.80)*dif1v;
 		     brdf += 2.0*vec3(0.20,0.20,0.20)*dif2;
-
-		col *= brdf;
-		
 		float fo = 1.0-exp(-pow(0.0015*t,1.5));
 		vec3 fco = vec3(0.7) + 0.6*vec3(0.8,0.7,0.5)*pow( sundot, 4.0 );
 		col = mix( col, fco, fo );
+
+		col *= brdf;
+		
 	}
 
 	col = sqrt(col);
 
 	vec2 uv = xy*0.5+0.5;
 	col *= 0.7 + 0.3*pow(16.0*uv.x*uv.y*(1.0-uv.x)*(1.0-uv.y),0.1);
-	
-   
-
-
 
 	
 	gl_FragColor=vec4(col,1.0);

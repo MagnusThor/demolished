@@ -1,0 +1,85 @@
+<html>
+
+<head>
+    <title>butterfly noise a demolioshed team production</title>
+    <script src="/libs/scriptProcessor.js"></script>
+    <script src="/libs/tinysid.js"></script>
+    <script src="demoBundle.js"></script>
+    <style>
+        body {
+            background: #000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+
+
+        }
+
+        html {
+            margin: 0;
+            box-sizing: border-box;
+
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .prop-box{
+            position: absolute;
+            top:10px;
+            right: 10px;
+            min-width: 300px;
+            min-height: 300px;
+            background: rgba(255,255,255,0.6);
+            z-index: 1001;
+            border: 1px solid #ffffff;
+        }
+        .prop-content{
+            padding: 10px;
+        }
+        .prop-content label{
+                line-height: 18px;
+                color:#fff
+        }
+        .prop-content input{
+            display: block;
+            width: 100%;
+        }
+        .prop-header{
+            text-align: center;
+            background: #000;
+            color: #fff;
+            line-height: 22px;
+            padding: 10px;
+        }
+        .prop-footer{
+            text-align: right; 
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+   
+         <div class="prop-box" id="dlg">
+            <div class="prop-header">
+                Uniforms
+            </div>
+            <div class="prop-content">
+
+            </div>
+            <div class="prop-footer">
+                <button>Hide</button>
+            </div>
+         </div>   
+       
+
+
+    <canvas id="webGl"></canvas>
+</body>
+
+</html>

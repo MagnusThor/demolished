@@ -138,7 +138,7 @@ float shadow(vec3 pos, vec3 sdir) {
 }
 
 float kset(vec3 p) {
-	p=abs(.5-fract(p*20.));
+	p=abs(.5-act(p*20.));
 	float es, l=es=0.;
 	for (int i=0;i<13;i++) {
 		float pl=l;

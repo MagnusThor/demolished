@@ -1,3 +1,20 @@
+RegExp.prototype.execAll = function(string) {
+    let match = null;
+    let matches = [];
+    while (match = this.exec(string)) {
+        let matchArray = [];
+        for (let i in match) {
+            if (parseInt(i) == i) {
+                matchArray.push(match[i]);
+            }
+        }
+        matchArray.index = match.index;
+        matches.push(matchArray);
+    }
+    return matches;
+};
+
+
 /**
     * Utils
     * 

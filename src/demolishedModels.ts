@@ -1,6 +1,7 @@
 ;
 import { ShaderEntity} from './demolishedEntity'
-import { DemloshedTransitionBase } from "./demolishedTransitions";
+import { DemlolishedTransitionBase } from "./demolishedTransitions";
+import { Observe } from './demolishedProperties';
 
 export class RenderTarget {
     constructor(public frameBuffer: WebGLFramebuffer, public renderBuffer: WebGLFramebuffer,
@@ -25,65 +26,52 @@ export class Graph {
  * @class TimeFragment
  */
 export class TimeFragment {
-
     entityShader: ShaderEntity;
-    overlays: Array<Overlay>; // overlays
     useTransitions: boolean
-    transition: DemloshedTransitionBase;
-
+    transition: DemlolishedTransitionBase;
     constructor(public entity: string, public start: number, public stop: number,
-    useTransitions: boolean,
-     overlays?:Array<Overlay>,
-    ) {
+    useTransitions: boolean) {
         this.useTransitions = useTransitions;
-        if(overlays instanceof Array) {
-            this.overlays = overlays;}
-            else this.overlays = new Array<Overlay>();
     }
     setEntity(ent: ShaderEntity) {
         this.entityShader = ent;
          if(this.useTransitions){
 
-                this.transition = new DemloshedTransitionBase(this.entityShader);
+                this.transition = new DemlolishedTransitionBase(this.entityShader);
         }
     }
-    get hasLayers() {
-            return this.overlays.length > 0;
-    }
-}
-
-export class Overlay{
-        markup:string
-        constructor(public name:string,public classList: Array<string>){
-        }
-        loadMarkup(){
-                throw "Not yet implemented";
-        }
 }
 /**
- * Uniforms are global variables  passed to the shaders program's 
+ * Uniforms are global variables passed to the shaders program's 
  * 
  * @export
  * @class Uniforms
  */
 export class Uniforms {
+    @Observe(true)
     time: number;
+    @Observe(true)
     timeTotal: number
+    @Observe(true)
     mouseX: number;
+    @Observe(true)
     mouseY: number;
+    @Observe(true)
     screenWidth: number;
-    screenHeight: number;    
+    @Observe(true)
+    screenHeight: number;
+    @Observe(true)    
     alpha:number;
     constructor(width: number, height: number) {
         this.screenWidth = width;
         this.screenHeight = height;
+        this.alpha = 0;
     }
     setScreen(w: number, h: number) {
         this.screenWidth = w;
         this.screenWidth = h;
     }
 }
-
 /**
  * 
  * 
@@ -104,13 +92,11 @@ export class Effect {
   * 
   * @export
   * @class AudioAnalyzerSettings
-  */
- export class AudioAnalyzerSettings {
+  */ export class AudioAnalyzerSettings {
         constructor(public fftSize: number, public smoothingTimeConstant: number,
             public minDecibels: number, public maxDecibels: number,
         ) { }
     }
-
 /**
  * 
  * 
@@ -126,17 +112,3 @@ export class AudioSettings{
 
             }
 }
-
-
-    //  "audioSettings": {
-    //     "audioFile": "song.mp3",
-    //     "audioAnalyzerSettings":{
-    //         "fftSize": 8192,
-    //         "smoothingTimeConstant": 0.85,
-    //         "minDecibels": -100,
-    //         "maxDecibels":-30
-    //     },
-       
-    //     "duration": 211200,
-    //     "bmp": 129
-    // }

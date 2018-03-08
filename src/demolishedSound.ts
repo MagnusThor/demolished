@@ -22,6 +22,7 @@ export interface IDemolisedAudioContext {
     createAudio(settings: any): Promise<boolean>
     play(tm?: number): void
     stop(tm?: number): void
+    mute(ismuted:boolean) : void;
     currentTime: number;
     getFrequenceData(): Uint8Array
     textureSize: number 
@@ -53,6 +54,9 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
     }
     stop() {
         this.sid.pause();
+    }
+    mute(ismuted:boolean){
+        throw "not implemented"
     }
     getFrequenceData():Uint8Array {
         return this.sid.getFreqByteData();
@@ -111,13 +115,16 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
         this.audio.play();
     }
     stop() {
-        this.audio.stop();
+        this.audio.pause();
+    }
+
+    mute(ismuted:boolean){
+        this.audio.muted = ismuted;
     }
 
     get duration(): number{
         return this.audio.duration;
     }
-
 
     get currentTime(): number {
         return this.audio.currentTime;
@@ -131,10 +138,6 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
             loadResource(audioSettings.audioFile).then((resp: Response) => {
                 return resp.arrayBuffer().then((buffer: ArrayBuffer) => {
                     let audioCtx = new AudioContext();
-
-
-                    console.log("streaming music loaded ",buffer);
-
                     audioCtx.decodeAudioData(buffer, (audioData: AudioBuffer) => {
 
                         let offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
