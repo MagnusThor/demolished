@@ -12,18 +12,18 @@ var BaseEntity2D = (function () {
     return BaseEntity2D;
 }());
 exports.BaseEntity2D = BaseEntity2D;
-var DemolishedCanvas = (function () {
-    function DemolishedCanvas(canvas) {
+var Demolished2D = (function () {
+    function Demolished2D(canvas) {
         this.canvas = canvas;
         this.entities = new Array();
         this.ctx = canvas.getContext("2d");
         this.animationStartTime = 0;
         this.resizeCanvas();
     }
-    DemolishedCanvas.prototype.clear = function () {
+    Demolished2D.prototype.clear = function () {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     };
-    DemolishedCanvas.prototype.animate = function (time) {
+    Demolished2D.prototype.animate = function (time) {
         var _this = this;
         var animationTime = time - this.animationStartTime;
         this.animationFrameId = requestAnimationFrame(function (_time) {
@@ -31,10 +31,10 @@ var DemolishedCanvas = (function () {
         });
         this.renderEntities(time);
     };
-    DemolishedCanvas.prototype.addEntity = function (ent) {
+    Demolished2D.prototype.addEntity = function (ent) {
         this.entities.push(ent);
     };
-    DemolishedCanvas.prototype.resizeCanvas = function () {
+    Demolished2D.prototype.resizeCanvas = function () {
         var width = window.innerWidth / 2;
         var height = window.innerHeight / 2;
         this.canvas.width = width;
@@ -42,15 +42,15 @@ var DemolishedCanvas = (function () {
         this.canvas.style.width = window.innerWidth + 'px';
         this.canvas.style.height = window.innerHeight + 'px';
     };
-    DemolishedCanvas.prototype.renderEntities = function (time) {
+    Demolished2D.prototype.renderEntities = function (time) {
         this.clear();
         this.entities.forEach(function (ent) {
             ent.update(time);
         });
     };
-    DemolishedCanvas.prototype.start = function (startTime) {
+    Demolished2D.prototype.start = function (startTime) {
         this.animate(startTime);
     };
-    return DemolishedCanvas;
+    return Demolished2D;
 }());
-exports.DemolishedCanvas = DemolishedCanvas;
+exports.Demolished2D = Demolished2D;

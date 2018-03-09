@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolished_1 = require("./src/demolished");
 var CodeMirror = require("codemirror");
@@ -21,70 +31,107 @@ require("codemirror/keymap/sublime");
 var demolishedUtils_1 = require("./src/demolishedUtils");
 var demolishedSound_1 = require("./src/demolishedSound");
 var demoishedEditorHelper_1 = require("./src/ui/editor/demoishedEditorHelper");
+var demolished2D_1 = require("./src/demolished2D");
+var SpectrumAnalyzer = (function (_super) {
+    __extends(SpectrumAnalyzer, _super);
+    function SpectrumAnalyzer(ctx) {
+        var _this = _super.call(this, "spectrumAnalyzer", ctx) || this;
+        _this.ctx = ctx;
+        _this.active = true;
+        _this.bars = 60;
+        _this.ctx.fillStyle = "#ffffff";
+        _this.ctx.strokeStyle = "#ffffff";
+        _this.frequencData = new Uint8Array(8192);
+        return _this;
+    }
+    SpectrumAnalyzer.prototype.update = function (time) {
+        var sum = 0;
+        var binSize = Math.floor(8192 / this.bars);
+        for (var i = 0; i < this.bars; i += 1) {
+            sum = 0;
+            for (var j = 0; j < binSize; j += 1) {
+                sum += this.frequencData[(i * binSize) + j];
+            }
+            var average = sum / binSize;
+            var barWith = this.ctx.canvas.width / this.bars;
+            var scaled_average = (average / 256) * this.height;
+            this.ctx.fillRect(i * barWith + 20, this.ctx.canvas.height, barWith - 2, -scaled_average);
+        }
+    };
+    return SpectrumAnalyzer;
+}(demolished2D_1.BaseEntity2D));
+exports.SpectrumAnalyzer = SpectrumAnalyzer;
 var DemolishedEd = (function () {
     function DemolishedEd() {
         var _this = this;
+        var Render2D = new demolished2D_1.Demolished2D(demolishedUtils_1.Utils.$("#canvas-spectrum"));
+        this.spectrum = new SpectrumAnalyzer(Render2D.ctx);
+        Render2D.addEntity(this.spectrum);
+        Render2D.start(0);
         this.shaderCompiler = new demolishedUtils_1.ShaderCompiler();
-        var webGlCanvas = document.querySelector("#webgl");
-        var music = new demolishedSound_1.DemolishedStreamingMusic();
-        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, this.select("#shader-view"), "entities/graph.json", music);
-        var timeEl = document.querySelector(".time");
+        this.music = new demolishedSound_1.DemolishedStreamingMusic();
+        this.engine = new demolished_1.Demolished.Rendering(demolishedUtils_1.Utils.$("#webgl"), demolishedUtils_1.Utils.$("#shader-view"), "entities/graph.json", this.music);
+        var timeEl = demolishedUtils_1.Utils.$(".time");
+        var playback = demolishedUtils_1.Utils.$("#toogle-playback");
+        var sound = demolishedUtils_1.Utils.$("#toggle-sound");
+        var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
+        var immediate = demolishedUtils_1.Utils.$(".immediate");
+        var timeLine = demolishedUtils_1.Utils.$("#current-time");
         timeEl.addEventListener("click", function () {
-            _this.webGlrendering.uniforms.time = 0;
-            _this.webGlrendering.resetClock(0);
+            _this.engine.uniforms.time = 0;
+            _this.engine.resetClock(0);
         });
-        this.select("#btn-showconsole").addEventListener("click", function () {
-            _this.select(".immediate").classList.toggle("hide");
+        demolishedUtils_1.Utils.$("#btn-showconsole").addEventListener("click", function () {
+            demolishedUtils_1.Utils.$(".immediate").classList.toggle("hide");
         });
-        var playback = this.select("#toogle-playback");
-        var sound = this.select("#toggle-sound");
-        var fullscreen = this.select("#btn-fullscreen");
         fullscreen.addEventListener("click", function () {
-            var view = _this.select("#webgl");
+            var view = demolishedUtils_1.Utils.$("#webgl");
             view.webkitRequestFullscreen();
         });
         document.addEventListener("webkitfullscreenchange", function (evt) {
             var target = document.webkitFullscreenElement;
             if (target) {
                 target.classList.add("shader-fullscreen");
-                _this.webGlrendering.resizeCanvas(document.body);
+                _this.engine.resizeCanvas(document.body);
             }
             else {
-                target = _this.select("#shader-view");
+                target = demolishedUtils_1.Utils.$("#shader-view");
                 target.classList.remove("shader-fullscreen");
-                _this.webGlrendering.resizeCanvas(target);
+                _this.engine.resizeCanvas(target);
             }
         });
         playback.addEventListener("click", function () {
             playback.classList.toggle("fa-play");
             playback.classList.toggle("fa-pause");
-            _this.webGlrendering.pause();
+            _this.engine.pause();
         });
         sound.addEventListener("click", function () {
             sound.classList.toggle("fa-volume-up");
             sound.classList.toggle("fa-volume-off");
-            _this.webGlrendering.mute();
+            _this.engine.mute();
         });
-        this.webGlrendering.onFrame = function (frame) {
+        this.engine.onFrame = function (frame) {
+            _this.spectrum.frequencData = _this.music.getFrequenceData();
             timeLine.value = parseInt(frame.ms).toString();
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
-        var timeLine = this.select("#current-time");
-        this.webGlrendering.onReady = function () {
+        this.engine.onReady = function () {
             _this.onReady();
             timeLine.setAttribute("max", "386400");
             window.setTimeout(function () {
-                _this.webGlrendering.start(0);
+                _this.engine.start(0);
             }, 2000);
         };
-        this.webGlrendering.onStop = function () {
+        this.engine.onNext = function (frameInfo) {
         };
-        this.webGlrendering.onStart = function () {
-            var shader = _this.webGlrendering.currentTimeFragment.entityShader.fragmetShader;
-            var mirror = _this.select("#fragment");
+        this.engine.onStop = function () {
+        };
+        this.engine.onStart = function () {
+            var shader = _this.engine.currentTimeFragment.entityShader.fragmetShader;
+            var mirror = demolishedUtils_1.Utils.$("#fragment");
             mirror.textContent = shader;
             var lastCompile = performance.now();
-            var editor = CodeMirror.fromTextArea(_this.select("#fragment"), {
+            var editor = CodeMirror.fromTextArea(demolishedUtils_1.Utils.$("#fragment"), {
                 gutters: ["note-gutter", "CodeMirror-linenumbers"],
                 viewportMargin: Infinity,
                 lineNumbers: true,
@@ -98,8 +145,7 @@ var DemolishedEd = (function () {
                 lineWrapping: true,
                 autofocus: true
             });
-            var helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(editor);
-            var immediate = _this.select(".immediate");
+            _this.helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(editor);
             var isCompile = false;
             editor.on("change", function (cm) {
                 if (isCompile)
@@ -107,20 +153,19 @@ var DemolishedEd = (function () {
                 if (-(lastCompile - performance.now()) / 1000 > 0.5) {
                     isCompile = true;
                     var fs = cm.getValue();
-                    var vs = _this.webGlrendering.currentTimeFragment.entityShader.vertexShader;
+                    var vs = _this.engine.currentTimeFragment.entityShader.vertexShader;
                     var shaderErrors = _this.shaderCompiler.compile(fs);
                     lastCompile = performance.now();
                     if (shaderErrors.length === 0) {
                         immediate.innerHTML = "";
-                        _this.webGlrendering.currentTimeFragment.entityShader.reCompile(fs);
+                        _this.engine.currentTimeFragment.entityShader.reCompile(fs);
                         if (!immediate.classList.contains("hide"))
                             immediate.classList.add("hide");
                     }
-                    var errInfo = document.querySelectorAll(".error-info");
-                    for (var i = 0; i < errInfo.length; i++) {
-                        errInfo[i].classList.remove("error-info");
-                    }
-                    shaderErrors.length === 0 ? _this.select("#btn-showconsole").classList.remove("red") : _this.select("#btn-showconsole").classList.add("red");
+                    demolishedUtils_1.Utils.$$(".error-info").forEach(function (el) {
+                        el.classList.remove("error-info");
+                    });
+                    shaderErrors.length === 0 ? demolishedUtils_1.Utils.$("#btn-showconsole").classList.remove("red") : demolishedUtils_1.Utils.$("#btn-showconsole").classList.add("red");
                     shaderErrors.forEach(function (err) {
                         var errNode = document.createElement("abbr");
                         errNode.classList.add("error-info");
@@ -139,20 +184,15 @@ var DemolishedEd = (function () {
                 }
             });
         };
-        this.webGlrendering.onNext = function (frameInfo) {
-        };
         window.onerror = function () {
-            _this.webGlrendering.stop();
+            _this.engine.stop();
         };
     }
     DemolishedEd.getIntance = function () {
         return new DemolishedEd();
     };
     DemolishedEd.prototype.onReady = function () {
-        this.select(".loader").classList.add("hide");
-    };
-    DemolishedEd.prototype.select = function (query, parent) {
-        return parent ? parent.querySelector(query) : document.querySelector(query);
+        demolishedUtils_1.Utils.$(".loader").classList.add("hide");
     };
     return DemolishedEd;
 }());

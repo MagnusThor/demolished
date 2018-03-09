@@ -30,124 +30,152 @@ import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Eff
 import { DemolishedStreamingMusic, DemolishedSIDMusic } from "./src/demolishedSound";
 import { DemolishedDialogBuilder } from './src/demolishedProperties';
 import { DemoishedEditorHelper } from './src/ui/editor/demoishedEditorHelper';
+import { BaseEntity2D, IEntity2D, Demolished2D } from './src/demolished2D';
 
 
+export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
+    start: 0;
+    stop: 0;
+    active:true;
+    constructor(public ctx: CanvasRenderingContext2D){
+        super("spectrumAnalyzer",ctx);
+        this.active = true;
+        this.bars = 60;
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.strokeStyle = "#ffffff";
+        this.frequencData = new Uint8Array(8192);
+    }
+    bars: number;
+
+    frequencData:Uint8Array
+
+    update(time:number){
+        let sum = 0;
+        let binSize = Math.floor(8192 / this.bars);
+        for(var i =0; i < this.bars;i+=1){
+               sum = 0;
+            for(var j = 0; j < binSize; j += 1){
+                sum += this.frequencData[(i * binSize ) + j];
+            }
+            let average = sum / binSize;
+            let barWith =this.ctx.canvas.width / this.bars;
+            let scaled_average = (average / 256) * this.height;
+            this.ctx.fillRect(i * barWith + 20,this.ctx.canvas.height
+                ,barWith -2, -scaled_average);  
+        }
+    }
+}
 
 export class DemolishedEd {
 
     static getIntance(){
         return new DemolishedEd();
     }
-
-
-    webGlrendering: Demolished.Rendering;
+    engine: Demolished.Rendering;
+    music: DemolishedStreamingMusic;
+    helpers: DemoishedEditorHelper;
     shaderCompiler: ShaderCompiler;
     onReady(): void { 
-        this.select(".loader").classList.add("hide");
+        Utils.$(".loader").classList.add("hide");
     }
 
-    private select(query:string,parent?:Element):Element{
-           return  parent ? parent.querySelector(query) : document.querySelector(query);
-    }
+    private spectrum: SpectrumAnalyzer;
 
     constructor() {
 
-      
 
-       
 
-    
+        let Render2D = new Demolished2D(Utils.$("#canvas-spectrum") as HTMLCanvasElement);
+
+        this.spectrum = new SpectrumAnalyzer(Render2D.ctx);
+        Render2D.addEntity(this.spectrum);
+
+        Render2D.start(0);
+
         this.shaderCompiler = new ShaderCompiler();
+        this.music = new DemolishedStreamingMusic();
 
-        let webGlCanvas = document.querySelector("#webgl") as HTMLCanvasElement;
-     
-        let music = new DemolishedStreamingMusic();
+        this.engine = new Demolished.Rendering(Utils.$("#webgl") as HTMLCanvasElement,
+            Utils.$("#shader-view"),
+            "entities/graph.json", this.music);
 
-        this.webGlrendering = new Demolished.Rendering(webGlCanvas,
-            this.select("#shader-view"),
-            "entities/graph.json", music);
+       // DemolishedDialogBuilder.render(this.webGlrendering,Utils.$("#dlg > .prop-content"));
 
-       // DemolishedDialogBuilder.render(this.webGlrendering,this.select("#dlg > .prop-content"));
+        let timeEl =Utils.$(".time");
+        let playback = Utils.$("#toogle-playback");
+        let sound = Utils.$("#toggle-sound");
+        let fullscreen = Utils.$("#btn-fullscreen");
+        let immediate = Utils.$(".immediate");
+        let timeLine = Utils.$("#current-time") as HTMLInputElement;
 
-        var timeEl = document.querySelector(".time");
 
         timeEl.addEventListener("click", () => {
-            this.webGlrendering.uniforms.time = 0;
-            this.webGlrendering.resetClock(0);
+            this.engine.uniforms.time = 0;
+            this.engine.resetClock(0);
         });
-
-        this.select("#btn-showconsole").addEventListener("click", () => {
-            this.select(".immediate").classList.toggle("hide");
+        Utils.$("#btn-showconsole").addEventListener("click", () => {
+            Utils.$(".immediate").classList.toggle("hide");
         });
-
-        let playback = this.select("#toogle-playback");
-        let sound = this.select("#toggle-sound");
-        let fullscreen = this.select("#btn-fullscreen");
-
         fullscreen.addEventListener("click", ()=>{
-            let view = this.select("#webgl");
+            let view = Utils.$("#webgl");
             view.webkitRequestFullscreen();
            
         });
-
         document.addEventListener("webkitfullscreenchange",(evt) => {
             let target = document.webkitFullscreenElement;
             if(target){
              
                 target.classList.add("shader-fullscreen");
-                this.webGlrendering.resizeCanvas(document.body);
+                this.engine.resizeCanvas(document.body);
             
             }else{
-                target = this.select("#shader-view");
+                target = Utils.$("#shader-view");
                 target.classList.remove("shader-fullscreen");
-                this.webGlrendering.resizeCanvas(target);
+                this.engine.resizeCanvas(target);
             }
         });
 
         playback.addEventListener("click",() => {   
             playback.classList.toggle("fa-play");
             playback.classList.toggle("fa-pause")
-            this.webGlrendering.pause();
+            this.engine.pause();
         });
 
         sound.addEventListener("click",() => {
                 sound.classList.toggle("fa-volume-up");
                 sound.classList.toggle("fa-volume-off");
-                this.webGlrendering.mute();
+                this.engine.mute();
         });
 
+        this.engine.onFrame = (frame) => {
 
-        this.webGlrendering.onFrame = (frame) => {
+            // pass frequency data to 2d canvas
+            // needs to be refactored
+
+
+            this.spectrum.frequencData = this.music.getFrequenceData();
+
+
             timeLine.value = parseInt(frame.ms).toString();
-
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
-        };
-
-        let timeLine = this.select("#current-time") as HTMLInputElement;
-
-        this.webGlrendering.onReady = () => {
+        };   
+        this.engine.onReady = () => {
             this.onReady();
-
             timeLine.setAttribute("max", "386400");
-
             window.setTimeout(() => {
-                this.webGlrendering.start(0);
+                this.engine.start(0);
             }, 2000);
-
         }
-        this.webGlrendering.onStop = () => {
+        this.engine.onNext = (frameInfo: any) => {
+        };
+        this.engine.onStop = () => {
         }
-        this.webGlrendering.onStart = () => {
-
-            let shader = this.webGlrendering.currentTimeFragment.entityShader.fragmetShader;
-
-            let mirror = this.select("#fragment") as HTMLDivElement;
-
+        this.engine.onStart = () => {
+            let shader = this.engine.currentTimeFragment.entityShader.fragmetShader;
+            let mirror = Utils.$("#fragment") as HTMLDivElement;
             mirror.textContent = shader;
-
-
             let lastCompile = performance.now();
-            let editor = CodeMirror.fromTextArea(this.select("#fragment"),
+            let editor = CodeMirror.fromTextArea(Utils.$("#fragment"),
                 {
                     gutters: ["note-gutter", "CodeMirror-linenumbers"],
                     viewportMargin: Infinity,
@@ -164,11 +192,7 @@ export class DemolishedEd {
                 }
             );
 
-            //let wrapper = document.querySelector(".wrapper");
-
-            let helpers = new DemoishedEditorHelper(editor);
-
-            let immediate = this.select(".immediate");
+            this.helpers = new DemoishedEditorHelper(editor);
             var isCompile = false;
 
             editor.on("change", (cm: CodeMirror) => {
@@ -177,25 +201,21 @@ export class DemolishedEd {
                 if (-(lastCompile - performance.now()) / 1000 > 0.5) {
                     isCompile = true;
                     let fs = cm.getValue();
-                    let vs = this.webGlrendering.currentTimeFragment.entityShader.vertexShader;
+                    let vs = this.engine.currentTimeFragment.entityShader.vertexShader;
                     let shaderErrors = this.shaderCompiler.compile(fs);
                     lastCompile = performance.now();
                     if (shaderErrors.length === 0) {
                         immediate.innerHTML = "";
-                        this.webGlrendering.currentTimeFragment.entityShader.reCompile(fs);
+                        this.engine.currentTimeFragment.entityShader.reCompile(fs);
                         if (!immediate.classList.contains("hide")) immediate.classList.add("hide");
                     }
 
-                    let errInfo = document.querySelectorAll(".error-info");
-                    for (var i = 0; i < errInfo.length; i++) {
-                        errInfo[i].classList.remove("error-info");
-                    }
-
                   
-                 
+                    Utils.$$(".error-info").forEach( (el:Element) => {
+                        el.classList.remove("error-info");
+                    })
 
-                    
-                    shaderErrors.length === 0 ? this.select("#btn-showconsole").classList.remove("red") : this.select("#btn-showconsole").classList.add("red");
+                    shaderErrors.length === 0 ? Utils.$("#btn-showconsole").classList.remove("red") : Utils.$("#btn-showconsole").classList.add("red");
 
                     shaderErrors.forEach((err: ShaderError) => {
 
@@ -221,10 +241,8 @@ export class DemolishedEd {
             });
 
         }
-        this.webGlrendering.onNext = (frameInfo: any) => {
-        };
         window.onerror = () => {
-            this.webGlrendering.stop();
+            this.engine.stop();
         }
     }
 }

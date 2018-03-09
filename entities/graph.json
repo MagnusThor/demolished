@@ -5,8 +5,8 @@
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
-            "minDecibels": -100,
-            "maxDecibels": -100
+            "minDecibels": -90,
+            "maxDecibels": -10
         },
         "duration": 386400,
         "bmp": 129

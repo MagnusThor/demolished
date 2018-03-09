@@ -1,23 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-RegExp.prototype.execAll = function (string) {
-    var match = null;
-    var matches = [];
-    while (match = this.exec(string)) {
-        var matchArray = [];
-        for (var i in match) {
-            if (parseInt(i) == i) {
-                matchArray.push(match[i]);
-            }
-        }
-        matchArray.index = match.index;
-        matches.push(matchArray);
-    }
-    return matches;
-};
 var Utils = (function () {
     function Utils() {
     }
+    Utils.$ = function (query, parent) {
+        return parent ? parent.querySelector(query) : document.querySelector(query);
+    };
+    Utils.$$ = function (query, parent) {
+        var results = new Array();
+        var queryResult = parent ? parent.querySelectorAll(query) : document.querySelectorAll(query);
+        for (var i = 0; i < queryResult.length;)
+            results.push(queryResult.item(i));
+        return results;
+    };
     Utils.getExponentOfTwo = function (value, max) {
         var count = 1;
         do {

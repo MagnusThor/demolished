@@ -1,4 +1,4 @@
-import { BaseEntity2D, IEntity2D } from "../../../src/demolishedCanvas";
+import { BaseEntity2D, IEntity2D } from "../../../src/demolished2D";
 
 export class Scroller2D extends BaseEntity2D implements IEntity2D {
 
@@ -36,5 +36,3 @@ export class Scroller2D extends BaseEntity2D implements IEntity2D {
         this.ctx.fillText(this.text, this.x, this.y);
     }
 }
-
-

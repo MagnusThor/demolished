@@ -35,6 +35,7 @@
 	  
 
 
+
 	.red{
 		color:red;
 	}
@@ -100,6 +101,11 @@
     padding: 1em;
 
 	}
+
+	#spectrum-analyzer{
+		opacity: 0.1;
+	}
+
 	#btn-showconsole{
 		position: absolute;
 		z-index: 1090;

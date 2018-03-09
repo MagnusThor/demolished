@@ -64,7 +64,7 @@ var Demolished;
                         })).then(function (assets) {
                             _this.addEntity(effect.name, assets);
                             if (_this.entitiesCache.length === graph.effects.length) {
-                                _this.onReady();
+                                _this.onReady(graph);
                             }
                         });
                     });
@@ -72,6 +72,11 @@ var Demolished;
                 });
             });
         }
+        Rendering.prototype.onFrame = function (frame) { };
+        Rendering.prototype.onNext = function (frame) { };
+        Rendering.prototype.onStart = function () { };
+        Rendering.prototype.onStop = function () { };
+        Rendering.prototype.onReady = function (graph) { };
         Rendering.prototype.getRendringContext = function () {
             var renderingContext;
             var contextAttributes = {
@@ -101,11 +106,6 @@ var Demolished;
                 return graph;
             });
         };
-        Rendering.prototype.onFrame = function (frame) { };
-        Rendering.prototype.onNext = function (frame) { };
-        Rendering.prototype.onStart = function () { };
-        Rendering.prototype.onStop = function () { };
-        Rendering.prototype.onReady = function () { };
         Rendering.prototype.addEventListeners = function () {
             var _this = this;
             document.addEventListener("mousemove", function (evt) {
@@ -248,8 +248,9 @@ var Demolished;
         Rendering.prototype.renderEntities = function (ent, ts) {
             var gl = this.gl;
             this.uniforms.time = ts;
+            this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
             gl.useProgram(ent.currentProgram);
-            gl.uniform1f(ent.uniformsCache.get("timeTotal"), (performance.now() - this.animationStartTime) / 1000);
+            gl.uniform1f(ent.uniformsCache.get("timeTotal"), this.uniforms.timeTotal / 1000);
             gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
             gl.uniform1i(ent.uniformsCache.get("frame"), this.animationFrameCount);
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.uniforms.mouseX, this.uniforms.mouseY);

@@ -1,18 +1,3 @@
-RegExp.prototype.execAll = function(string) {
-    let match = null;
-    let matches = [];
-    while (match = this.exec(string)) {
-        let matchArray = [];
-        for (let i in match) {
-            if (parseInt(i) == i) {
-                matchArray.push(match[i]);
-            }
-        }
-        matchArray.index = match.index;
-        matches.push(matchArray);
-    }
-    return matches;
-};
 
 
 /**
@@ -37,6 +22,18 @@ export class Utils {
             return peaksArray;
         }
     }
+
+    static $(query:string,parent?:Element):Element{
+            return  parent ? parent.querySelector(query) : document.querySelector(query)
+    }
+
+    static $$(query:string,parent?:Element):Array<Element>{
+        var results = new Array<Element>();
+        let  queryResult =  parent ? parent.querySelectorAll(query) : document.querySelectorAll(query)
+        for(let i = 0; i < queryResult.length;) results.push(queryResult.item(i));
+        return results;
+    }
+
     static Array = {
         add: (x, y) => x + y,
         sum: xs => xs.reduce(Utils.Array.add, 0),

@@ -121,7 +121,7 @@ vec3 ClosestTimeOfApproach(vec3 pos1, vec3 vel1, vec3 pos2, vec3 vel2)
 #define AxisPattern(axis, location, negativePattern, positivePattern) (intersection.axis > location ? positivePattern : negativePattern)
 
 // Given a spacing between each circle, a radius for each circle and two patterns, one pattern is shown
-// inside a repeating grid of circles while the other is shown outside the circles.
+// inside a repeating gid of circles while the other is shown outside the circles.
 #define CirclePattern(spacing, radius, insidePattern, outsidePattern)
 
 // Given a (float) spacing between each stripe, a (float) width for the stripes and two patterns, 

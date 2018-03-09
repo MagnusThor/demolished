@@ -18,7 +18,6 @@ var DemolishedPropertyHandler = (function () {
 exports.DemolishedPropertyHandler = DemolishedPropertyHandler;
 function Observe(isObserved) {
     return function (target, key) {
-        console.log("decorate", key, target);
         return Reflect.defineMetadata("isObserved", isObserved, target, key);
     };
 }

@@ -89,7 +89,6 @@ var DemolishedStreamingMusic = (function (_super) {
     });
     DemolishedStreamingMusic.prototype.getFrequenceData = function () {
         var bufferLength = this.audioAnalyser.frequencyBinCount;
-        ;
         var freqArray = new Uint8Array(bufferLength);
         this.audioAnalyser.getByteFrequencyData(freqArray);
         return freqArray;

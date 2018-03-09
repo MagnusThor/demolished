@@ -15,8 +15,7 @@ export interface IEntity2D{
     active:boolean;
 }
 
-
-export class DemolishedCanvas{
+export class Demolished2D{
 
     public ctx:CanvasRenderingContext2D
 

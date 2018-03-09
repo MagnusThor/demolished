@@ -105,7 +105,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
         return 32;
     }
     getFrequenceData():Uint8Array {
-        let bufferLength =  this.audioAnalyser.frequencyBinCount;;
+        let bufferLength =  this.audioAnalyser.frequencyBinCount;
         let freqArray = new Uint8Array(bufferLength);
         this.audioAnalyser.getByteFrequencyData(freqArray)
         return freqArray;
@@ -114,6 +114,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
     play() {
         this.audio.play();
     }
+
     stop() {
         this.audio.pause();
     }

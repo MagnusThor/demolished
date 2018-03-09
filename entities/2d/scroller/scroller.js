@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedCanvas_1 = require("../../../src/demolishedCanvas");
+var demolished2D_1 = require("../../../src/demolished2D");
 var Scroller2D = (function (_super) {
     __extends(Scroller2D, _super);
     function Scroller2D(ctx, text) {
@@ -34,5 +34,5 @@ var Scroller2D = (function (_super) {
         this.ctx.fillText(this.text, this.x, this.y);
     };
     return Scroller2D;
-}(demolishedCanvas_1.BaseEntity2D));
+}(demolished2D_1.BaseEntity2D));
 exports.Scroller2D = Scroller2D;

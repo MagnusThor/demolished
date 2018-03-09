@@ -1,9 +1,9 @@
 import { Utils } from './demolishedUtils'
 import { SmartArray } from './demolishedSmartArray';
 import { ShaderEntity, EntityTexture, IEntity } from './demolishedEntity'
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings } from './demolishedModels'
+import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings } from './demolishedModels';
 import loadResource from './demolishedLoader'
-import { DemolishedCanvas } from "./demolishedCanvas";
+import { Demolished2D } from "./demolishedCanvas";
 import { IDemolisedAudioContext } from "./demolishedSound";
 import { DemoishedProperty, Observe } from './demolishedProperties';
 
@@ -11,24 +11,27 @@ export namespace Demolished {
 
     export class Rendering {
 
+        onFrame(frame: any): void { }
+        onNext(frame: any):void {}
+        onStart(): void { }
+        onStop(): void { }
+        onReady(graph:Graph): void { }
+
         gl: WebGLRenderingContext | any;
-
-        sound: IDemolisedAudioContext;
-
+        webGLbuffer: WebGLBuffer
+       
         animationFrameCount: number;
         animationStartTime: number;
         animationFrameId: number;
         animationOffsetTime: number;
+
         entitiesCache: Array<ShaderEntity>;i
         timeFragments: Array<TimeFragment>;
         currentTimeFragment: TimeFragment;
 
         isPaused:boolean;
         isSoundMuted: boolean;
-
-        webGLbuffer: WebGLBuffer
         fftTexture: WebGLTexture;
-       
         
         width: number = 1;
         height: number = 1;
@@ -80,7 +83,7 @@ export namespace Demolished {
 
         constructor(public canvas: HTMLCanvasElement,
             public parent: Element,
-            public timelineFile: string,public audio:IDemolisedAudioContext ,public simpleCanvas?:DemolishedCanvas) {
+            public timelineFile: string,public audio:IDemolisedAudioContext ,public simpleCanvas?:Demolished2D) {
 
             this.gl = this.getRendringContext();
             
@@ -129,11 +132,9 @@ export namespace Demolished {
                             });
                         })).then((assets: Array<EntityTexture>) => {
                             this.addEntity(effect.name, assets);
-                            if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still
-                                this.onReady();
-                               // this.resizeCanvas(this.parent);
+                            if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
+                                this.onReady(graph);
                             }
-
                         });
                     });
                        this.resizeCanvas(this.parent);
@@ -141,12 +142,7 @@ export namespace Demolished {
             });
         }
 
-        onFrame(frame: any): void { }
-        onNext(frame: any):void {}
-        onStart(): void { }
-        onStop(): void { }
-        onReady(): void { }
-
+      
         // todo:Rename
         private addEventListeners() {
             document.addEventListener("mousemove", (evt: MouseEvent) => {
@@ -331,9 +327,11 @@ export namespace Demolished {
             let gl = this.gl;
 
             this.uniforms.time = ts; 
+            this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
+
             gl.useProgram(ent.currentProgram);
 
-            gl.uniform1f(ent.uniformsCache.get("timeTotal"),(performance.now() - this.animationStartTime) /1000);
+            gl.uniform1f(ent.uniformsCache.get("timeTotal"),this.uniforms.timeTotal /1000);
             gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
 
             gl.uniform1i(ent.uniformsCache.get("frame"),this.animationFrameCount);
@@ -359,7 +357,7 @@ export namespace Demolished {
 
             let offset = 2;
             ent.assets.forEach((asset: EntityTexture, index: number) => {              
-                  gl.activeTexture(gl.TEXTURE0 + (offset + index));
+                gl.activeTexture(gl.TEXTURE0 + (offset + index));
                 gl.bindTexture(gl.TEXTURE_2D, asset.texture);
                 gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), offset + index);
             });
@@ -376,6 +374,7 @@ export namespace Demolished {
             ent.swapBuffers();
 
             this.animationFrameCount ++;
+        
         
         }
     }

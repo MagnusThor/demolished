@@ -25,7 +25,6 @@ Decorator
 
 export function Observe(isObserved:boolean){
         return function (target:any,key:string) {
-                console.log("decorate",key,target);
                return Reflect.defineMetadata("isObserved",isObserved,target,key);
         }
 }
