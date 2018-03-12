@@ -3,7 +3,6 @@ import { SmartArray } from './demolishedSmartArray';
 import { ShaderEntity, EntityTexture, IEntity } from './demolishedEntity'
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings } from './demolishedModels';
 import loadResource from './demolishedLoader'
-import { Demolished2D } from "./demolishedCanvas";
 import { IDemolisedAudioContext } from "./demolishedSound";
 import { DemoishedProperty, Observe } from './demolishedProperties';
 
@@ -37,6 +36,7 @@ export namespace Demolished {
         height: number = 1;
         centerX: number = 0;
         centerY: number = 0;
+        resolution : number = 1;
 
         @Observe(true)
         uniforms: Uniforms;
@@ -83,7 +83,7 @@ export namespace Demolished {
 
         constructor(public canvas: HTMLCanvasElement,
             public parent: Element,
-            public timelineFile: string,public audio:IDemolisedAudioContext ,public simpleCanvas?:Demolished2D) {
+            public timelineFile: string,public audio:IDemolisedAudioContext) {
 
             this.gl = this.getRendringContext();
             
@@ -174,7 +174,6 @@ export namespace Demolished {
             });
         }
 
-
        resetClock(time:number){
         this.uniforms.timeTotal = time;
         this.animationFrameCount = 0;
@@ -223,14 +222,9 @@ export namespace Demolished {
            
             return this.uniforms.time;
         }
-
-
-
-        resume(time:number){
-          
+        resume(time:number){ 
             this.start(time);
         }
-
         updateTextureData(texture: WebGLTexture, size: number, bytes: Uint8Array): void {
             let gl = this.gl;
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -296,10 +290,15 @@ export namespace Demolished {
             this.gl.viewport(0, 0, width, height);
         }
 
+
         resizeCanvas(parent:Element,resolution?:number) {
 
-            let width = parent.clientWidth ;// 2
-            let height = parent.clientHeight; // 2;
+            if(resolution) this.resolution = resolution;
+
+            let width = parent.clientWidth / this.resolution;
+            let height = parent.clientHeight / this.resolution;
+
+            console.log(width,height);
 
             this.canvas.width = width;
             this.canvas.height = height;
@@ -311,15 +310,14 @@ export namespace Demolished {
             this.uniforms.screenHeight = height;
 
             this.surfaceCorners();
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-            let layers = document.querySelectorAll(".layer");
-            for (var i = 0; i < layers.length; i++) {
-                let el = layers[i] as HTMLCanvasElement;
-                el.width = width;
-                el.height = height;
-                el.style.width = parent.clientWidth + 'px';
-                el.style.height = parent.clientHeight + 'px'
-            }
+
+            this.setViewPort( this.canvas.width, this.canvas.height);
+
+        }
+
+
+        private updateUniforms(){
+                throw "Not yet implemented";
         }
       
         renderEntities(ent: IEntity, ts: number) {

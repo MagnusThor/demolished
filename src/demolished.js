@@ -16,17 +16,17 @@ var demolishedProperties_1 = require("./demolishedProperties");
 var Demolished;
 (function (Demolished) {
     var Rendering = (function () {
-        function Rendering(canvas, parent, timelineFile, audio, simpleCanvas) {
+        function Rendering(canvas, parent, timelineFile, audio) {
             var _this = this;
             this.canvas = canvas;
             this.parent = parent;
             this.timelineFile = timelineFile;
             this.audio = audio;
-            this.simpleCanvas = simpleCanvas;
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
             this.centerY = 0;
+            this.resolution = 1;
             this.gl = this.getRendringContext();
             var proxy = new demolishedProperties_1.DemoishedProperty(new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height));
             this.uniforms = proxy.getObserver();
@@ -226,8 +226,11 @@ var Demolished;
             this.gl.viewport(0, 0, width, height);
         };
         Rendering.prototype.resizeCanvas = function (parent, resolution) {
-            var width = parent.clientWidth;
-            var height = parent.clientHeight;
+            if (resolution)
+                this.resolution = resolution;
+            var width = parent.clientWidth / this.resolution;
+            var height = parent.clientHeight / this.resolution;
+            console.log(width, height);
             this.canvas.width = width;
             this.canvas.height = height;
             this.canvas.style.width = parent.clientWidth + 'px';
@@ -235,15 +238,10 @@ var Demolished;
             this.uniforms.screenWidth = width;
             this.uniforms.screenHeight = height;
             this.surfaceCorners();
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-            var layers = document.querySelectorAll(".layer");
-            for (var i = 0; i < layers.length; i++) {
-                var el = layers[i];
-                el.width = width;
-                el.height = height;
-                el.style.width = parent.clientWidth + 'px';
-                el.style.height = parent.clientHeight + 'px';
-            }
+            this.setViewPort(this.canvas.width, this.canvas.height);
+        };
+        Rendering.prototype.updateUniforms = function () {
+            throw "Not yet implemented";
         };
         Rendering.prototype.renderEntities = function (ent, ts) {
             var gl = this.gl;

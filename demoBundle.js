@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 29);
+/******/ 	return __webpack_require__(__webpack_require__.s = 30);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -9714,7 +9714,7 @@ return CodeMirror$1;
 /* harmony export (immutable) */ __webpack_exports__["b"] = addEvent;
 /* harmony export (immutable) */ __webpack_exports__["c"] = removeEvent;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__tools_common__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__modals_mixin__ = __webpack_require__(35);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__modals_mixin__ = __webpack_require__(36);
 /*
 Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
 Author: Lou Huang (@saikofish)
@@ -10795,7 +10795,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
-var demolishedTransitions_1 = __webpack_require__(34);
+var demolishedTransitions_1 = __webpack_require__(35);
 var demolishedProperties_1 = __webpack_require__(8);
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
@@ -10902,7 +10902,7 @@ exports.AudioSettings = AudioSettings;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-__webpack_require__(31);
+__webpack_require__(32);
 var DemolishedPropertyHandler = (function () {
     function DemolishedPropertyHandler() {
     }
@@ -10981,7 +10981,7 @@ exports.DemolishedDialogBuilder = DemolishedDialogBuilder;
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Vector__ = __webpack_require__(39);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Vector__ = __webpack_require__(40);
 
 
 
@@ -14953,24 +14953,24 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedEntity_1 = __webpack_require__(33);
+var demolishedEntity_1 = __webpack_require__(34);
 var demolishedModels_1 = __webpack_require__(7);
 var demolishedLoader_1 = __webpack_require__(3);
 var demolishedProperties_1 = __webpack_require__(8);
 var Demolished;
 (function (Demolished) {
     var Rendering = (function () {
-        function Rendering(canvas, parent, timelineFile, audio, simpleCanvas) {
+        function Rendering(canvas, parent, timelineFile, audio) {
             var _this = this;
             this.canvas = canvas;
             this.parent = parent;
             this.timelineFile = timelineFile;
             this.audio = audio;
-            this.simpleCanvas = simpleCanvas;
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
             this.centerY = 0;
+            this.resolution = 1;
             this.gl = this.getRendringContext();
             var proxy = new demolishedProperties_1.DemoishedProperty(new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height));
             this.uniforms = proxy.getObserver();
@@ -15170,8 +15170,11 @@ var Demolished;
             this.gl.viewport(0, 0, width, height);
         };
         Rendering.prototype.resizeCanvas = function (parent, resolution) {
-            var width = parent.clientWidth;
-            var height = parent.clientHeight;
+            if (resolution)
+                this.resolution = resolution;
+            var width = parent.clientWidth / this.resolution;
+            var height = parent.clientHeight / this.resolution;
+            console.log(width, height);
             this.canvas.width = width;
             this.canvas.height = height;
             this.canvas.style.width = parent.clientWidth + 'px';
@@ -15179,15 +15182,10 @@ var Demolished;
             this.uniforms.screenWidth = width;
             this.uniforms.screenHeight = height;
             this.surfaceCorners();
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-            var layers = document.querySelectorAll(".layer");
-            for (var i = 0; i < layers.length; i++) {
-                var el = layers[i];
-                el.width = width;
-                el.height = height;
-                el.style.width = parent.clientWidth + 'px';
-                el.style.height = parent.clientHeight + 'px';
-            }
+            this.setViewPort(this.canvas.width, this.canvas.height);
+        };
+        Rendering.prototype.updateUniforms = function () {
+            throw "Not yet implemented";
         };
         Rendering.prototype.renderEntities = function (ent, ts) {
             var gl = this.gl;
@@ -15236,6 +15234,69 @@ var Demolished;
 
 /***/ }),
 /* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var BaseEntity2D = (function () {
+    function BaseEntity2D(name, ctx) {
+        this.name = name;
+        this.ctx = ctx;
+        this.width = ctx.canvas.width;
+        this.height = ctx.canvas.height;
+    }
+    BaseEntity2D.prototype.update = function (t) {
+    };
+    return BaseEntity2D;
+}());
+exports.BaseEntity2D = BaseEntity2D;
+var Demolished2D = (function () {
+    function Demolished2D(canvas) {
+        this.canvas = canvas;
+        this.entities = new Array();
+        this.ctx = canvas.getContext("2d");
+        this.animationStartTime = 0;
+        this.resizeCanvas();
+    }
+    Demolished2D.prototype.clear = function () {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    };
+    Demolished2D.prototype.animate = function (time) {
+        var _this = this;
+        var animationTime = time - this.animationStartTime;
+        this.animationFrameId = requestAnimationFrame(function (_time) {
+            _this.animate(_time);
+        });
+        this.renderEntities(time);
+    };
+    Demolished2D.prototype.addEntity = function (ent) {
+        this.entities.push(ent);
+    };
+    Demolished2D.prototype.resizeCanvas = function () {
+        var width = window.innerWidth / 2;
+        var height = window.innerHeight / 2;
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.canvas.style.width = window.innerWidth + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
+    };
+    Demolished2D.prototype.renderEntities = function (time) {
+        this.clear();
+        this.entities.forEach(function (ent) {
+            ent.update(time);
+        });
+    };
+    Demolished2D.prototype.start = function (startTime) {
+        this.animate(startTime);
+    };
+    return Demolished2D;
+}());
+exports.Demolished2D = Demolished2D;
+
+
+/***/ }),
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15414,7 +15475,7 @@ exports.DemolishedStreamingMusic = DemolishedStreamingMusic;
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15429,7 +15490,7 @@ var Utils = (function () {
     Utils.$$ = function (query, parent) {
         var results = new Array();
         var queryResult = parent ? parent.querySelectorAll(query) : document.querySelectorAll(query);
-        for (var i = 0; i < queryResult.length;)
+        for (var i = 0; i < queryResult.length; i++)
             results.push(queryResult.item(i));
         return results;
     };
@@ -15492,9 +15553,17 @@ var ShaderError = (function () {
 exports.ShaderError = ShaderError;
 var ShaderCompiler = (function () {
     function ShaderCompiler() {
+        this.lastCompile = performance.now();
+        this.isCompiling = false;
         this.canvas = document.createElement("canvas");
         this.gl = this.canvas.getContext("webgl");
     }
+    ShaderCompiler.prototype.onError = function (error) {
+        throw "Not implememnted";
+    };
+    ShaderCompiler.prototype.onSuccess = function (fs) {
+        throw "Not implemented";
+    };
     ShaderCompiler.prototype.toErrorLines = function (error) {
         var index = 0;
         var indexEnd = 0;
@@ -15519,10 +15588,24 @@ var ShaderCompiler = (function () {
         }
         return errorLines;
     };
+    ShaderCompiler.prototype.canCompile = function () {
+        var bounce = -(this.lastCompile - performance.now());
+        return bounce > 500. && !this.isCompiling;
+    };
     ShaderCompiler.prototype.compile = function (fs) {
+        this.isCompiling = true;
         var gl = this.gl;
         var compileResults = this.createShader(fs, gl.FRAGMENT_SHADER);
-        return compileResults;
+        if (compileResults.length > 0) {
+            this.isCompiling = false;
+            this.lastCompile = performance.now();
+            this.onError(compileResults);
+        }
+        else {
+            this.isCompiling = false;
+            this.lastCompile = performance.now();
+            this.onSuccess(fs);
+        }
     };
     ShaderCompiler.prototype.createShader = function (src, type) {
         var gl = this.gl;
@@ -15541,14 +15624,14 @@ exports.ShaderCompiler = ShaderCompiler;
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var ColorPicker_1 = __webpack_require__(36);
-var FloatPicker_1 = __webpack_require__(37);
+var ColorPicker_1 = __webpack_require__(37);
+var FloatPicker_1 = __webpack_require__(38);
 var Vec2Picker_1 = __webpack_require__(9);
 var Vec2Picker_2 = __webpack_require__(9);
 var Color_1 = __webpack_require__(10);
@@ -15701,7 +15784,7 @@ exports.DemoishedEditorHelper = DemoishedEditorHelper;
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15735,10 +15818,10 @@ __webpack_require__(15);
 __webpack_require__(14);
 __webpack_require__(24);
 __webpack_require__(23);
-var demolishedUtils_1 = __webpack_require__(27);
-var demolishedSound_1 = __webpack_require__(26);
-var demoishedEditorHelper_1 = __webpack_require__(28);
-var demolished2D_1 = __webpack_require__(42);
+var demolishedUtils_1 = __webpack_require__(28);
+var demolishedSound_1 = __webpack_require__(27);
+var demoishedEditorHelper_1 = __webpack_require__(29);
+var demolished2D_1 = __webpack_require__(26);
 var SpectrumAnalyzer = (function (_super) {
     __extends(SpectrumAnalyzer, _super);
     function SpectrumAnalyzer(ctx) {
@@ -15784,6 +15867,7 @@ var DemolishedEd = (function () {
         var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
         var immediate = demolishedUtils_1.Utils.$(".immediate");
         var timeLine = demolishedUtils_1.Utils.$("#current-time");
+        var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
         timeEl.addEventListener("click", function () {
             _this.engine.uniforms.time = 0;
             _this.engine.resetClock(0);
@@ -15794,6 +15878,9 @@ var DemolishedEd = (function () {
         fullscreen.addEventListener("click", function () {
             var view = demolishedUtils_1.Utils.$("#webgl");
             view.webkitRequestFullscreen();
+        });
+        shaderResolution.addEventListener("change", function (evt) {
+            _this.engine.resizeCanvas(demolishedUtils_1.Utils.$("#shader-view"), parseInt(shaderResolution.value));
         });
         document.addEventListener("webkitfullscreenchange", function (evt) {
             var target = document.webkitFullscreenElement;
@@ -15819,12 +15906,11 @@ var DemolishedEd = (function () {
         });
         this.engine.onFrame = function (frame) {
             _this.spectrum.frequencData = _this.music.getFrequenceData();
-            timeLine.value = parseInt(frame.ms).toString();
+            timeLine.style.width = ((parseInt(frame.ms) / 386400) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
         this.engine.onReady = function () {
             _this.onReady();
-            timeLine.setAttribute("max", "386400");
             window.setTimeout(function () {
                 _this.engine.start(0);
             }, 2000);
@@ -15853,42 +15939,35 @@ var DemolishedEd = (function () {
                 autofocus: true
             });
             _this.helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(editor);
-            var isCompile = false;
+            _this.shaderCompiler.onError = function (shaderErrors) {
+                shaderErrors.forEach(function (err) {
+                    var errNode = document.createElement("abbr");
+                    errNode.classList.add("error-info");
+                    errNode.title = err.error;
+                    editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
+                    var p = document.createElement("p");
+                    var m = document.createElement("mark");
+                    var s = document.createElement("span");
+                    s.textContent = err.error;
+                    m.textContent = err.line.toString();
+                    p.appendChild(m);
+                    p.appendChild(s);
+                    immediate.appendChild(p);
+                });
+            };
+            _this.shaderCompiler.onSuccess = function (fs) {
+                var shaderErrors = demolishedUtils_1.Utils.$$(".error-info");
+                shaderErrors.forEach(function (el) {
+                    el.classList.remove("error-info");
+                });
+                _this.engine.currentTimeFragment.entityShader.reCompile(fs);
+            };
             editor.on("change", function (cm) {
-                if (isCompile)
+                var fs = cm.getValue();
+                if (fs.length == 0 && !_this.shaderCompiler.canCompile())
                     return;
-                if (-(lastCompile - performance.now()) / 1000 > 0.5) {
-                    isCompile = true;
-                    var fs = cm.getValue();
-                    var vs = _this.engine.currentTimeFragment.entityShader.vertexShader;
-                    var shaderErrors = _this.shaderCompiler.compile(fs);
-                    lastCompile = performance.now();
-                    if (shaderErrors.length === 0) {
-                        immediate.innerHTML = "";
-                        _this.engine.currentTimeFragment.entityShader.reCompile(fs);
-                        if (!immediate.classList.contains("hide"))
-                            immediate.classList.add("hide");
-                    }
-                    demolishedUtils_1.Utils.$$(".error-info").forEach(function (el) {
-                        el.classList.remove("error-info");
-                    });
-                    shaderErrors.length === 0 ? demolishedUtils_1.Utils.$("#btn-showconsole").classList.remove("red") : demolishedUtils_1.Utils.$("#btn-showconsole").classList.add("red");
-                    shaderErrors.forEach(function (err) {
-                        var errNode = document.createElement("abbr");
-                        errNode.classList.add("error-info");
-                        errNode.title = err.error;
-                        editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
-                        var p = document.createElement("p");
-                        var m = document.createElement("mark");
-                        var s = document.createElement("span");
-                        s.textContent = err.error;
-                        m.textContent = err.line.toString();
-                        p.appendChild(m);
-                        p.appendChild(s);
-                        immediate.appendChild(p);
-                    });
-                    isCompile = false;
-                }
+                var vs = _this.engine.currentTimeFragment.entityShader.vertexShader;
+                _this.shaderCompiler.compile(fs);
             });
         };
         window.onerror = function () {
@@ -15910,7 +15989,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -16100,7 +16179,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process, global) {/*! *****************************************************************************
@@ -17235,10 +17314,10 @@ var Reflect;
     });
 })(Reflect || (Reflect = {}));
 //# sourceMappingURL=Reflect.js.map
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(30), __webpack_require__(32)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(31), __webpack_require__(33)))
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports) {
 
 var g;
@@ -17265,7 +17344,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17428,7 +17507,7 @@ exports.ShaderEntity = ShaderEntity;
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17450,7 +17529,7 @@ exports.DemlolishedTransitionBase = DemlolishedTransitionBase;
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17531,7 +17610,7 @@ function subscribeMixin (target) {
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17539,7 +17618,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Color__ = __webpack_require__(10);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__tools_common__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__ = __webpack_require__(40);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__ = __webpack_require__(41);
 /*
 Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
 Author: Lou Huang (@saikofish)
@@ -17884,13 +17963,13 @@ function drawCircle (ctx, coords, radius, color, width) { // uses drawDisk
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Float__ = __webpack_require__(38);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Float__ = __webpack_require__(39);
 
 
 
@@ -18011,7 +18090,7 @@ class FloatPicker extends __WEBPACK_IMPORTED_MODULE_0__Picker__["a" /* default *
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18043,7 +18122,7 @@ class Float {
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18286,12 +18365,12 @@ class Vector {
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = subscribeInteractiveDom;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mixin__ = __webpack_require__(41);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mixin__ = __webpack_require__(42);
 /*
  * Original code from: https://twitter.com/blurspline / https://github.com/zz85
  * See post @ http://www.lab4games.net/zz85/blog/2014/11/15/resizing-moving-snapping-windows-with-js-css/
@@ -18615,7 +18694,7 @@ function subscribeInteractiveDom (dom, options) {
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18693,69 +18772,6 @@ function subscribeMixin (target) {
         }
     });
 }
-
-
-/***/ }),
-/* 42 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var BaseEntity2D = (function () {
-    function BaseEntity2D(name, ctx) {
-        this.name = name;
-        this.ctx = ctx;
-        this.width = ctx.canvas.width;
-        this.height = ctx.canvas.height;
-    }
-    BaseEntity2D.prototype.update = function (t) {
-    };
-    return BaseEntity2D;
-}());
-exports.BaseEntity2D = BaseEntity2D;
-var Demolished2D = (function () {
-    function Demolished2D(canvas) {
-        this.canvas = canvas;
-        this.entities = new Array();
-        this.ctx = canvas.getContext("2d");
-        this.animationStartTime = 0;
-        this.resizeCanvas();
-    }
-    Demolished2D.prototype.clear = function () {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    };
-    Demolished2D.prototype.animate = function (time) {
-        var _this = this;
-        var animationTime = time - this.animationStartTime;
-        this.animationFrameId = requestAnimationFrame(function (_time) {
-            _this.animate(_time);
-        });
-        this.renderEntities(time);
-    };
-    Demolished2D.prototype.addEntity = function (ent) {
-        this.entities.push(ent);
-    };
-    Demolished2D.prototype.resizeCanvas = function () {
-        var width = window.innerWidth / 2;
-        var height = window.innerHeight / 2;
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.canvas.style.width = window.innerWidth + 'px';
-        this.canvas.style.height = window.innerHeight + 'px';
-    };
-    Demolished2D.prototype.renderEntities = function (time) {
-        this.clear();
-        this.entities.forEach(function (ent) {
-            ent.update(time);
-        });
-    };
-    Demolished2D.prototype.start = function (startTime) {
-        this.animate(startTime);
-    };
-    return Demolished2D;
-}());
-exports.Demolished2D = Demolished2D;
 
 
 /***/ })

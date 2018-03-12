@@ -30,7 +30,7 @@ export class Utils {
     static $$(query:string,parent?:Element):Array<Element>{
         var results = new Array<Element>();
         let  queryResult =  parent ? parent.querySelectorAll(query) : document.querySelectorAll(query)
-        for(let i = 0; i < queryResult.length;) results.push(queryResult.item(i));
+        for(let i = 0; i < queryResult.length;i++) results.push(queryResult.item(i));
         return results;
     }
 
@@ -75,10 +75,24 @@ export class ShaderCompiler
 {
         private gl: WebGLRenderingContext;
         private canvas: HTMLCanvasElement;
+        public isCompiling : boolean;
+        public lastCompile: number;
         constructor(){
+            this.lastCompile = performance.now();
+            this.isCompiling = false;
             this.canvas = document.createElement("canvas") as HTMLCanvasElement;
             this.gl = this.canvas.getContext("webgl");
         }
+
+        onError(error:Array<ShaderError>){
+            throw "Not implememnted";    
+        } 
+
+        onSuccess(fs:string){
+
+            throw "Not implemented";   
+        }
+
         private toErrorLines(error:string):Array<ShaderError>{
             let index = 0;
             let indexEnd:number = 0;
@@ -102,10 +116,25 @@ export class ShaderCompiler
             return errorLines;
         }
 
-        public compile(fs:string):Array<ShaderError>{
+        public canCompile():boolean{
+            let bounce = -(this.lastCompile - performance.now());
+            return bounce > 500. && !this.isCompiling;
+        }
+
+        public compile(fs:string){
+                this.isCompiling = true;
                 let gl = this.gl;
                 let compileResults=  this.createShader(fs,gl.FRAGMENT_SHADER)
-                return compileResults;
+                if(compileResults.length > 0){
+                    this.isCompiling = false;
+                    this.lastCompile = performance.now();
+                    this.onError(compileResults);
+                }else {
+                    this.isCompiling = false;
+                    this.lastCompile = performance.now();
+                    this.onSuccess(fs);
+                }
+               // return compileResults;
         }
         
         private createShader(src:string,type:number):Array<ShaderError>{

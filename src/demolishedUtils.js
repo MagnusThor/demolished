@@ -9,7 +9,7 @@ var Utils = (function () {
     Utils.$$ = function (query, parent) {
         var results = new Array();
         var queryResult = parent ? parent.querySelectorAll(query) : document.querySelectorAll(query);
-        for (var i = 0; i < queryResult.length;)
+        for (var i = 0; i < queryResult.length; i++)
             results.push(queryResult.item(i));
         return results;
     };
@@ -72,9 +72,17 @@ var ShaderError = (function () {
 exports.ShaderError = ShaderError;
 var ShaderCompiler = (function () {
     function ShaderCompiler() {
+        this.lastCompile = performance.now();
+        this.isCompiling = false;
         this.canvas = document.createElement("canvas");
         this.gl = this.canvas.getContext("webgl");
     }
+    ShaderCompiler.prototype.onError = function (error) {
+        throw "Not implememnted";
+    };
+    ShaderCompiler.prototype.onSuccess = function (fs) {
+        throw "Not implemented";
+    };
     ShaderCompiler.prototype.toErrorLines = function (error) {
         var index = 0;
         var indexEnd = 0;
@@ -99,10 +107,24 @@ var ShaderCompiler = (function () {
         }
         return errorLines;
     };
+    ShaderCompiler.prototype.canCompile = function () {
+        var bounce = -(this.lastCompile - performance.now());
+        return bounce > 500. && !this.isCompiling;
+    };
     ShaderCompiler.prototype.compile = function (fs) {
+        this.isCompiling = true;
         var gl = this.gl;
         var compileResults = this.createShader(fs, gl.FRAGMENT_SHADER);
-        return compileResults;
+        if (compileResults.length > 0) {
+            this.isCompiling = false;
+            this.lastCompile = performance.now();
+            this.onError(compileResults);
+        }
+        else {
+            this.isCompiling = false;
+            this.lastCompile = performance.now();
+            this.onSuccess(fs);
+        }
     };
     ShaderCompiler.prototype.createShader = function (src, type) {
         var gl = this.gl;

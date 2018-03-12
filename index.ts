@@ -98,7 +98,7 @@ export class DemolishedEd {
         this.engine = new Demolished.Rendering(Utils.$("#webgl") as HTMLCanvasElement,
             Utils.$("#shader-view"),
             "entities/graph.json", this.music);
-
+   
        // DemolishedDialogBuilder.render(this.webGlrendering,Utils.$("#dlg > .prop-content"));
 
         let timeEl =Utils.$(".time");
@@ -107,6 +107,7 @@ export class DemolishedEd {
         let fullscreen = Utils.$("#btn-fullscreen");
         let immediate = Utils.$(".immediate");
         let timeLine = Utils.$("#current-time") as HTMLInputElement;
+        let shaderResolution = Utils.$("#shader-resolution") as HTMLInputElement;
 
 
         timeEl.addEventListener("click", () => {
@@ -121,6 +122,15 @@ export class DemolishedEd {
             view.webkitRequestFullscreen();
            
         });
+
+
+        shaderResolution.addEventListener("change", (evt:Event) => {
+
+            this.engine.resizeCanvas(Utils.$("#shader-view"),
+            parseInt(shaderResolution.value));
+        });
+
+
         document.addEventListener("webkitfullscreenchange",(evt) => {
             let target = document.webkitFullscreenElement;
             if(target){
@@ -148,20 +158,12 @@ export class DemolishedEd {
         });
 
         this.engine.onFrame = (frame) => {
-
-            // pass frequency data to 2d canvas
-            // needs to be refactored
-
-
             this.spectrum.frequencData = this.music.getFrequenceData();
-
-
-            timeLine.value = parseInt(frame.ms).toString();
+            timeLine.style.width = ((parseInt(frame.ms) / 386400  ) * 100.  ).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };   
         this.engine.onReady = () => {
             this.onReady();
-            timeLine.setAttribute("max", "386400");
             window.setTimeout(() => {
                 this.engine.start(0);
             }, 2000);
@@ -193,38 +195,14 @@ export class DemolishedEd {
             );
 
             this.helpers = new DemoishedEditorHelper(editor);
-            var isCompile = false;
-
-            editor.on("change", (cm: CodeMirror) => {
-                if (isCompile) return;
-
-                if (-(lastCompile - performance.now()) / 1000 > 0.5) {
-                    isCompile = true;
-                    let fs = cm.getValue();
-                    let vs = this.engine.currentTimeFragment.entityShader.vertexShader;
-                    let shaderErrors = this.shaderCompiler.compile(fs);
-                    lastCompile = performance.now();
-                    if (shaderErrors.length === 0) {
-                        immediate.innerHTML = "";
-                        this.engine.currentTimeFragment.entityShader.reCompile(fs);
-                        if (!immediate.classList.contains("hide")) immediate.classList.add("hide");
-                    }
-
-                  
-                    Utils.$$(".error-info").forEach( (el:Element) => {
-                        el.classList.remove("error-info");
-                    })
-
-                    shaderErrors.length === 0 ? Utils.$("#btn-showconsole").classList.remove("red") : Utils.$("#btn-showconsole").classList.add("red");
-
-                    shaderErrors.forEach((err: ShaderError) => {
-
+     
+            this.shaderCompiler.onError = (shaderErrors:Array<ShaderError>) =>{
+                
+                       shaderErrors.forEach((err: ShaderError) => {
                         let errNode = document.createElement("abbr");
-
                         errNode.classList.add("error-info");
                         errNode.title = err.error;
                         editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
-
                         // todo: refactor
                         let p = document.createElement("p");
                         let m = document.createElement("mark");
@@ -233,11 +211,22 @@ export class DemolishedEd {
                         m.textContent = err.line.toString();
                         p.appendChild(m);
                         p.appendChild(s);
-
                         immediate.appendChild(p);
                     });
-                    isCompile = false;
-                }
+            };
+            this.shaderCompiler.onSuccess = (fs:string) =>{
+                let shaderErrors = Utils.$$(".error-info"); 
+                shaderErrors.forEach( (el:Element) => {
+                    el.classList.remove("error-info");
+                });
+                this.engine.currentTimeFragment.entityShader.reCompile(fs);  
+            }
+
+            editor.on("change", (cm: CodeMirror) => {
+                let fs = cm.getValue();
+                if(fs.length == 0 && !this.shaderCompiler.canCompile() ) return;
+                    let vs = this.engine.currentTimeFragment.entityShader.vertexShader;
+                    this.shaderCompiler.compile(fs);
             });
 
         }

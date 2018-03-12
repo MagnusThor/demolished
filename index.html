@@ -28,6 +28,11 @@
 </head>
 
 <body>
+	<nav class="menu">
+		<div id="logo">
+			demolishEd 0.1
+		</span>
+	</nav>
 
 
 	<div id="spectrum-analyzer">
@@ -69,11 +74,16 @@
 	</div>
 	<div id="shader-win">
 		<div id="shader-win-tb">
+			<select id="shader-resolution">
+				<option value="1">1x</option>
+				<option value="2">2x</option>
+				<option class="4">4x</option>
+			</select>
 			<i class="fa fa-desktop" id="btn-fullscreen"></i>
 			<i class="fa fa-volume-off" id="toggle-sound"></i>
 			<i class="fa fa-play" id="toogle-playback"></i>
 			<i class="fa fa-circle red"></i>
-			<i class="time">00.00</span>
+			<i class="time">00.00</i>
 		</div>
 		<div id="shader-view">
 
@@ -85,7 +95,7 @@
 
 	</div>
 	<div class="tools">
-		<input type="range" min="0" max="100" value="10" id="current-time" />
+		<div id="current-time"></div>
 	</div>
 	<script src="demoBundle.js"></script>
 </body>

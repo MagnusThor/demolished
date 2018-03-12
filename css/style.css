@@ -1,4 +1,8 @@
-	body {
+
+@import url(https://fonts.googleapis.com/css?family=Open+Sans);
+@import url(https://fonts.googleapis.com/css?family=Bree+Serif);
+
+body {
 		background: #000;
 		margin: 0;
 		padding: 0;
@@ -110,7 +114,7 @@
 		position: absolute;
 		z-index: 1090;
 		right: 20px;
-		top: 1em;
+		top: 48px;
 		height: 2em;
 		margin-top: 2px;
 		border: 0;
@@ -155,16 +159,39 @@
 
 	#editor{
 		
-		position: absolute;
+		position: fixed;
 		left:0;
 		top:0;
 		height: 100%;
 		width: 100%;
+		padding-top:48px;
 		background: rgba(255, 255, 255, 0.1);
+	}
+
+	nav{
+		top:0px;
+		left:0px;
+		height:48px;
+		width: 100%;
+		margin:0;
+		padding: 0;
+		background-color:rgba(255, 255, 255, 0.1);
 	}
 
 
 
+
+	#logo{
+		color: #fff;
+		display: block;
+		padding: 0 40px;
+		float: left;
+		font-size: 20px;
+		line-height: 48px;
+		font-family: 'Open Sans', sans-serif;
+	}
+
+	
 	
 
 	:root {
@@ -412,6 +439,11 @@
 		padding: 4px;
 		
 	}
+	#shader-win-tb select {
+		float: left;
+		height: 24px;
+		border: 0;
+	}
 	#shader-win-tb i {
 		margin: auto 10px; 
 		cursor: pointer
@@ -427,6 +459,14 @@
 		height: 225px;
 		width: 450px;
 
+	}
+
+	#current-time{
+		height: 100%;
+		background: rgba(1,1,1,.7);
+		position: relative;
+		left:0;
+		top:0;
 	}
 
 	.prop-box {

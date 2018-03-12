@@ -77,6 +77,7 @@ var DemolishedEd = (function () {
         var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
         var immediate = demolishedUtils_1.Utils.$(".immediate");
         var timeLine = demolishedUtils_1.Utils.$("#current-time");
+        var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
         timeEl.addEventListener("click", function () {
             _this.engine.uniforms.time = 0;
             _this.engine.resetClock(0);
@@ -87,6 +88,9 @@ var DemolishedEd = (function () {
         fullscreen.addEventListener("click", function () {
             var view = demolishedUtils_1.Utils.$("#webgl");
             view.webkitRequestFullscreen();
+        });
+        shaderResolution.addEventListener("change", function (evt) {
+            _this.engine.resizeCanvas(demolishedUtils_1.Utils.$("#shader-view"), parseInt(shaderResolution.value));
         });
         document.addEventListener("webkitfullscreenchange", function (evt) {
             var target = document.webkitFullscreenElement;
@@ -112,12 +116,11 @@ var DemolishedEd = (function () {
         });
         this.engine.onFrame = function (frame) {
             _this.spectrum.frequencData = _this.music.getFrequenceData();
-            timeLine.value = parseInt(frame.ms).toString();
+            timeLine.style.width = ((parseInt(frame.ms) / 386400) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
         this.engine.onReady = function () {
             _this.onReady();
-            timeLine.setAttribute("max", "386400");
             window.setTimeout(function () {
                 _this.engine.start(0);
             }, 2000);
@@ -146,42 +149,35 @@ var DemolishedEd = (function () {
                 autofocus: true
             });
             _this.helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(editor);
-            var isCompile = false;
+            _this.shaderCompiler.onError = function (shaderErrors) {
+                shaderErrors.forEach(function (err) {
+                    var errNode = document.createElement("abbr");
+                    errNode.classList.add("error-info");
+                    errNode.title = err.error;
+                    editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
+                    var p = document.createElement("p");
+                    var m = document.createElement("mark");
+                    var s = document.createElement("span");
+                    s.textContent = err.error;
+                    m.textContent = err.line.toString();
+                    p.appendChild(m);
+                    p.appendChild(s);
+                    immediate.appendChild(p);
+                });
+            };
+            _this.shaderCompiler.onSuccess = function (fs) {
+                var shaderErrors = demolishedUtils_1.Utils.$$(".error-info");
+                shaderErrors.forEach(function (el) {
+                    el.classList.remove("error-info");
+                });
+                _this.engine.currentTimeFragment.entityShader.reCompile(fs);
+            };
             editor.on("change", function (cm) {
-                if (isCompile)
+                var fs = cm.getValue();
+                if (fs.length == 0 && !_this.shaderCompiler.canCompile())
                     return;
-                if (-(lastCompile - performance.now()) / 1000 > 0.5) {
-                    isCompile = true;
-                    var fs = cm.getValue();
-                    var vs = _this.engine.currentTimeFragment.entityShader.vertexShader;
-                    var shaderErrors = _this.shaderCompiler.compile(fs);
-                    lastCompile = performance.now();
-                    if (shaderErrors.length === 0) {
-                        immediate.innerHTML = "";
-                        _this.engine.currentTimeFragment.entityShader.reCompile(fs);
-                        if (!immediate.classList.contains("hide"))
-                            immediate.classList.add("hide");
-                    }
-                    demolishedUtils_1.Utils.$$(".error-info").forEach(function (el) {
-                        el.classList.remove("error-info");
-                    });
-                    shaderErrors.length === 0 ? demolishedUtils_1.Utils.$("#btn-showconsole").classList.remove("red") : demolishedUtils_1.Utils.$("#btn-showconsole").classList.add("red");
-                    shaderErrors.forEach(function (err) {
-                        var errNode = document.createElement("abbr");
-                        errNode.classList.add("error-info");
-                        errNode.title = err.error;
-                        editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
-                        var p = document.createElement("p");
-                        var m = document.createElement("mark");
-                        var s = document.createElement("span");
-                        s.textContent = err.error;
-                        m.textContent = err.line.toString();
-                        p.appendChild(m);
-                        p.appendChild(s);
-                        immediate.appendChild(p);
-                    });
-                    isCompile = false;
-                }
+                var vs = _this.engine.currentTimeFragment.entityShader.vertexShader;
+                _this.shaderCompiler.compile(fs);
             });
         };
         window.onerror = function () {
