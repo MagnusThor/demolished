@@ -23,20 +23,7 @@
         {
             "name": "empty",
             "description": "",
-            "textures": [
-                {
-                    "url": "assets/iChannel0.png",
-                    "uniform": "texture0",
-                    "width": 512,
-                    "height": 512
-                },
-                {
-                    "url": "assets/iChannel1.jpg",
-                    "uniform": "texture1",
-                    "width": 512,
-                    "height": 512
-                }
-            ]
+            "textures": []         
         }
     ]
 }

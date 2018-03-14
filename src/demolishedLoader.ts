@@ -5,7 +5,6 @@
  * there is a few different, fat, astute pollyfills  avaiable, but i prefere this .
  * .fetch ( that dont work out-of-the-box) in electron, as well as electron-fetch is 
  * not suitiable in "my" case
- *  ! the whole thing could be evvolved and pacakged.
  * @export
  * @param {string} file 
  * @returns {Promise<any>} 
@@ -19,7 +18,6 @@ export default
         });
         return promise;
      }
-
 class XMLHttpRequestWrapper{    
     private xhr:XMLHttpRequest;
     constructor(private file,resolve,reject){

@@ -2,12 +2,7 @@ import {
     Demolished
 } from './src/demolished'
 
-
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings } from './src/demolishedModels';
-import {  DemolishedSIDMusic } from "./src/demolishedSound";
-import { DemoishedProperty, DemolishedDialogBuilder } from './src/demolishedProperties';
-
-
+import { DemolishedSonant } from './src/DemolishedSonant';
 
 export class Demo {
 
@@ -22,25 +17,23 @@ export class Demo {
      
         let webGlCanvas = document.querySelector("#webgl") as HTMLCanvasElement;
 
-        let music = new DemolishedSIDMusic();
+        let music = new DemolishedSonant(window["song"]);
 
-        this.webGlrendering = new DemoishedProperty<Demolished.Rendering>(new Demolished.Rendering(webGlCanvas,
-            document.querySelector("foo"),
-            "entities/demo.json", music)).getObserver();
+        for (var t = 0; t < 8; t++) music.generate(t);;
+       
+        this.webGlrendering = new Demolished.Rendering(webGlCanvas,
+            document.querySelector("#shader-view"),
+            "entities/graph.json", music);
 
-        // this.webGlrendering = new Demolished.Rendering(webGlCanvas,
-        //     "entities/demo.json", music);
 
         this.webGlrendering.onFrame = (frame) => {
         };
 
         this.webGlrendering.onReady = () => {
-
-            DemolishedDialogBuilder.render(this.webGlrendering,document.querySelector("#dlg > .prop-content"));
-
-            
             this.onReady();
             window.setTimeout(() => {
+                document.querySelector(".loader").classList.add("hide");
+                this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"),2);
                 this.webGlrendering.start(0);
             }, 2000);
 
@@ -57,7 +50,7 @@ export class Demo {
     }
 }
 document.addEventListener("DOMContentLoaded", () => {
-    Demo.getIntance();
+        Demo.getIntance();
 });
 
 

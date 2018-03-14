@@ -156,7 +156,6 @@ var DemolishedStreamingMusic = (function (_super) {
                                 analyser.connect(audioCtx.destination);
                                 _this.audioAnalyser = analyser;
                                 resolve(true);
-                                window.addEventListener("load", onLoad, false);
                             };
                             onLoad();
                             var bufferSource = audioCtx.createBufferSource();

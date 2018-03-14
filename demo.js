@@ -1,20 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolished_1 = require("./src/demolished");
-var demolishedSound_1 = require("./src/demolishedSound");
-var demolishedProperties_1 = require("./src/demolishedProperties");
+var DemolishedSonant_1 = require("./src/DemolishedSonant");
 var Demo = (function () {
     function Demo() {
         var _this = this;
         var webGlCanvas = document.querySelector("#webgl");
-        var music = new demolishedSound_1.DemolishedSIDMusic();
-        this.webGlrendering = new demolishedProperties_1.DemoishedProperty(new demolished_1.Demolished.Rendering(webGlCanvas, document.querySelector("foo"), "entities/demo.json", music)).getObserver();
+        var music = new DemolishedSonant_1.DemolishedSonant(window["song"]);
+        for (var t = 0; t < 8; t++)
+            music.generate(t);
+        ;
+        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, document.querySelector("#shader-view"), "entities/graph.json", music);
         this.webGlrendering.onFrame = function (frame) {
         };
         this.webGlrendering.onReady = function () {
-            demolishedProperties_1.DemolishedDialogBuilder.render(_this.webGlrendering, document.querySelector("#dlg > .prop-content"));
             _this.onReady();
             window.setTimeout(function () {
+                document.querySelector(".loader").classList.add("hide");
+                _this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"), 2);
                 _this.webGlrendering.start(0);
             }, 2000);
         };

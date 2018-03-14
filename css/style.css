@@ -178,9 +178,6 @@ body {
 		background-color:rgba(255, 255, 255, 0.1);
 	}
 
-
-
-
 	#logo{
 		color: #fff;
 		display: block;
@@ -190,9 +187,6 @@ body {
 		line-height: 48px;
 		font-family: 'Open Sans', sans-serif;
 	}
-
-	
-	
 
 	:root {
 		--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;

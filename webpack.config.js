@@ -1,15 +1,15 @@
-//const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 
 module.exports = {
   node: {
    fs: "empty"
   },
   watch: true,
-  entry: './index.js',
+  entry: './demo.js',
   output: {
     filename: 'demoBundle.js'
   },
   plugins: [
-   // 	new UglifyJSPlugin()
+    	new UglifyJSPlugin()
   ]
 }

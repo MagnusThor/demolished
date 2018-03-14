@@ -184,7 +184,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
                                 analyser.connect(audioCtx.destination);
                                 this.audioAnalyser = analyser;
                                 resolve(true)
-                                window.addEventListener("load", onLoad, false);
+                              //  window.addEventListener("load", onLoad, false);
                             };
                             onLoad();
 

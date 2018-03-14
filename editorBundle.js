@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 22);
+/******/ 	return __webpack_require__(__webpack_require__.s = 30);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -9708,6 +9708,230 @@ return CodeMirror$1;
 
 /***/ }),
 /* 1 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["b"] = addEvent;
+/* harmony export (immutable) */ __webpack_exports__["c"] = removeEvent;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__tools_common__ = __webpack_require__(12);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__modals_mixin__ = __webpack_require__(36);
+/*
+Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
+Author: Lou Huang (@saikofish)
+*/
+
+
+
+
+
+class Picker {
+    constructor (CSS_PREFIX, properties) {
+        __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1__modals_mixin__["a" /* subscribeMixin */])(this);
+        this.CSS_PREFIX = CSS_PREFIX;
+
+        this.bgColor = 'rgb(46, 48, 51)';
+        this.dimColor = 'rgb(100, 100, 100)';
+        this.fnColor = 'rgb(230, 230, 230)';
+        this.selColor = 'rgb(133, 204, 196)';
+
+        properties = properties || {};
+        for (let prop in properties) {
+            this[prop] = properties[prop];
+        }
+
+        /**
+         *  This initializes the renderer. It uses requestAnimationFrame() to
+         *  smoothly render changes in the color picker as user interacts with it.
+         */
+        this.renderer = {
+            // Stores a reference to the animation rendering loop.
+            frame: null,
+
+            drawFrame: () => {
+                if (!this.el) {
+                    return;
+                }
+                this.draw();
+            },
+
+            // Starts animation rendering loop
+            start: () => {
+                this.renderer.drawFrame();
+                this.renderer.frame = window.requestAnimationFrame(this.renderer.start);
+            },
+
+            // Stops animation rendering loop
+            stop: () => {
+                window.cancelAnimationFrame(this.renderer.frame);
+            }
+        };
+        this.isVisible = false;
+    }
+
+    create () {
+        this.el = document.createElement('div');
+        this.el.className = this.CSS_PREFIX + 'modal ge_picker_modal';
+        this.el.style.backgroundColor = this.bgColor;
+
+        this.canvas = document.createElement('canvas');
+        this.canvas.className = this.CSS_PREFIX + 'canvas ge_picker_canvas';
+        this.canvas.style.backgroundColor = this.bgColor;
+
+        this.el.appendChild(this.canvas);
+        this.ctx = this.canvas.getContext('2d');
+
+        let ratio = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__tools_common__["a" /* getDevicePixelRatio */])(this.ctx);
+        this.canvas.width = this.width * ratio;
+        this.canvas.height = this.height * ratio;
+        this.ctx.scale(ratio, ratio);
+    }
+
+    draw () {
+        // render rutine
+    }
+
+    close () {
+        // Close rutine
+        this.destroyEvents();
+        removeEvent(this.el, 'mousedown', this.onMouseDownHandler);
+        this.onMouseDownHandler = null;
+    }
+
+    destroyEvents () {
+        removeEvent(this.el, 'mousemove', this.onMouseMoveHandler);
+        this.onMouseMoveHandler = null;
+        removeEvent(window, 'mouseup', this.onMouseUpHandler);
+        this.onMouseUpHandler = null;
+    }
+
+    setValue (value) {
+        this.value = value;
+    }
+
+    getValue () {
+        return this.value;
+    }
+
+    showAt (cm) {
+        let cursor = cm.cursorCoords(true, 'page');
+        let x = cursor.left;
+        let y = cursor.top;
+
+        x -= this.width * 0.5;
+        y += 30;
+
+        // // Check if desired x, y will be outside the viewport.
+        // // Do not allow the modal to disappear off the edge of the window.
+        // x = (x + this.width < window.innerWidth) ? x : (window.innerWidth - 20 - this.width);
+        // y = (y + this.height < window.innerHeight) ? y : (window.innerHeight - 20 - this.height);
+
+        this.presentModal(x, y);
+    }
+
+    presentModal (x, y) {
+        // Listen for interaction outside of the modal
+        window.setTimeout(() => {
+            this.onClickOutsideHandler = addEvent(document.body, 'click', this.onClickOutside, this);
+            this.onKeyPressHandler = addEvent(window, 'keydown', this.onKeyPress, this);
+        }, 0);
+        this.isVisible = true;
+
+        this.el.style.left = x + 'px';
+        this.el.style.top = y + 'px';
+        this.el.style.width = this.width + 'px';
+        this.el.style.height = this.height + 'px';
+        document.body.appendChild(this.el);
+
+        this.onMouseDownHandler = addEvent(this.el, 'mousedown', this.onMouseDown, this);
+
+        this.renderer.drawFrame();
+    }
+
+     /**
+     *  Removes modal from DOM and destroys related event listeners
+     */
+    removeModal () {
+        if (this.el && this.el.parentNode) {
+            this.el.parentNode.removeChild(this.el);
+        }
+        removeEvent(document.body, 'click', this.onClickOutsideHandler);
+        this.onClickOutsideHandler = null;
+        removeEvent(window, 'keydown', this.onKeyPressHandler);
+        this.onKeyPressHandler = null;
+
+        this.close();
+        this.isVisible = false;
+    }
+
+    onKeyPress (event) {
+        this.removeModal();
+    }
+
+    onClickOutside (event) {
+        // HACKY!!
+        // A click event fires on the body after mousedown - mousemove, simultaneously with
+        // mouseup. So if someone started a mouse action inside the modal and then
+        // mouseup'd outside of it, it fires a click event on the body, thus, causing the
+        // modal to disappear when the user does not expect it to, since the mouse down event
+        // did not start outside the modal.
+        // There might be (or should be) a better way to track this, but right now, just cancel
+        // the event if the target ends up being on the body directly rather than on one of the
+        // other child elements.
+        if (event.target === document.body) {
+            return;
+        }
+        // end this specific hacky part
+
+        let target = event.target;
+
+        while (target !== document.documentElement && !target.classList.contains(this.CSS_PREFIX + 'modal')) {
+            target = target.parentNode;
+        }
+
+        if (!target.classList.contains(this.CSS_PREFIX + 'modal')) {
+            this.removeModal();
+        }
+    }
+
+    onMouseDown (event) {
+        event.preventDefault();
+
+        // Starts listening for mousemove and mouseup events
+        this.onMouseMoveHandler = addEvent(this.el, 'mousemove', this.onMouseMove, this);
+        this.onMouseUpHandler = addEvent(window, 'mouseup', this.onMouseUp, this);
+
+        this.onMouseMove(event);
+
+        this.renderer.start();
+    }
+
+    onMouseMove (event) {
+    }
+
+    onMouseUp (event) {
+        this.renderer.stop();
+        this.destroyEvents();
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Picker;
+
+
+/* Event handling */
+function addEvent (element, event, callback, caller) {
+    let handler;
+    element.addEventListener(event, handler = function (e) {
+        callback.call(caller, e);
+    }, false);
+    return handler;
+}
+
+function removeEvent (element, event, callback) {
+    element.removeEventListener(event, callback, false);
+}
+
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -10002,7 +10226,7 @@ return CodeMirror$1;
 
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10088,7 +10312,7 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -10251,7 +10475,7 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -10397,7 +10621,7 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -10555,14 +10779,24 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
-var demolishedTransitions_1 = __webpack_require__(24);
+var demolishedTransitions_1 = __webpack_require__(35);
+var demolishedProperties_1 = __webpack_require__(8);
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -10579,53 +10813,59 @@ var Graph = (function () {
 }());
 exports.Graph = Graph;
 var TimeFragment = (function () {
-    function TimeFragment(entity, start, stop, useTransitions, overlays) {
+    function TimeFragment(entity, start, stop, useTransitions) {
         this.entity = entity;
         this.start = start;
         this.stop = stop;
         this.useTransitions = useTransitions;
-        if (overlays instanceof Array) {
-            this.overlays = overlays;
-        }
-        else
-            this.overlays = new Array();
     }
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;
         if (this.useTransitions) {
-            this.transition = new demolishedTransitions_1.DemloshedTransitionBase(this.entityShader);
+            this.transition = new demolishedTransitions_1.DemlolishedTransitionBase(this.entityShader);
         }
     };
-    Object.defineProperty(TimeFragment.prototype, "hasLayers", {
-        get: function () {
-            return this.overlays.length > 0;
-        },
-        enumerable: true,
-        configurable: true
-    });
     return TimeFragment;
 }());
 exports.TimeFragment = TimeFragment;
-var Overlay = (function () {
-    function Overlay(name, classList) {
-        this.name = name;
-        this.classList = classList;
-    }
-    Overlay.prototype.loadMarkup = function () {
-        throw "Not yet implemented";
-    };
-    return Overlay;
-}());
-exports.Overlay = Overlay;
 var Uniforms = (function () {
     function Uniforms(width, height) {
         this.screenWidth = width;
         this.screenHeight = height;
+        this.alpha = 0;
     }
     Uniforms.prototype.setScreen = function (w, h) {
         this.screenWidth = w;
         this.screenWidth = h;
     };
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "time", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "timeTotal", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "mouseX", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "mouseY", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "screenWidth", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "screenHeight", void 0);
+    __decorate([
+        demolishedProperties_1.Observe(true),
+        __metadata("design:type", Number)
+    ], Uniforms.prototype, "alpha", void 0);
     return Uniforms;
 }());
 exports.Uniforms = Uniforms;
@@ -10656,7 +10896,798 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 7 */
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+__webpack_require__(32);
+var DemolishedPropertyHandler = (function () {
+    function DemolishedPropertyHandler() {
+    }
+    DemolishedPropertyHandler.prototype.set = function (target, key, value, receiver) {
+        var old = Reflect.get(target, key, receiver);
+        return Reflect.set(target, key, value, receiver);
+    };
+    DemolishedPropertyHandler.prototype.get = function (target, key, receiver) {
+        return Reflect.get(target, key, receiver);
+    };
+    DemolishedPropertyHandler.prototype.observe = function () {
+    };
+    return DemolishedPropertyHandler;
+}());
+exports.DemolishedPropertyHandler = DemolishedPropertyHandler;
+function Observe(isObserved) {
+    return function (target, key) {
+        return Reflect.defineMetadata("isObserved", isObserved, target, key);
+    };
+}
+exports.Observe = Observe;
+var DemoishedProperty = (function () {
+    function DemoishedProperty(target) {
+        this.target = target;
+        this.handler = new DemolishedPropertyHandler();
+    }
+    DemoishedProperty.prototype.getObserver = function () {
+        return new Proxy(this.target, this.handler);
+    };
+    return DemoishedProperty;
+}());
+exports.DemoishedProperty = DemoishedProperty;
+var DemolishedDialogBuilder = (function () {
+    function DemolishedDialogBuilder() {
+    }
+    DemolishedDialogBuilder.render = function (observer, parent) {
+        var _this = this;
+        var keys = Object.keys(observer);
+        keys.forEach(function (key) {
+            var prop = observer[key];
+            var isObserved = Reflect.getMetadata("isObserved", observer, key);
+            if (isObserved) {
+                if (typeof (prop) == "number" || typeof (prop) == "string") {
+                    var field = document.createElement("div");
+                    var label = document.createElement("label");
+                    label.textContent = key;
+                    field.appendChild(label);
+                    var input = document.createElement("input");
+                    input.type = "text";
+                    input.id = key;
+                    input.value = prop.toString();
+                    input.addEventListener("change", function (evt) {
+                        observer[key] = evt.target["value"];
+                    });
+                    input.addEventListener("click", function (evt) {
+                        evt.target["value"] = observer[key];
+                    });
+                    field.appendChild(input);
+                    parent.appendChild(field);
+                }
+                else if (typeof (prop) == "object") {
+                    _this.render(observer[key], parent);
+                }
+            }
+        });
+    };
+    return DemolishedDialogBuilder;
+}());
+exports.DemolishedDialogBuilder = DemolishedDialogBuilder;
+
+
+/***/ }),
+/* 9 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Vector__ = __webpack_require__(40);
+
+
+
+class Vec2Picker extends __WEBPACK_IMPORTED_MODULE_0__Picker__["a" /* default */] {
+    constructor (pos, properties) {
+        super('ge_vec2picker_', properties);
+
+        this.width = this.width || 200;
+        this.height = this.height || 200;
+
+        this.min = this.min || -1;
+        this.max = this.max || 1;
+        this.size = this.size || 6;
+        this.range = this.max - this.min;
+        this.overPoint = false;
+
+        let center = ((this.range / 2) - this.max) * -1;
+        this.setValue(pos || [center,center]);
+        this.create();
+    }
+
+    draw () {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // frame
+        this.ctx.strokeStyle = this.dimColor;
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(0, 0, this.width, this.height);
+
+        this.ctx.beginPath();
+        this.ctx.lineWidth = 0.25;
+        let sections = 20;
+        let step = this.width / sections;
+        for (let i = 0; i < sections; i++) {
+            this.ctx.moveTo(i * step, 0);
+            this.ctx.lineTo(i * step, this.height);
+            this.ctx.moveTo(0, i * step);
+            this.ctx.lineTo(this.width, i * step);
+        }
+        this.ctx.stroke();
+
+        // horizontal line
+        this.ctx.strokeStyle = this.dimColor;
+        this.ctx.lineWidth = 1.0;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, 0.5 + this.height * 0.5);
+        this.ctx.lineTo(this.width, 0.5 + this.height * 0.5);
+        this.ctx.closePath();
+        this.ctx.stroke();
+
+        // vertical line
+        this.ctx.beginPath();
+        this.ctx.moveTo(0.5 + this.width * 0.5, 0);
+        this.ctx.lineTo(0.5 + this.width * 0.5, this.height);
+        this.ctx.closePath();
+        this.ctx.stroke();
+
+        // // Triangle line
+        // this.ctx.fillStyle = this.dimColor;
+        // this.ctx.beginPath();
+        // this.ctx.moveTo(this.width * 0.5, 5);
+        // this.ctx.lineTo(this.width * 0.48, 0);
+        // this.ctx.lineTo(this.width * 0.52, 0);
+        // this.ctx.closePath();
+        // this.ctx.fill();
+
+        let x = Math.round(((this.value.x - this.min) / this.range) * this.width);
+        let y = Math.round(((1 - (this.value.y - this.min) / this.range)) * this.height);
+
+        let half = this.size / 2;
+
+        if (x < half) {
+            x = half;
+        }
+        if (x > this.width - half) {
+            x = this.width - half;
+        }
+        if (y < half) {
+            y = half;
+        }
+        if (y > this.height - half) {
+            y = this.height - half;
+        }
+
+        // point
+        this.ctx.fillStyle = this.overPoint ? this.selColor : this.fnColor;
+        this.ctx.beginPath();
+        let radius = this.overPoint ? 4 : 2;
+        this.ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+        this.ctx.fill();
+
+        this.ctx.restore();
+        this.overPoint = false;
+    }
+
+    // Actions when user moves around on HSV color map
+    onMouseMove (event) {
+        let x = event.offsetX;
+        let y = event.offsetY;
+
+        this.value.x = ((this.range / this.width) * x) - (this.range - this.max);
+        this.value.y = (((this.range / this.height) * y) - (this.range - this.max)) * -1;
+
+        // fire 'changed'
+        this.trigger('changed', this.value);
+        this.overPoint = true;
+    }
+
+    setValue (pos) {
+        this.value = new __WEBPACK_IMPORTED_MODULE_1__types_Vector__["a" /* default */](pos);
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["default"] = Vec2Picker;
+
+
+
+/***/ }),
+/* 10 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__ColorConverter__ = __webpack_require__(11);
+
+
+
+class Color {
+    constructor (color) {
+        this.colors = {};
+        this.set(color);
+    }
+
+    set (color, type) { // color only full range
+        if (typeof color === 'number') {
+            type = type ? type : 'rgb';
+            this.colors[type] = {};
+            for (var n = 3; n--;) {
+                let m = type[n] || type.charAt(n); // IE7
+                this.colors[type][m] = color;
+            }
+        }
+        else if (typeof color === 'string') {
+            let parts = color.replace(/(?:#|\)|%)/g, '').split('(');
+            if (parts[1]) {
+                let values = (parts[1] || '').split(/,\s*/);
+                type = type ? type : (parts[1] ? parts[0].substr(0, 3) : 'rgb');
+                this.set(values, type);
+            }
+            else {
+                this.set(__webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__ColorConverter__["a" /* getColorAsRGB */])(color), 'rgb');
+            }
+        }
+        else if (color) {
+            if (Array.isArray(color)) {
+                let m = '';
+                type = type || 'rgb';
+
+                this.colors[type] = this.colors[type] || {};
+                for (let n = 3; n--;) {
+                    m = type[n] || type.charAt(n); // IE7
+                    let i = color.length >= 3 ? n : 0;
+                    this.colors[type][m] = parseFloat(color[i]);
+                }
+
+                if (color.length === 4) {
+                    this.colors.alpha = parseFloat(color[3]);
+                }
+            }
+            else if (type) {
+                for (let n in color) {
+                    this.colors[type][n] = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__ColorConverter__["b" /* limitValue */])(color[n] / __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__ColorConverter__["c" /* getValueRanges */])(type)[n][1], 0, 1) * __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__ColorConverter__["c" /* getValueRanges */])(type)[n][1];
+                }
+            }
+        }
+
+        if (!type) {
+            return;
+        }
+
+        if (type !== 'rgb') {
+            var convert = __WEBPACK_IMPORTED_MODULE_0__ColorConverter__["d" /* default */];
+            this.colors.rgb = convert[type + '2rgb'](this.colors[type]);
+        }
+        this.convert(type);
+        this.colors.hueRGB = __WEBPACK_IMPORTED_MODULE_0__ColorConverter__["d" /* default */].hue2RGB(this.colors.hsv.h);
+        this.colors.luminance = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__ColorConverter__["e" /* getLuminance */])(this.colors.rgb);
+    }
+
+    convert (type) {
+        let convert = __WEBPACK_IMPORTED_MODULE_0__ColorConverter__["d" /* default */],
+            ranges = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__ColorConverter__["c" /* getValueRanges */])(),
+            exceptions = { hsl: 'hsv', cmyk: 'cmy', rgb: type };
+
+        if (type !== 'alpha') {
+            for (let typ in ranges) {
+                if (!ranges[typ][typ]) { // no alpha|HEX
+                    if (type !== typ && typ !== 'XYZ') {
+                        let from = exceptions[typ] || 'rgb';
+                        this.colors[typ] = convert[from + '2' + typ](this.colors[from]);
+                    }
+                }
+            }
+        }
+    }
+
+    get (type) {
+        if (type !== 'rgb') {
+            var convert = __WEBPACK_IMPORTED_MODULE_0__ColorConverter__["d" /* default */];
+            this.colors[type] = convert['rgb2' + type](this.colors['rgb']);
+            return this.colors[type];
+        }
+        else {
+            return this.colors['rgb'];
+        }
+    }
+
+    getString (type) {
+        if (type === 'HEX') {
+            var convert = __WEBPACK_IMPORTED_MODULE_0__ColorConverter__["d" /* default */];
+            return convert['rgb2' + type](this.colors['rgb']);
+        }
+        else {
+            let color = this.get(type);
+            let str = type,
+                m = '';
+            if (type === 'vec') {
+                str += this.colors.alpha ? 4 : 3;
+            }
+            str += '(';
+            for (let n = 0; n < 3; n++) {
+                m = type[n] || type.charAt(n); // IE7
+                if (type === 'vec') {
+                    str += (color[m]).toFixed(3);
+                }
+                else {
+                    str += Math.floor(color[m]);
+                }
+                if (n !== 2) {
+                    str += ',';
+                }
+            }
+
+            if (this.colors.alpha) {
+                str += ',' + (this.colors.alpha).toFixed(3);
+            }
+            return str += ')';
+        }
+    }
+
+    uniformType () {
+        if (this.colors.alpha) {
+            return 'vec4';
+        }
+        return 'vec3';
+    }
+
+    uniformValue () {
+        var vec = this.get('vec')
+        var arr = [vec.v, vec.e, vec.c];
+        if (this.colors.alpha) {
+            arr.push(this.colors.alpha);
+        }
+        return arr;
+    }
+
+    uniformMethod (type) {
+        if (this.colors.alpha) {
+            return '4f';
+        }
+        return '3f';
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["default"] = Color;
+
+
+
+/***/ }),
+/* 11 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["b"] = limitValue;
+/* harmony export (immutable) */ __webpack_exports__["e"] = getLuminance;
+/* harmony export (immutable) */ __webpack_exports__["a"] = getColorAsRGB;
+/* harmony export (immutable) */ __webpack_exports__["c"] = getValueRanges;
+var valueRanges = {
+        rgb: { r: [0, 255], g: [0, 255], b: [0, 255] },
+        hsv: { h: [0, 1], s: [0, 1], v: [0, 255] },
+        hsl: { h: [0, 360], s: [0, 100], l: [0, 100] },
+        cmy: { c: [0, 100], m: [0, 100], y: [0, 100] },
+        cmyk: { c: [0, 100], m: [0, 100], y: [0, 100], k: [0, 100] },
+        Lab: { L: [0, 100], a: [-128, 127], b: [-128, 127] },
+        XYZ: { X: [0, 100], Y: [0, 100], Z: [0, 100] },
+        vec: { v: [0, 1], e: [0, 1], c: [0, 1] },
+        alpha: { alpha: [0, 1] },
+        HEX: { HEX: [0, 16777215] } // maybe we don't need this
+    };
+
+// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html for more
+var XYZMatrix = { // Observer = 2° (CIE 1931), Illuminant = D65
+        X: [ 0.4124564, 0.3575761, 0.1804375],
+        Y: [ 0.2126729, 0.7151522, 0.0721750],
+        Z: [ 0.0193339, 0.1191920, 0.9503041],
+        R: [ 3.2404542, -1.5371385, -0.4985314],
+        G: [-0.9692660, 1.8760108, 0.0415560],
+        B: [ 0.0556434, -0.2040259, 1.0572252]
+    };
+
+var XYZReference = {
+        X: XYZMatrix.X[0] + XYZMatrix.X[1] + XYZMatrix.X[2],
+        Y: XYZMatrix.Y[0] + XYZMatrix.Y[1] + XYZMatrix.Y[2],
+        Z: XYZMatrix.Z[0] + XYZMatrix.Z[1] + XYZMatrix.Z[2]
+    };
+
+var luminance = { r: 0.2126, g: 0.7152, b: 0.0722 }; // W3C 2.0
+
+var _colors;
+
+class ColorConverter {
+    // ------------------------ VEC ------------------------ //
+    static vec2rgb (vec) {
+        return {
+            r: vec.v * valueRanges['rgb']['r'][1],
+            g: vec.e * valueRanges['rgb']['g'][1],
+            b: vec.c * valueRanges['rgb']['b'][1]
+        };
+    }
+
+    static rgb2vec (rgb) {
+        return {
+            v: rgb.r / valueRanges['rgb']['r'][1],
+            e: rgb.g / valueRanges['rgb']['g'][1],
+            c: rgb.b / valueRanges['rgb']['b'][1]
+        };
+    }
+
+    // ------------------------ HEX ------------------------ //
+
+    static RGB2HEX (rgb) {
+        return (
+            (rgb.r < 16 ? '0' : '') + rgb.r.toString(16) +
+            (rgb.g < 16 ? '0' : '') + rgb.g.toString(16) +
+            (rgb.b < 16 ? '0' : '') + rgb.b.toString(16)
+        ).toUpperCase();
+    }
+
+    static HEX2rgb (HEX) {
+        HEX = HEX.split(''); // IE7
+        return {
+            r: parseInt(HEX[0] + HEX[HEX[3] ? 1 : 0], 16) / 255,
+            g: parseInt(HEX[HEX[3] ? 2 : 1] + (HEX[3] || HEX[1]), 16) / 255,
+            b: parseInt((HEX[4] || HEX[2]) + (HEX[5] || HEX[2]), 16) / 255
+        };
+    }
+
+    // ------------------------ HUE ------------------------ //
+
+    static hue2RGB (hue) {
+        var h = hue * 6,
+            // mod = ~~h % 6, // Math.floor(h) -> faster in most browsers
+            mod = Math.floor(h),
+            i = h === 6 ? 0 : (h - mod);
+        return {
+            r: Math.round([1, 1 - i, 0, 0, i, 1][mod] * 255),
+            g: Math.round([i, 1, 1, 1 - i, 0, 0][mod] * 255),
+            b: Math.round([0, 0, i, 1, 1, 1 - i][mod] * 255)
+        };
+    }
+
+    // ------------------------ HSV ------------------------ //
+
+    static rgb2hsv (rgb) { // faster
+        var r = rgb.r,
+            g = rgb.g,
+            b = rgb.b,
+            k = 0,
+            chroma,
+            min,
+            s;
+
+        if (g < b) {
+            g = b + (b = g, 0);
+            k = -1;
+        }
+        min = b;
+        if (r < g) {
+            r = g + (g = r, 0);
+            k = -2 / 6 - k;
+            min = Math.min(g, b); // g < b ? g : b; ???
+        }
+        chroma = r - min;
+        s = r ? (chroma / r) : 0;
+        return {
+            h: s < 1e-15 ? ((_colors && _colors.hsl && _colors.hsl.h) || 0) :
+                chroma ? Math.abs(k + (g - b) / (6 * chroma)) : 0,
+            s: r ? (chroma / r) : ((_colors && _colors.hsv && _colors.hsv.s) || 0), // ??_colors.hsv.s || 0
+            v: r
+        };
+    }
+
+    static hsv2rgb (hsv) {
+        var h = hsv.h * 6,
+            s = hsv.s,
+            v = hsv.v,
+            // i = ~~h, // Math.floor(h) -> faster in most browsers
+            i = Math.floor(h),
+            f = h - i,
+            p = v * (1 - s),
+            q = v * (1 - f * s),
+            t = v * (1 - (1 - f) * s),
+            mod = i % 6;
+
+        return {
+            r: [v, q, p, p, t, v][mod],
+            g: [t, v, v, q, p, p][mod],
+            b: [p, p, t, v, v, q][mod]
+        };
+    }
+
+    // ------------------------ HSL ------------------------ //
+
+    static hsv2hsl (hsv) {
+        var l = (2 - hsv.s) * hsv.v,
+            s = hsv.s * hsv.v;
+
+        s = !hsv.s ? 0 : l < 1 ? (l ? s / l : 0) : s / (2 - l);
+
+        return {
+            h: hsv.h,
+            s: !hsv.v && !s ? ((_colors && _colors.hsl && _colors.hsl.s) || 0) : s, // ???
+            l: l / 2
+        };
+    }
+
+    static rgb2hsl (rgb, dependent) { // not used in Color
+        var hsv = ColorConverter.rgb2hsv(rgb);
+
+        return ColorConverter.hsv2hsl(dependent ? hsv : (_colors.hsv = hsv));
+    }
+
+    static hsl2rgb (hsl) {
+        var h = hsl.h * 6,
+            s = hsl.s,
+            l = hsl.l,
+            v = l < 0.5 ? l * (1 + s) : (l + s) - (s * l),
+            m = l + l - v,
+            sv = v ? ((v - m) / v) : 0,
+            // sextant = ~~h, // Math.floor(h) -> faster in most browsers
+            sextant = Math.floor(h),
+            fract = h - sextant,
+            vsf = v * sv * fract,
+            t = m + vsf,
+            q = v - vsf,
+            mod = sextant % 6;
+
+        return {
+            r: [v, q, m, m, t, v][mod],
+            g: [t, v, v, q, m, m][mod],
+            b: [m, m, t, v, v, q][mod]
+        };
+    }
+
+    // ------------------------ CMYK ------------------------ //
+    // Quote from Wikipedia:
+    // 'Since RGB and CMYK spaces are both device-dependent spaces, there is no
+    // simple or general conversion formula that converts between them.
+    // Conversions are generally done through color management systems, using
+    // color profiles that describe the spaces being converted. Nevertheless, the
+    // conversions cannot be exact, since these spaces have very different gamuts.'
+    // Translation: the following are just simple RGB to CMY(K) and visa versa conversion functions.
+
+    static rgb2cmy (rgb) {
+        return {
+            c: 1 - rgb.r,
+            m: 1 - rgb.g,
+            y: 1 - rgb.b
+        };
+    }
+
+    static cmy2cmyk (cmy) {
+        var k = Math.min(Math.min(cmy.c, cmy.m), cmy.y),
+            t = 1 - k || 1e-20;
+
+        return { // regular
+            c: (cmy.c - k) / t,
+            m: (cmy.m - k) / t,
+            y: (cmy.y - k) / t,
+            k: k
+        };
+    }
+
+    static cmyk2cmy (cmyk) {
+        var k = cmyk.k;
+
+        return { // regular
+            c: cmyk.c * (1 - k) + k,
+            m: cmyk.m * (1 - k) + k,
+            y: cmyk.y * (1 - k) + k
+        };
+    }
+
+    static cmy2rgb (cmy) {
+        return {
+            r: 1 - cmy.c,
+            g: 1 - cmy.m,
+            b: 1 - cmy.y
+        };
+    }
+
+    static rgb2cmyk (rgb) {
+        var cmy = ColorConverter.rgb2cmy(rgb); // doppelt??
+        return ColorConverter.cmy2cmyk(cmy);
+    }
+
+    static cmyk2rgb (cmyk) {
+        var cmy = ColorConverter.cmyk2cmy(cmyk); // doppelt??
+        return ColorConverter.cmy2rgb(cmy);
+    }
+
+    // ------------------------ LAB ------------------------ //
+
+    static XYZ2rgb (XYZ) {
+        var M = XYZMatrix,
+            X = XYZ.X,
+            Y = XYZ.Y,
+            Z = XYZ.Z,
+            r = X * M.R[0] + Y * M.R[1] + Z * M.R[2],
+            g = X * M.G[0] + Y * M.G[1] + Z * M.G[2],
+            b = X * M.B[0] + Y * M.B[1] + Z * M.B[2],
+            N = 1 / 2.4;
+
+        M = 0.0031308;
+
+        r = (r > M ? 1.055 * Math.pow(r, N) - 0.055 : 12.92 * r);
+        g = (g > M ? 1.055 * Math.pow(g, N) - 0.055 : 12.92 * g);
+        b = (b > M ? 1.055 * Math.pow(b, N) - 0.055 : 12.92 * b);
+
+        return {
+            r: limitValue(r, 0, 1),
+            g: limitValue(g, 0, 1),
+            b: limitValue(b, 0, 1)
+        };
+    }
+
+    static rgb2XYZ (rgb) {
+        var M = XYZMatrix,
+            r = rgb.r,
+            g = rgb.g,
+            b = rgb.b,
+            N = 0.04045;
+
+        r = (r > N ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92);
+        g = (g > N ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92);
+        b = (b > N ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92);
+
+        return {
+            X: r * M.X[0] + g * M.X[1] + b * M.X[2],
+            Y: r * M.Y[0] + g * M.Y[1] + b * M.Y[2],
+            Z: r * M.Z[0] + g * M.Z[1] + b * M.Z[2]
+        };
+    }
+
+    static XYZ2Lab (XYZ) {
+        var R = XYZReference,
+            X = XYZ.X / R.X,
+            Y = XYZ.Y / R.Y,
+            Z = XYZ.Z / R.Z,
+            N = 16 / 116,
+            M = 1 / 3,
+            K = 0.008856,
+            L = 7.787037;
+
+        X = X > K ? Math.pow(X, M) : (L * X) + N;
+        Y = Y > K ? Math.pow(Y, M) : (L * Y) + N;
+        Z = Z > K ? Math.pow(Z, M) : (L * Z) + N;
+
+        return {
+            L: (116 * Y) - 16,
+            a: 500 * (X - Y),
+            b: 200 * (Y - Z)
+        };
+    }
+
+    static Lab2XYZ (Lab) {
+        var R = XYZReference,
+            Y = (Lab.L + 16) / 116,
+            X = Lab.a / 500 + Y,
+            Z = Y - Lab.b / 200,
+            X3 = Math.pow(X, 3),
+            Y3 = Math.pow(Y, 3),
+            Z3 = Math.pow(Z, 3),
+            N = 16 / 116,
+            K = 0.008856,
+            L = 7.787037;
+
+        return {
+            X: (X3 > K ? X3 : (X - N) / L) * R.X,
+            Y: (Y3 > K ? Y3 : (Y - N) / L) * R.Y,
+            Z: (Z3 > K ? Z3 : (Z - N) / L) * R.Z
+        };
+    }
+
+    static rgb2Lab (rgb) {
+        var XYZ = ColorConverter.rgb2XYZ(rgb);
+
+        return ColorConverter.XYZ2Lab(XYZ);
+    }
+
+    static Lab2rgb (Lab) {
+        var XYZ = ColorConverter.Lab2XYZ(Lab);
+
+        return ColorConverter.XYZ2rgb(XYZ);
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["d"] = ColorConverter;
+
+
+function limitValue(value, min, max) {
+    // return Math.max(min, Math.min(max, value)); // faster??
+    return (value > max ? max : value < min ? min : value);
+}
+
+function getLuminance(rgb, normalized) {
+    var div = normalized ? 1 : 255,
+        RGB = [rgb.r / div, rgb.g / div, rgb.b / div];
+
+    for (var i = RGB.length; i--;) {
+        RGB[i] = RGB[i] <= 0.03928 ? RGB[i] / 12.92 : Math.pow(((RGB[i] + 0.055) / 1.055), 2.4);
+    }
+    return ((luminance.r * RGB[0]) + (luminance.g * RGB[1]) + (luminance.b * RGB[2]));
+}
+
+function getColorAsRGB (color) {
+    // Create a test element to apply a CSS color and retrieve
+    // a normalized value from.
+    let test = document.createElement('div');
+    test.style.backgroundColor = color;
+
+    // Chrome requires the element to be in DOM for styles to be computed.
+    document.body.appendChild(test);
+
+    // Get the computed style from the browser, in the format of
+    // rgb(x, x, x)
+    let normalized = window.getComputedStyle(test).backgroundColor;
+
+    // In certain cases getComputedStyle() may return
+    // 'transparent' as a value, which is useless(?) for the current
+    // color picker. According to specifications, transparent
+    // is a black with 0 alpha - rgba(0, 0, 0, 0) - but because
+    // the picker does not currently handle alpha, we return the
+    // black value.
+    if (normalized === 'transparent') {
+        normalized = 'rgb(0, 0, 0)';
+    }
+
+    // Garbage collection
+    test.parentNode.removeChild(test);
+
+    return normalized;
+}
+
+function getValueRanges(type) {
+    if (!type) {
+        return valueRanges;
+    }
+    else {
+        return valueRanges[type];
+    }
+}
+
+
+/***/ }),
+/* 12 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* unused harmony export getDomOrigin */
+/* harmony export (immutable) */ __webpack_exports__["a"] = getDevicePixelRatio;
+function getDomOrigin (el) {
+    const box = (el.getBoundingClientRect) ? el.getBoundingClientRect() : { top: 0, left: 0 };
+    const doc = el && el.ownerDocument;
+    const body = doc.body;
+    const win = doc.defaultView || doc.parentWindow || window;
+    const docElem = doc.documentElement || body.parentNode;
+    const clientTop = docElem.clientTop || body.clientTop || 0; // border on html or body or both
+    const clientLeft = docElem.clientLeft || body.clientLeft || 0;
+
+    return {
+        left: box.left + (win.pageXOffset || docElem.scrollLeft) - clientLeft,
+        top: box.top + (win.pageYOffset || docElem.scrollTop) - clientTop
+    };
+}
+
+function getDevicePixelRatio (ctx) {
+    let devicePixelRatio = window.devicePixelRatio || 1;
+    let backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+                            ctx.mozBackingStorePixelRatio ||
+                            ctx.msBackingStorePixelRatio ||
+                            ctx.oBackingStorePixelRatio ||
+                            ctx.backingStorePixelRatio || 1;
+    return devicePixelRatio / backingStoreRatio;
+}
+
+
+/***/ }),
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -10875,7 +11906,7 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 8 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -11004,7 +12035,7 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 9 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -11061,7 +12092,7 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 10 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -11274,7 +12305,7 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 11 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -11282,7 +12313,7 @@ exports.AudioSettings = AudioSettings;
 
 (function(mod) {
   if (true) // CommonJS
-    mod(__webpack_require__(0), __webpack_require__(5));
+    mod(__webpack_require__(0), __webpack_require__(6));
   else if (typeof define == "function" && define.amd) // AMD
     define(["../../lib/codemirror", "./foldcode"], mod);
   else // Plain browser env
@@ -11426,7 +12457,7 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 12 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -11480,7 +12511,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 
 /***/ }),
-/* 13 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -11641,7 +12672,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 
 /***/ }),
-/* 14 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -12085,7 +13116,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 
 /***/ }),
-/* 15 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -12101,7 +13132,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 (function(mod) {
   if (true) // CommonJS
-    mod(__webpack_require__(0), __webpack_require__(1), __webpack_require__(3));
+    mod(__webpack_require__(0), __webpack_require__(2), __webpack_require__(4));
   else if (typeof define == "function" && define.amd) // AMD
     define(["../../lib/codemirror", "./searchcursor", "../dialog/dialog"], mod);
   else // Plain browser env
@@ -12343,7 +13374,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 
 /***/ }),
-/* 16 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -12493,7 +13524,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 
 /***/ }),
-/* 17 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -12504,7 +13535,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 (function(mod) {
   if (true) // CommonJS
-    mod(__webpack_require__(0), __webpack_require__(1), __webpack_require__(4));
+    mod(__webpack_require__(0), __webpack_require__(2), __webpack_require__(5));
   else if (typeof define == "function" && define.amd) // AMD
     define(["../lib/codemirror", "../addon/search/searchcursor", "../addon/edit/matchbrackets"], mod);
   else // Plain browser env
@@ -13112,7 +14143,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 
 /***/ }),
-/* 18 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -13907,30 +14938,42 @@ CodeMirror.defineMode("clike", function(config, parserConfig) {
 
 
 /***/ }),
-/* 19 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedEntity_1 = __webpack_require__(23);
-var demolishedModels_1 = __webpack_require__(6);
-var demolishedLoader_1 = __webpack_require__(2);
+var demolishedEntity_1 = __webpack_require__(34);
+var demolishedModels_1 = __webpack_require__(7);
+var demolishedLoader_1 = __webpack_require__(3);
+var demolishedProperties_1 = __webpack_require__(8);
 var Demolished;
 (function (Demolished) {
     var Rendering = (function () {
-        function Rendering(canvas, timelineFile, audio, simpleCanvas) {
+        function Rendering(canvas, parent, timelineFile, audio) {
             var _this = this;
             this.canvas = canvas;
+            this.parent = parent;
             this.timelineFile = timelineFile;
             this.audio = audio;
-            this.simpleCanvas = simpleCanvas;
             this.width = 1;
             this.height = 1;
             this.centerX = 0;
             this.centerY = 0;
+            this.resolution = 1;
             this.gl = this.getRendringContext();
-            this.uniforms = new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height);
+            var proxy = new demolishedProperties_1.DemoishedProperty(new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height));
+            this.uniforms = proxy.getObserver();
             this.uniforms.time = 0;
             this.uniforms.timeTotal = 0;
             this.uniforms.mouseX = 0.5;
@@ -13943,7 +14986,7 @@ var Demolished;
             this.loadGraph(this.timelineFile).then(function (graph) {
                 var audioSettings = graph.audioSettings;
                 graph.timeline.forEach(function (tf) {
-                    var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.useTransitions, tf.overlays);
+                    var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.useTransitions);
                     _this.timeFragments.push(_tf);
                 });
                 _this.timeFragments.sort(function (a, b) {
@@ -13965,15 +15008,19 @@ var Demolished;
                         })).then(function (assets) {
                             _this.addEntity(effect.name, assets);
                             if (_this.entitiesCache.length === graph.effects.length) {
-                                _this.onReady();
-                                _this.resizeCanvas();
+                                _this.onReady(graph);
                             }
                         });
                     });
-                    _this.resizeCanvas();
+                    _this.resizeCanvas(_this.parent);
                 });
             });
         }
+        Rendering.prototype.onFrame = function (frame) { };
+        Rendering.prototype.onNext = function (frame) { };
+        Rendering.prototype.onStart = function () { };
+        Rendering.prototype.onStop = function () { };
+        Rendering.prototype.onReady = function (graph) { };
         Rendering.prototype.getRendringContext = function () {
             var renderingContext;
             var contextAttributes = {
@@ -14003,19 +15050,11 @@ var Demolished;
                 return graph;
             });
         };
-        Rendering.prototype.onFrame = function (frame) { };
-        Rendering.prototype.onNext = function (frame) { };
-        Rendering.prototype.onStart = function () { };
-        Rendering.prototype.onStop = function () { };
-        Rendering.prototype.onReady = function () { };
         Rendering.prototype.addEventListeners = function () {
             var _this = this;
             document.addEventListener("mousemove", function (evt) {
                 _this.uniforms.mouseX = evt.clientX / window.innerWidth;
                 _this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
-            });
-            window.addEventListener("resize", function () {
-                _this.resizeCanvas();
             });
         };
         Rendering.prototype.addEntity = function (name, textures) {
@@ -14030,34 +15069,9 @@ var Demolished;
             return entity;
         };
         Rendering.prototype.tryFindTimeFragment = function (time) {
-            var parent = document.querySelector("#main");
-            this.removeLayers(parent);
-            var timeFragment = this.timeFragments.find(function (tf) {
+            return this.timeFragments.find(function (tf) {
                 return time < tf.stop && time >= tf.start;
             });
-            if (!timeFragment)
-                return;
-            if (timeFragment.hasLayers) {
-                timeFragment.overlays.forEach(function (overlay) {
-                    var layer = document.createElement("div");
-                    layer.id = overlay.name;
-                    overlay.classList.forEach(function (className) {
-                        layer.classList.add(className);
-                    });
-                    layer.innerHTML = overlay.markup;
-                    layer.classList.add("layer");
-                    parent.appendChild(layer);
-                });
-            }
-            if (timeFragment) {
-                this.onNext({
-                    d: time - this.animationStartTime,
-                    c: this.animationFrameCount,
-                    t: time - this.animationStartTime,
-                    fps: 1000 / (time / this.animationFrameCount)
-                });
-            }
-            return timeFragment;
         };
         Rendering.prototype.resetClock = function (time) {
             this.uniforms.timeTotal = time;
@@ -14072,16 +15086,36 @@ var Demolished;
             this.animationOffsetTime = time;
             this.currentTimeFragment = this.tryFindTimeFragment(time);
             this.animationStartTime = performance.now();
-            this.audio.play();
             this.animate(time);
             this.audio.currentTime = (time / 1000) % 60;
-            this.onStart();
+            this.audio.play();
+            if (!this.isPaused)
+                this.onStart();
         };
         Rendering.prototype.stop = function () {
+            this.audio.stop();
             cancelAnimationFrame(this.animationFrameId);
             ;
             this.onStop();
             return this.animationFrameId;
+        };
+        Rendering.prototype.mute = function () {
+            this.isSoundMuted = !this.isSoundMuted;
+            this.audio.mute(this.isSoundMuted);
+        };
+        Rendering.prototype.pause = function () {
+            if (!this.isPaused) {
+                this.isPaused = true;
+                this.stop();
+            }
+            else {
+                this.isPaused = false;
+                this.resume(this.uniforms.time);
+            }
+            return this.uniforms.time;
+        };
+        Rendering.prototype.resume = function (time) {
+            this.start(time);
         };
         Rendering.prototype.updateTextureData = function (texture, size, bytes) {
             var gl = this.gl;
@@ -14108,7 +15142,8 @@ var Demolished;
                 if (animationTime >= this.currentTimeFragment.stop) {
                     this.currentTimeFragment = this.tryFindTimeFragment(time);
                 }
-                this.renderEntities(this.currentTimeFragment.entityShader, animationTime);
+                this.currentTimeFragment ?
+                    this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0);
             }
             this.onFrame({
                 frame: this.animationFrameCount,
@@ -14116,11 +15151,6 @@ var Demolished;
                 min: Math.floor(animationTime / 60000) % 60,
                 sec: Math.floor((animationTime / 1000) % 60),
             });
-        };
-        Rendering.prototype.removeLayers = function (parent) {
-            var layers = document.querySelectorAll(".layer");
-            for (var i = 0; i < layers.length; i++)
-                parent.removeChild(layers[i]);
         };
         Rendering.prototype.surfaceCorners = function () {
             if (this.gl) {
@@ -14139,31 +15169,30 @@ var Demolished;
         Rendering.prototype.setViewPort = function (width, height) {
             this.gl.viewport(0, 0, width, height);
         };
-        Rendering.prototype.resizeCanvas = function () {
-            var width = window.innerWidth / 2;
-            var height = window.innerHeight / 2;
+        Rendering.prototype.resizeCanvas = function (parent, resolution) {
+            if (resolution)
+                this.resolution = resolution;
+            var width = parent.clientWidth / this.resolution;
+            var height = parent.clientHeight / this.resolution;
+            console.log(width, height);
             this.canvas.width = width;
             this.canvas.height = height;
-            this.canvas.style.width = window.innerWidth + 'px';
-            this.canvas.style.height = window.innerHeight + 'px';
+            this.canvas.style.width = parent.clientWidth + 'px';
+            this.canvas.style.height = parent.clientHeight + 'px';
             this.uniforms.screenWidth = width;
             this.uniforms.screenHeight = height;
             this.surfaceCorners();
-            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-            var layers = document.querySelectorAll(".layer");
-            for (var i = 0; i < layers.length; i++) {
-                var el = layers[i];
-                el.width = width;
-                el.height = height;
-                el.style.width = window.innerWidth + 'px';
-                el.style.height = window.innerHeight + 'px';
-            }
+            this.setViewPort(this.canvas.width, this.canvas.height);
+        };
+        Rendering.prototype.updateUniforms = function () {
+            throw "Not yet implemented";
         };
         Rendering.prototype.renderEntities = function (ent, ts) {
             var gl = this.gl;
             this.uniforms.time = ts;
+            this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
             gl.useProgram(ent.currentProgram);
-            gl.uniform1f(ent.uniformsCache.get("timeTotal"), (performance.now() - this.animationStartTime) / 1000);
+            gl.uniform1f(ent.uniformsCache.get("timeTotal"), this.uniforms.timeTotal / 1000);
             gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
             gl.uniform1i(ent.uniformsCache.get("frame"), this.animationFrameCount);
             gl.uniform2f(ent.uniformsCache.get('mouse'), this.uniforms.mouseX, this.uniforms.mouseY);
@@ -14193,6 +15222,10 @@ var Demolished;
             ent.swapBuffers();
             this.animationFrameCount++;
         };
+        __decorate([
+            demolishedProperties_1.Observe(true),
+            __metadata("design:type", demolishedModels_1.Uniforms)
+        ], Rendering.prototype, "uniforms", void 0);
         return Rendering;
     }());
     Demolished.Rendering = Rendering;
@@ -14200,7 +15233,70 @@ var Demolished;
 
 
 /***/ }),
-/* 20 */
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var BaseEntity2D = (function () {
+    function BaseEntity2D(name, ctx) {
+        this.name = name;
+        this.ctx = ctx;
+        this.width = ctx.canvas.width;
+        this.height = ctx.canvas.height;
+    }
+    BaseEntity2D.prototype.update = function (t) {
+    };
+    return BaseEntity2D;
+}());
+exports.BaseEntity2D = BaseEntity2D;
+var Demolished2D = (function () {
+    function Demolished2D(canvas) {
+        this.canvas = canvas;
+        this.entities = new Array();
+        this.ctx = canvas.getContext("2d");
+        this.animationStartTime = 0;
+        this.resizeCanvas();
+    }
+    Demolished2D.prototype.clear = function () {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    };
+    Demolished2D.prototype.animate = function (time) {
+        var _this = this;
+        var animationTime = time - this.animationStartTime;
+        this.animationFrameId = requestAnimationFrame(function (_time) {
+            _this.animate(_time);
+        });
+        this.renderEntities(time);
+    };
+    Demolished2D.prototype.addEntity = function (ent) {
+        this.entities.push(ent);
+    };
+    Demolished2D.prototype.resizeCanvas = function () {
+        var width = window.innerWidth / 2;
+        var height = window.innerHeight / 2;
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.canvas.style.width = window.innerWidth + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
+    };
+    Demolished2D.prototype.renderEntities = function (time) {
+        this.clear();
+        this.entities.forEach(function (ent) {
+            ent.update(time);
+        });
+    };
+    Demolished2D.prototype.start = function (startTime) {
+        this.animate(startTime);
+    };
+    return Demolished2D;
+}());
+exports.Demolished2D = Demolished2D;
+
+
+/***/ }),
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14216,7 +15312,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedLoader_1 = __webpack_require__(2);
+var demolishedLoader_1 = __webpack_require__(3);
 var DemolishedSoundBase = (function () {
     function DemolishedSoundBase() {
     }
@@ -14240,6 +15336,9 @@ var DemolishedSIDMusic = (function (_super) {
     };
     DemolishedSIDMusic.prototype.stop = function () {
         this.sid.pause();
+    };
+    DemolishedSIDMusic.prototype.mute = function (ismuted) {
+        throw "not implemented";
     };
     DemolishedSIDMusic.prototype.getFrequenceData = function () {
         return this.sid.getFreqByteData();
@@ -14292,7 +15391,6 @@ var DemolishedStreamingMusic = (function (_super) {
     });
     DemolishedStreamingMusic.prototype.getFrequenceData = function () {
         var bufferLength = this.audioAnalyser.frequencyBinCount;
-        ;
         var freqArray = new Uint8Array(bufferLength);
         this.audioAnalyser.getByteFrequencyData(freqArray);
         return freqArray;
@@ -14301,7 +15399,10 @@ var DemolishedStreamingMusic = (function (_super) {
         this.audio.play();
     };
     DemolishedStreamingMusic.prototype.stop = function () {
-        this.audio.stop();
+        this.audio.pause();
+    };
+    DemolishedStreamingMusic.prototype.mute = function (ismuted) {
+        this.audio.muted = ismuted;
     };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
         get: function () {
@@ -14326,7 +15427,6 @@ var DemolishedStreamingMusic = (function (_super) {
             demolishedLoader_1.default(audioSettings.audioFile).then(function (resp) {
                 return resp.arrayBuffer().then(function (buffer) {
                     var audioCtx = new AudioContext();
-                    console.log("streaming music loaded ", buffer);
                     audioCtx.decodeAudioData(buffer, function (audioData) {
                         var offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
                         var filteredSource = offlineCtx.createBufferSource();
@@ -14358,7 +15458,6 @@ var DemolishedStreamingMusic = (function (_super) {
                                 analyser.connect(audioCtx.destination);
                                 _this.audioAnalyser = analyser;
                                 resolve(true);
-                                window.addEventListener("load", onLoad, false);
                             };
                             onLoad();
                             var bufferSource = audioCtx.createBufferSource();
@@ -14375,7 +15474,7 @@ exports.DemolishedStreamingMusic = DemolishedStreamingMusic;
 
 
 /***/ }),
-/* 21 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14384,6 +15483,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var Utils = (function () {
     function Utils() {
     }
+    Utils.$ = function (query, parent) {
+        return parent ? parent.querySelector(query) : document.querySelector(query);
+    };
+    Utils.$$ = function (query, parent) {
+        var results = new Array();
+        var queryResult = parent ? parent.querySelectorAll(query) : document.querySelectorAll(query);
+        for (var i = 0; i < queryResult.length; i++)
+            results.push(queryResult.item(i));
+        return results;
+    };
     Utils.getExponentOfTwo = function (value, max) {
         var count = 1;
         do {
@@ -14443,9 +15552,17 @@ var ShaderError = (function () {
 exports.ShaderError = ShaderError;
 var ShaderCompiler = (function () {
     function ShaderCompiler() {
+        this.lastCompile = performance.now();
+        this.isCompiling = false;
         this.canvas = document.createElement("canvas");
         this.gl = this.canvas.getContext("webgl");
     }
+    ShaderCompiler.prototype.onError = function (error) {
+        throw "Not implememnted";
+    };
+    ShaderCompiler.prototype.onSuccess = function (fs) {
+        throw "Not implemented";
+    };
     ShaderCompiler.prototype.toErrorLines = function (error) {
         var index = 0;
         var indexEnd = 0;
@@ -14470,10 +15587,24 @@ var ShaderCompiler = (function () {
         }
         return errorLines;
     };
+    ShaderCompiler.prototype.canCompile = function () {
+        var bounce = -(this.lastCompile - performance.now());
+        return bounce > 500. && !this.isCompiling;
+    };
     ShaderCompiler.prototype.compile = function (fs) {
+        this.isCompiling = true;
         var gl = this.gl;
         var compileResults = this.createShader(fs, gl.FRAGMENT_SHADER);
-        return compileResults;
+        if (compileResults.length > 0) {
+            this.isCompiling = false;
+            this.lastCompile = performance.now();
+            this.onError(compileResults);
+        }
+        else {
+            this.isCompiling = false;
+            this.lastCompile = performance.now();
+            this.onSuccess(fs);
+        }
     };
     ShaderCompiler.prototype.createShader = function (src, type) {
         var gl = this.gl;
@@ -14492,136 +15623,167 @@ exports.ShaderCompiler = ShaderCompiler;
 
 
 /***/ }),
-/* 22 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolished_1 = __webpack_require__(19);
-var CodeMirror = __webpack_require__(0);
-__webpack_require__(15);
-__webpack_require__(1);
-__webpack_require__(7);
-__webpack_require__(3);
-__webpack_require__(4);
-__webpack_require__(10);
-__webpack_require__(16);
-__webpack_require__(5);
-__webpack_require__(11);
-__webpack_require__(12);
-__webpack_require__(14);
-__webpack_require__(13);
-__webpack_require__(9);
-__webpack_require__(8);
-__webpack_require__(18);
-__webpack_require__(17);
-var demolishedUtils_1 = __webpack_require__(21);
-var demolishedSound_1 = __webpack_require__(20);
-var DemoEd = (function () {
-    function DemoEd() {
+var ColorPicker_1 = __webpack_require__(37);
+var FloatPicker_1 = __webpack_require__(38);
+var Vec2Picker_1 = __webpack_require__(9);
+var Vec2Picker_2 = __webpack_require__(9);
+var Color_1 = __webpack_require__(10);
+var DemoishedEditorHelper = (function () {
+    function DemoishedEditorHelper(editor) {
         var _this = this;
-        this.shaderCompiler = new demolishedUtils_1.ShaderCompiler();
-        var webGlCanvas = document.querySelector("#webgl");
-        var music = new demolishedSound_1.DemolishedStreamingMusic();
-        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, "entities/graph.json", music);
-        var timeEl = document.querySelector(".time");
-        timeEl.addEventListener("click", function () {
-            _this.webGlrendering.uniforms.time = 0;
-            _this.webGlrendering.resetClock(0);
+        this.editor = editor;
+        this.wrapper = editor.getWrapperElement();
+        var style = window.getComputedStyle(this.wrapper, null);
+        var bgColor = new Color_1.default(style.background !== '' ? style.background : style.backgroundColor);
+        var fgColor = new Color_1.default(style.color);
+        this.properties = {
+            bgColor: bgColor.getString('rgb'),
+            fnColor: fgColor.getString('rgb'),
+            dimColor: 'rgb(127, 127, 127)',
+            selColor: 'rgb(40, 168, 107)',
+            link_button: true
+        };
+        this.wrapper.addEventListener('contextmenu', function (event) {
+            event.preventDefault();
+            var cursor = _this.editor.getCursor(true);
+            var token = _this.editor.getTokenAt(cursor);
         });
-        document.querySelector("#btn-showconsole").addEventListener("click", function () {
-            document.querySelector(".immediate").classList.toggle("hide");
-        });
-        this.webGlrendering.onFrame = function (frame) {
-            timeLine.value = parseInt(frame.ms).toString();
-            timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
-        };
-        var timeLine = document.querySelector("#current-time");
-        this.webGlrendering.onReady = function () {
-            _this.onReady();
-            timeLine.setAttribute("max", "386400");
-            window.setTimeout(function () {
-                _this.webGlrendering.start(0);
-            }, 2000);
-        };
-        this.webGlrendering.onStop = function () {
-        };
-        this.webGlrendering.onStart = function () {
-            var shader = _this.webGlrendering.currentTimeFragment.entityShader.fragmetShader;
-            var mirror = document.querySelector("#fragment");
-            mirror.textContent = shader;
-            var lastCompile = performance.now();
-            var editor = CodeMirror.fromTextArea(document.querySelector("#fragment"), {
-                gutters: ["note-gutter", "CodeMirror-linenumbers"],
-                viewportMargin: Infinity,
-                lineNumbers: true,
-                matchBrackets: true,
-                mode: 'x-shader/x-fragment',
-                keyMap: 'sublime',
-                autoCloseBrackets: true,
-                showCursorWhenSelecting: true,
-                theme: "monokai",
-                indentUnit: 4,
-                lineWrapping: true,
-                autofocus: true
-            });
-            var immediate = document.querySelector(".immediate");
-            var isCompile = false;
-            editor.on("change", function (cm) {
-                if (isCompile)
+        this.wrapper.addEventListener('mouseup', function (event) {
+            if (_this.editor.somethingSelected()) {
+                return;
+            }
+            var cursor = _this.editor.getCursor(true);
+            var match = _this.getMatch(cursor);
+            var token = _this.editor.getTokenAt(cursor);
+            if (match) {
+                if (_this.activeModal && _this.activeModal.isVisible) {
+                    _this.activeModal.removeModal();
                     return;
-                if (-(lastCompile - performance.now()) / 1000 > 0.5) {
-                    isCompile = true;
-                    var fs = cm.getValue();
-                    var vs = _this.webGlrendering.currentTimeFragment.entityShader.vertexShader;
-                    var shaderErrors = _this.shaderCompiler.compile(fs);
-                    lastCompile = performance.now();
-                    if (shaderErrors.length === 0) {
-                        immediate.innerHTML = "";
-                        _this.webGlrendering.currentTimeFragment.entityShader.reCompile(fs);
-                        if (!immediate.classList.contains("hide"))
-                            immediate.classList.add("hide");
-                    }
-                    var errInfo = document.querySelectorAll(".error-info");
-                    for (var i = 0; i < errInfo.length; i++)
-                        errInfo[i].classList.remove("error-info");
-                    shaderErrors.forEach(function (err) {
-                        var errNode = document.createElement("abbr");
-                        errNode.classList.add("error-info");
-                        errNode.title = err.error;
-                        editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
-                        var p = document.createElement("p");
-                        var m = document.createElement("mark");
-                        var s = document.createElement("span");
-                        s.textContent = err.error;
-                        m.textContent = err.line.toString();
-                        p.appendChild(m);
-                        p.appendChild(s);
-                        immediate.appendChild(p);
-                    });
-                    isCompile = false;
                 }
-            });
-        };
-        this.webGlrendering.onNext = function (frameInfo) {
-        };
-        window.onerror = function () {
-            _this.webGlrendering.stop();
-        };
+                if (match.type === 'color') {
+                    _this.activeModal = new ColorPicker_1.default(match.string, _this.properties);
+                    _this.activeModal.showAt(_this.editor);
+                    _this.activeModal.on('changed', function (color) {
+                        var newColor = color.getString('vec');
+                        var start = { line: cursor.line, ch: match.start };
+                        var end = { line: cursor.line, ch: match.end };
+                        match.end = match.start + newColor.length;
+                        _this.editor.replaceRange(newColor, start, end);
+                    });
+                    _this.activeModal.on('link_button', function (color) {
+                        _this.activeModal = new Vec2Picker_2.default(color.getString('vec'), _this.properties);
+                        _this.activeModal.showAt(_this.editor);
+                        _this.activeModal.on('changed', function (dir) {
+                            var newDir = dir.getString('vec3');
+                            var start = { line: cursor.line, ch: match.start };
+                            var end = { line: cursor.line, ch: match.end };
+                            match.end = match.start + newDir.length;
+                            _this.editor.replaceRange(newDir, start, end);
+                        });
+                    });
+                }
+                if (match.type === 'vec3') {
+                    _this.activeModal = new Vec2Picker_2.default(match.string, _this.properties);
+                    _this.activeModal.showAt(_this.editor);
+                    _this.activeModal.on('changed', function (dir) {
+                        var newDir = dir.getString('vec3');
+                        var start = { line: cursor.line, ch: match.start };
+                        var end = { line: cursor.line, ch: match.end };
+                        match.end = match.start + newDir.length;
+                        _this.editor.replaceRange(newDir, start, end);
+                    });
+                }
+                else if (match.type === 'vec2') {
+                    _this.activeModal = new Vec2Picker_1.default(match.string, _this.properties);
+                    _this.activeModal.showAt(_this.editor);
+                    _this.activeModal.on('changed', function (pos) {
+                        var newpos = pos.getString();
+                        var start = { line: cursor.line, ch: match.start };
+                        var end = { line: cursor.line, ch: match.end };
+                        match.end = match.start + newpos.length;
+                        _this.editor.replaceRange(newpos, start, end);
+                    });
+                }
+                else if (match.type === 'number') {
+                    _this.activeModal = new FloatPicker_1.default(match.string, _this.properties);
+                    _this.activeModal.showAt(_this.editor);
+                    _this.activeModal.on('changed', function (number) {
+                        var newNumber = number.getString();
+                        var start = { line: cursor.line, ch: match.start };
+                        var end = { line: cursor.line, ch: match.end };
+                        match.end = match.start + newNumber.length;
+                        _this.editor.replaceRange(newNumber, start, end);
+                    });
+                }
+            }
+        });
     }
-    DemoEd.prototype.onReady = function () { };
-    return DemoEd;
+    DemoishedEditorHelper.prototype.getMatch = function (cursor) {
+        var types = ['color', 'vec3', 'vec2', 'number'];
+        var rta;
+        for (var i in types) {
+            rta = this.getTypeMatch(cursor, types[i]);
+            if (rta) {
+                return rta;
+            }
+        }
+        return;
+    };
+    DemoishedEditorHelper.prototype.getTypeMatch = function (cursor, type) {
+        if (!type) {
+            return;
+        }
+        var re;
+        switch (type.toLowerCase()) {
+            case 'color':
+                re = /vec[3|4]\([\d|.|,\s]*\)/g;
+                break;
+            case 'vec3':
+                re = /vec3\([-|\d|.|,\s]*\)/g;
+                break;
+            case 'vec2':
+                re = /vec2\([-|\d|.|,\s]*\)/g;
+                break;
+            case 'number':
+                re = /[-]?\d+\.\d+|\d+\.|\.\d+/g;
+                break;
+            default:
+                console.error('invalid match selection');
+                return;
+        }
+        var line = this.editor.getLine(cursor.line);
+        var matches = re.execAll(line);
+        if (matches) {
+            for (var i = 0; i < matches.length; i++) {
+                var val = matches[i][0];
+                var len = val.length;
+                var start = matches[i].index;
+                var end = matches[i].index + len;
+                if (cursor.ch >= start && cursor.ch <= end) {
+                    return {
+                        type: type,
+                        start: start,
+                        end: end,
+                        string: val
+                    };
+                }
+            }
+        }
+        return;
+    };
+    return DemoishedEditorHelper;
 }());
-exports.DemoEd = DemoEd;
-document.addEventListener("DOMContentLoaded", function () {
-    var demo = new DemoEd();
-    window["demoEd"] = demo;
-});
+exports.DemoishedEditorHelper = DemoishedEditorHelper;
 
 
 /***/ }),
-/* 23 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14637,8 +15799,1568 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedModels_1 = __webpack_require__(6);
-var demolishedLoader_1 = __webpack_require__(2);
+var demolished_1 = __webpack_require__(25);
+var CodeMirror = __webpack_require__(0);
+__webpack_require__(21);
+__webpack_require__(2);
+__webpack_require__(13);
+__webpack_require__(4);
+__webpack_require__(5);
+__webpack_require__(16);
+__webpack_require__(22);
+__webpack_require__(6);
+__webpack_require__(17);
+__webpack_require__(18);
+__webpack_require__(20);
+__webpack_require__(19);
+__webpack_require__(15);
+__webpack_require__(14);
+__webpack_require__(24);
+__webpack_require__(23);
+var demolishedUtils_1 = __webpack_require__(28);
+var demolishedSound_1 = __webpack_require__(27);
+var demoishedEditorHelper_1 = __webpack_require__(29);
+var demolished2D_1 = __webpack_require__(26);
+var SpectrumAnalyzer = (function (_super) {
+    __extends(SpectrumAnalyzer, _super);
+    function SpectrumAnalyzer(ctx) {
+        var _this = _super.call(this, "spectrumAnalyzer", ctx) || this;
+        _this.ctx = ctx;
+        _this.active = true;
+        _this.bars = 60;
+        _this.ctx.fillStyle = "#ffffff";
+        _this.ctx.strokeStyle = "#ffffff";
+        _this.frequencData = new Uint8Array(8192);
+        return _this;
+    }
+    SpectrumAnalyzer.prototype.update = function (time) {
+        var sum = 0;
+        var binSize = Math.floor(8192 / this.bars);
+        for (var i = 0; i < this.bars; i += 1) {
+            sum = 0;
+            for (var j = 0; j < binSize; j += 1) {
+                sum += this.frequencData[(i * binSize) + j];
+            }
+            var average = sum / binSize;
+            var barWith = this.ctx.canvas.width / this.bars;
+            var scaled_average = (average / 256) * this.height;
+            this.ctx.fillRect(i * barWith + 20, this.ctx.canvas.height, barWith - 2, -scaled_average);
+        }
+    };
+    return SpectrumAnalyzer;
+}(demolished2D_1.BaseEntity2D));
+exports.SpectrumAnalyzer = SpectrumAnalyzer;
+var DemolishedEd = (function () {
+    function DemolishedEd() {
+        var _this = this;
+        var Render2D = new demolished2D_1.Demolished2D(demolishedUtils_1.Utils.$("#canvas-spectrum"));
+        this.spectrum = new SpectrumAnalyzer(Render2D.ctx);
+        Render2D.addEntity(this.spectrum);
+        Render2D.start(0);
+        this.shaderCompiler = new demolishedUtils_1.ShaderCompiler();
+        this.music = new demolishedSound_1.DemolishedStreamingMusic();
+        this.engine = new demolished_1.Demolished.Rendering(demolishedUtils_1.Utils.$("#webgl"), demolishedUtils_1.Utils.$("#shader-view"), "entities/graph.json", this.music);
+        var timeEl = demolishedUtils_1.Utils.$(".time");
+        var playback = demolishedUtils_1.Utils.$("#toogle-playback");
+        var sound = demolishedUtils_1.Utils.$("#toggle-sound");
+        var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
+        var immediate = demolishedUtils_1.Utils.$(".immediate");
+        var timeLine = demolishedUtils_1.Utils.$("#current-time");
+        var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
+        timeEl.addEventListener("click", function () {
+            _this.engine.uniforms.time = 0;
+            _this.engine.resetClock(0);
+        });
+        demolishedUtils_1.Utils.$("#btn-showconsole").addEventListener("click", function () {
+            demolishedUtils_1.Utils.$(".immediate").classList.toggle("hide");
+        });
+        fullscreen.addEventListener("click", function () {
+            var view = demolishedUtils_1.Utils.$("#webgl");
+            view.webkitRequestFullscreen();
+        });
+        shaderResolution.addEventListener("change", function (evt) {
+            _this.engine.resizeCanvas(demolishedUtils_1.Utils.$("#shader-view"), parseInt(shaderResolution.value));
+        });
+        document.addEventListener("webkitfullscreenchange", function (evt) {
+            var target = document.webkitFullscreenElement;
+            if (target) {
+                target.classList.add("shader-fullscreen");
+                _this.engine.resizeCanvas(document.body);
+            }
+            else {
+                target = demolishedUtils_1.Utils.$("#shader-view");
+                target.classList.remove("shader-fullscreen");
+                _this.engine.resizeCanvas(target);
+            }
+        });
+        playback.addEventListener("click", function () {
+            playback.classList.toggle("fa-play");
+            playback.classList.toggle("fa-pause");
+            _this.engine.pause();
+        });
+        sound.addEventListener("click", function () {
+            sound.classList.toggle("fa-volume-up");
+            sound.classList.toggle("fa-volume-off");
+            _this.engine.mute();
+        });
+        this.engine.onFrame = function (frame) {
+            _this.spectrum.frequencData = _this.music.getFrequenceData();
+            timeLine.style.width = ((parseInt(frame.ms) / 386400) * 100.).toString() + "%";
+            timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
+        };
+        this.engine.onReady = function () {
+            _this.onReady();
+            window.setTimeout(function () {
+                _this.engine.start(0);
+            }, 2000);
+        };
+        this.engine.onNext = function (frameInfo) {
+        };
+        this.engine.onStop = function () {
+        };
+        this.engine.onStart = function () {
+            var shader = _this.engine.currentTimeFragment.entityShader.fragmetShader;
+            var mirror = demolishedUtils_1.Utils.$("#fragment");
+            mirror.textContent = shader;
+            var lastCompile = performance.now();
+            var editor = CodeMirror.fromTextArea(demolishedUtils_1.Utils.$("#fragment"), {
+                gutters: ["note-gutter", "CodeMirror-linenumbers"],
+                viewportMargin: Infinity,
+                lineNumbers: true,
+                matchBrackets: true,
+                mode: 'x-shader/x-fragment',
+                keyMap: 'sublime',
+                autoCloseBrackets: true,
+                showCursorWhenSelecting: true,
+                theme: "monokai",
+                indentUnit: 4,
+                lineWrapping: true,
+                autofocus: true
+            });
+            _this.helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(editor);
+            _this.shaderCompiler.onError = function (shaderErrors) {
+                shaderErrors.forEach(function (err) {
+                    var errNode = document.createElement("abbr");
+                    errNode.classList.add("error-info");
+                    errNode.title = err.error;
+                    editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
+                    var p = document.createElement("p");
+                    var m = document.createElement("mark");
+                    var s = document.createElement("span");
+                    s.textContent = err.error;
+                    m.textContent = err.line.toString();
+                    p.appendChild(m);
+                    p.appendChild(s);
+                    immediate.appendChild(p);
+                });
+            };
+            _this.shaderCompiler.onSuccess = function (fs) {
+                var shaderErrors = demolishedUtils_1.Utils.$$(".error-info");
+                shaderErrors.forEach(function (el) {
+                    el.classList.remove("error-info");
+                });
+                _this.engine.currentTimeFragment.entityShader.reCompile(fs);
+            };
+            editor.on("change", function (cm) {
+                var fs = cm.getValue();
+                if (fs.length == 0 && !_this.shaderCompiler.canCompile())
+                    return;
+                var vs = _this.engine.currentTimeFragment.entityShader.vertexShader;
+                _this.shaderCompiler.compile(fs);
+            });
+        };
+        window.onerror = function () {
+            _this.engine.stop();
+        };
+    }
+    DemolishedEd.getIntance = function () {
+        return new DemolishedEd();
+    };
+    DemolishedEd.prototype.onReady = function () {
+        demolishedUtils_1.Utils.$(".loader").classList.add("hide");
+    };
+    return DemolishedEd;
+}());
+exports.DemolishedEd = DemolishedEd;
+document.addEventListener("DOMContentLoaded", function () {
+    DemolishedEd.getIntance();
+});
+
+
+/***/ }),
+/* 31 */
+/***/ (function(module, exports) {
+
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+
+/***/ }),
+/* 32 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(process, global) {/*! *****************************************************************************
+Copyright (C) Microsoft. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+var Reflect;
+(function (Reflect) {
+    // Metadata Proposal
+    // https://rbuckton.github.io/reflect-metadata/
+    (function (factory) {
+        var root = typeof global === "object" ? global :
+            typeof self === "object" ? self :
+                typeof this === "object" ? this :
+                    Function("return this;")();
+        var exporter = makeExporter(Reflect);
+        if (typeof root.Reflect === "undefined") {
+            root.Reflect = Reflect;
+        }
+        else {
+            exporter = makeExporter(root.Reflect, exporter);
+        }
+        factory(exporter);
+        function makeExporter(target, previous) {
+            return function (key, value) {
+                if (typeof target[key] !== "function") {
+                    Object.defineProperty(target, key, { configurable: true, writable: true, value: value });
+                }
+                if (previous)
+                    previous(key, value);
+            };
+        }
+    })(function (exporter) {
+        var hasOwn = Object.prototype.hasOwnProperty;
+        // feature test for Symbol support
+        var supportsSymbol = typeof Symbol === "function";
+        var toPrimitiveSymbol = supportsSymbol && typeof Symbol.toPrimitive !== "undefined" ? Symbol.toPrimitive : "@@toPrimitive";
+        var iteratorSymbol = supportsSymbol && typeof Symbol.iterator !== "undefined" ? Symbol.iterator : "@@iterator";
+        var supportsCreate = typeof Object.create === "function"; // feature test for Object.create support
+        var supportsProto = { __proto__: [] } instanceof Array; // feature test for __proto__ support
+        var downLevel = !supportsCreate && !supportsProto;
+        var HashMap = {
+            // create an object in dictionary mode (a.k.a. "slow" mode in v8)
+            create: supportsCreate
+                ? function () { return MakeDictionary(Object.create(null)); }
+                : supportsProto
+                    ? function () { return MakeDictionary({ __proto__: null }); }
+                    : function () { return MakeDictionary({}); },
+            has: downLevel
+                ? function (map, key) { return hasOwn.call(map, key); }
+                : function (map, key) { return key in map; },
+            get: downLevel
+                ? function (map, key) { return hasOwn.call(map, key) ? map[key] : undefined; }
+                : function (map, key) { return map[key]; },
+        };
+        // Load global or shim versions of Map, Set, and WeakMap
+        var functionPrototype = Object.getPrototypeOf(Function);
+        var usePolyfill = typeof process === "object" && process.env && process.env["REFLECT_METADATA_USE_MAP_POLYFILL"] === "true";
+        var _Map = !usePolyfill && typeof Map === "function" && typeof Map.prototype.entries === "function" ? Map : CreateMapPolyfill();
+        var _Set = !usePolyfill && typeof Set === "function" && typeof Set.prototype.entries === "function" ? Set : CreateSetPolyfill();
+        var _WeakMap = !usePolyfill && typeof WeakMap === "function" ? WeakMap : CreateWeakMapPolyfill();
+        // [[Metadata]] internal slot
+        // https://rbuckton.github.io/reflect-metadata/#ordinary-object-internal-methods-and-internal-slots
+        var Metadata = new _WeakMap();
+        /**
+         * Applies a set of decorators to a property of a target object.
+         * @param decorators An array of decorators.
+         * @param target The target object.
+         * @param propertyKey (Optional) The property key to decorate.
+         * @param attributes (Optional) The property descriptor for the target key.
+         * @remarks Decorators are applied in reverse order.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     Example = Reflect.decorate(decoratorsArray, Example);
+         *
+         *     // property (on constructor)
+         *     Reflect.decorate(decoratorsArray, Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     Reflect.decorate(decoratorsArray, Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     Object.defineProperty(Example, "staticMethod",
+         *         Reflect.decorate(decoratorsArray, Example, "staticMethod",
+         *             Object.getOwnPropertyDescriptor(Example, "staticMethod")));
+         *
+         *     // method (on prototype)
+         *     Object.defineProperty(Example.prototype, "method",
+         *         Reflect.decorate(decoratorsArray, Example.prototype, "method",
+         *             Object.getOwnPropertyDescriptor(Example.prototype, "method")));
+         *
+         */
+        function decorate(decorators, target, propertyKey, attributes) {
+            if (!IsUndefined(propertyKey)) {
+                if (!IsArray(decorators))
+                    throw new TypeError();
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsObject(attributes) && !IsUndefined(attributes) && !IsNull(attributes))
+                    throw new TypeError();
+                if (IsNull(attributes))
+                    attributes = undefined;
+                propertyKey = ToPropertyKey(propertyKey);
+                return DecorateProperty(decorators, target, propertyKey, attributes);
+            }
+            else {
+                if (!IsArray(decorators))
+                    throw new TypeError();
+                if (!IsConstructor(target))
+                    throw new TypeError();
+                return DecorateConstructor(decorators, target);
+            }
+        }
+        exporter("decorate", decorate);
+        // 4.1.2 Reflect.metadata(metadataKey, metadataValue)
+        // https://rbuckton.github.io/reflect-metadata/#reflect.metadata
+        /**
+         * A default metadata decorator factory that can be used on a class, class member, or parameter.
+         * @param metadataKey The key for the metadata entry.
+         * @param metadataValue The value for the metadata entry.
+         * @returns A decorator function.
+         * @remarks
+         * If `metadataKey` is already defined for the target and target key, the
+         * metadataValue for that key will be overwritten.
+         * @example
+         *
+         *     // constructor
+         *     @Reflect.metadata(key, value)
+         *     class Example {
+         *     }
+         *
+         *     // property (on constructor, TypeScript only)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         static staticProperty;
+         *     }
+         *
+         *     // property (on prototype, TypeScript only)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         property;
+         *     }
+         *
+         *     // method (on constructor)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         static staticMethod() { }
+         *     }
+         *
+         *     // method (on prototype)
+         *     class Example {
+         *         @Reflect.metadata(key, value)
+         *         method() { }
+         *     }
+         *
+         */
+        function metadata(metadataKey, metadataValue) {
+            function decorator(target, propertyKey) {
+                if (!IsObject(target))
+                    throw new TypeError();
+                if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey))
+                    throw new TypeError();
+                OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+            }
+            return decorator;
+        }
+        exporter("metadata", metadata);
+        /**
+         * Define a unique metadata entry on the target.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param metadataValue A value that contains attached metadata.
+         * @param target The target object on which to define metadata.
+         * @param propertyKey (Optional) The property key for the target.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     Reflect.defineMetadata("custom:annotation", options, Example);
+         *
+         *     // property (on constructor)
+         *     Reflect.defineMetadata("custom:annotation", options, Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     Reflect.defineMetadata("custom:annotation", options, Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     Reflect.defineMetadata("custom:annotation", options, Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     Reflect.defineMetadata("custom:annotation", options, Example.prototype, "method");
+         *
+         *     // decorator factory as metadata-producing annotation.
+         *     function MyAnnotation(options): Decorator {
+         *         return (target, key?) => Reflect.defineMetadata("custom:annotation", options, target, key);
+         *     }
+         *
+         */
+        function defineMetadata(metadataKey, metadataValue, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+        }
+        exporter("defineMetadata", defineMetadata);
+        /**
+         * Gets a value indicating whether the target object or its prototype chain has the provided metadata key defined.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns `true` if the metadata key was defined on the target object or its prototype chain; otherwise, `false`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.hasMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.hasMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.hasMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.hasMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.hasMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function hasMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryHasMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("hasMetadata", hasMetadata);
+        /**
+         * Gets a value indicating whether the target object has the provided metadata key defined.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns `true` if the metadata key was defined on the target object; otherwise, `false`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.hasOwnMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function hasOwnMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryHasOwnMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("hasOwnMetadata", hasOwnMetadata);
+        /**
+         * Gets the metadata value for the provided metadata key on the target object or its prototype chain.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns The metadata value for the metadata key if found; otherwise, `undefined`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function getMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryGetMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("getMetadata", getMetadata);
+        /**
+         * Gets the metadata value for the provided metadata key on the target object.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns The metadata value for the metadata key if found; otherwise, `undefined`.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getOwnMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function getOwnMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryGetOwnMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("getOwnMetadata", getOwnMetadata);
+        /**
+         * Gets the metadata keys defined on the target object or its prototype chain.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns An array of unique metadata keys.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getMetadataKeys(Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getMetadataKeys(Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getMetadataKeys(Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getMetadataKeys(Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getMetadataKeys(Example.prototype, "method");
+         *
+         */
+        function getMetadataKeys(target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryMetadataKeys(target, propertyKey);
+        }
+        exporter("getMetadataKeys", getMetadataKeys);
+        /**
+         * Gets the unique metadata keys defined on the target object.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns An array of unique metadata keys.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.getOwnMetadataKeys(Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.getOwnMetadataKeys(Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.getOwnMetadataKeys(Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.getOwnMetadataKeys(Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.getOwnMetadataKeys(Example.prototype, "method");
+         *
+         */
+        function getOwnMetadataKeys(target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            return OrdinaryOwnMetadataKeys(target, propertyKey);
+        }
+        exporter("getOwnMetadataKeys", getOwnMetadataKeys);
+        /**
+         * Deletes the metadata entry from the target object with the provided key.
+         * @param metadataKey A key used to store and retrieve metadata.
+         * @param target The target object on which the metadata is defined.
+         * @param propertyKey (Optional) The property key for the target.
+         * @returns `true` if the metadata entry was found and deleted; otherwise, false.
+         * @example
+         *
+         *     class Example {
+         *         // property declarations are not part of ES6, though they are valid in TypeScript:
+         *         // static staticProperty;
+         *         // property;
+         *
+         *         constructor(p) { }
+         *         static staticMethod(p) { }
+         *         method(p) { }
+         *     }
+         *
+         *     // constructor
+         *     result = Reflect.deleteMetadata("custom:annotation", Example);
+         *
+         *     // property (on constructor)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example, "staticProperty");
+         *
+         *     // property (on prototype)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example.prototype, "property");
+         *
+         *     // method (on constructor)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example, "staticMethod");
+         *
+         *     // method (on prototype)
+         *     result = Reflect.deleteMetadata("custom:annotation", Example.prototype, "method");
+         *
+         */
+        function deleteMetadata(metadataKey, target, propertyKey) {
+            if (!IsObject(target))
+                throw new TypeError();
+            if (!IsUndefined(propertyKey))
+                propertyKey = ToPropertyKey(propertyKey);
+            var metadataMap = GetOrCreateMetadataMap(target, propertyKey, /*Create*/ false);
+            if (IsUndefined(metadataMap))
+                return false;
+            if (!metadataMap.delete(metadataKey))
+                return false;
+            if (metadataMap.size > 0)
+                return true;
+            var targetMetadata = Metadata.get(target);
+            targetMetadata.delete(propertyKey);
+            if (targetMetadata.size > 0)
+                return true;
+            Metadata.delete(target);
+            return true;
+        }
+        exporter("deleteMetadata", deleteMetadata);
+        function DecorateConstructor(decorators, target) {
+            for (var i = decorators.length - 1; i >= 0; --i) {
+                var decorator = decorators[i];
+                var decorated = decorator(target);
+                if (!IsUndefined(decorated) && !IsNull(decorated)) {
+                    if (!IsConstructor(decorated))
+                        throw new TypeError();
+                    target = decorated;
+                }
+            }
+            return target;
+        }
+        function DecorateProperty(decorators, target, propertyKey, descriptor) {
+            for (var i = decorators.length - 1; i >= 0; --i) {
+                var decorator = decorators[i];
+                var decorated = decorator(target, propertyKey, descriptor);
+                if (!IsUndefined(decorated) && !IsNull(decorated)) {
+                    if (!IsObject(decorated))
+                        throw new TypeError();
+                    descriptor = decorated;
+                }
+            }
+            return descriptor;
+        }
+        function GetOrCreateMetadataMap(O, P, Create) {
+            var targetMetadata = Metadata.get(O);
+            if (IsUndefined(targetMetadata)) {
+                if (!Create)
+                    return undefined;
+                targetMetadata = new _Map();
+                Metadata.set(O, targetMetadata);
+            }
+            var metadataMap = targetMetadata.get(P);
+            if (IsUndefined(metadataMap)) {
+                if (!Create)
+                    return undefined;
+                metadataMap = new _Map();
+                targetMetadata.set(P, metadataMap);
+            }
+            return metadataMap;
+        }
+        // 3.1.1.1 OrdinaryHasMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinaryhasmetadata
+        function OrdinaryHasMetadata(MetadataKey, O, P) {
+            var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
+            if (hasOwn)
+                return true;
+            var parent = OrdinaryGetPrototypeOf(O);
+            if (!IsNull(parent))
+                return OrdinaryHasMetadata(MetadataKey, parent, P);
+            return false;
+        }
+        // 3.1.2.1 OrdinaryHasOwnMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinaryhasownmetadata
+        function OrdinaryHasOwnMetadata(MetadataKey, O, P) {
+            var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+            if (IsUndefined(metadataMap))
+                return false;
+            return ToBoolean(metadataMap.has(MetadataKey));
+        }
+        // 3.1.3.1 OrdinaryGetMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarygetmetadata
+        function OrdinaryGetMetadata(MetadataKey, O, P) {
+            var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
+            if (hasOwn)
+                return OrdinaryGetOwnMetadata(MetadataKey, O, P);
+            var parent = OrdinaryGetPrototypeOf(O);
+            if (!IsNull(parent))
+                return OrdinaryGetMetadata(MetadataKey, parent, P);
+            return undefined;
+        }
+        // 3.1.4.1 OrdinaryGetOwnMetadata(MetadataKey, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarygetownmetadata
+        function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
+            var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+            if (IsUndefined(metadataMap))
+                return undefined;
+            return metadataMap.get(MetadataKey);
+        }
+        // 3.1.5.1 OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarydefineownmetadata
+        function OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P) {
+            var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ true);
+            metadataMap.set(MetadataKey, MetadataValue);
+        }
+        // 3.1.6.1 OrdinaryMetadataKeys(O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinarymetadatakeys
+        function OrdinaryMetadataKeys(O, P) {
+            var ownKeys = OrdinaryOwnMetadataKeys(O, P);
+            var parent = OrdinaryGetPrototypeOf(O);
+            if (parent === null)
+                return ownKeys;
+            var parentKeys = OrdinaryMetadataKeys(parent, P);
+            if (parentKeys.length <= 0)
+                return ownKeys;
+            if (ownKeys.length <= 0)
+                return parentKeys;
+            var set = new _Set();
+            var keys = [];
+            for (var _i = 0, ownKeys_1 = ownKeys; _i < ownKeys_1.length; _i++) {
+                var key = ownKeys_1[_i];
+                var hasKey = set.has(key);
+                if (!hasKey) {
+                    set.add(key);
+                    keys.push(key);
+                }
+            }
+            for (var _a = 0, parentKeys_1 = parentKeys; _a < parentKeys_1.length; _a++) {
+                var key = parentKeys_1[_a];
+                var hasKey = set.has(key);
+                if (!hasKey) {
+                    set.add(key);
+                    keys.push(key);
+                }
+            }
+            return keys;
+        }
+        // 3.1.7.1 OrdinaryOwnMetadataKeys(O, P)
+        // https://rbuckton.github.io/reflect-metadata/#ordinaryownmetadatakeys
+        function OrdinaryOwnMetadataKeys(O, P) {
+            var keys = [];
+            var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+            if (IsUndefined(metadataMap))
+                return keys;
+            var keysObj = metadataMap.keys();
+            var iterator = GetIterator(keysObj);
+            var k = 0;
+            while (true) {
+                var next = IteratorStep(iterator);
+                if (!next) {
+                    keys.length = k;
+                    return keys;
+                }
+                var nextValue = IteratorValue(next);
+                try {
+                    keys[k] = nextValue;
+                }
+                catch (e) {
+                    try {
+                        IteratorClose(iterator);
+                    }
+                    finally {
+                        throw e;
+                    }
+                }
+                k++;
+            }
+        }
+        // 6 ECMAScript Data Typ0es and Values
+        // https://tc39.github.io/ecma262/#sec-ecmascript-data-types-and-values
+        function Type(x) {
+            if (x === null)
+                return 1 /* Null */;
+            switch (typeof x) {
+                case "undefined": return 0 /* Undefined */;
+                case "boolean": return 2 /* Boolean */;
+                case "string": return 3 /* String */;
+                case "symbol": return 4 /* Symbol */;
+                case "number": return 5 /* Number */;
+                case "object": return x === null ? 1 /* Null */ : 6 /* Object */;
+                default: return 6 /* Object */;
+            }
+        }
+        // 6.1.1 The Undefined Type
+        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-undefined-type
+        function IsUndefined(x) {
+            return x === undefined;
+        }
+        // 6.1.2 The Null Type
+        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-null-type
+        function IsNull(x) {
+            return x === null;
+        }
+        // 6.1.5 The Symbol Type
+        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-symbol-type
+        function IsSymbol(x) {
+            return typeof x === "symbol";
+        }
+        // 6.1.7 The Object Type
+        // https://tc39.github.io/ecma262/#sec-object-type
+        function IsObject(x) {
+            return typeof x === "object" ? x !== null : typeof x === "function";
+        }
+        // 7.1 Type Conversion
+        // https://tc39.github.io/ecma262/#sec-type-conversion
+        // 7.1.1 ToPrimitive(input [, PreferredType])
+        // https://tc39.github.io/ecma262/#sec-toprimitive
+        function ToPrimitive(input, PreferredType) {
+            switch (Type(input)) {
+                case 0 /* Undefined */: return input;
+                case 1 /* Null */: return input;
+                case 2 /* Boolean */: return input;
+                case 3 /* String */: return input;
+                case 4 /* Symbol */: return input;
+                case 5 /* Number */: return input;
+            }
+            var hint = PreferredType === 3 /* String */ ? "string" : PreferredType === 5 /* Number */ ? "number" : "default";
+            var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
+            if (exoticToPrim !== undefined) {
+                var result = exoticToPrim.call(input, hint);
+                if (IsObject(result))
+                    throw new TypeError();
+                return result;
+            }
+            return OrdinaryToPrimitive(input, hint === "default" ? "number" : hint);
+        }
+        // 7.1.1.1 OrdinaryToPrimitive(O, hint)
+        // https://tc39.github.io/ecma262/#sec-ordinarytoprimitive
+        function OrdinaryToPrimitive(O, hint) {
+            if (hint === "string") {
+                var toString_1 = O.toString;
+                if (IsCallable(toString_1)) {
+                    var result = toString_1.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+                var valueOf = O.valueOf;
+                if (IsCallable(valueOf)) {
+                    var result = valueOf.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+            }
+            else {
+                var valueOf = O.valueOf;
+                if (IsCallable(valueOf)) {
+                    var result = valueOf.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+                var toString_2 = O.toString;
+                if (IsCallable(toString_2)) {
+                    var result = toString_2.call(O);
+                    if (!IsObject(result))
+                        return result;
+                }
+            }
+            throw new TypeError();
+        }
+        // 7.1.2 ToBoolean(argument)
+        // https://tc39.github.io/ecma262/2016/#sec-toboolean
+        function ToBoolean(argument) {
+            return !!argument;
+        }
+        // 7.1.12 ToString(argument)
+        // https://tc39.github.io/ecma262/#sec-tostring
+        function ToString(argument) {
+            return "" + argument;
+        }
+        // 7.1.14 ToPropertyKey(argument)
+        // https://tc39.github.io/ecma262/#sec-topropertykey
+        function ToPropertyKey(argument) {
+            var key = ToPrimitive(argument, 3 /* String */);
+            if (IsSymbol(key))
+                return key;
+            return ToString(key);
+        }
+        // 7.2 Testing and Comparison Operations
+        // https://tc39.github.io/ecma262/#sec-testing-and-comparison-operations
+        // 7.2.2 IsArray(argument)
+        // https://tc39.github.io/ecma262/#sec-isarray
+        function IsArray(argument) {
+            return Array.isArray
+                ? Array.isArray(argument)
+                : argument instanceof Object
+                    ? argument instanceof Array
+                    : Object.prototype.toString.call(argument) === "[object Array]";
+        }
+        // 7.2.3 IsCallable(argument)
+        // https://tc39.github.io/ecma262/#sec-iscallable
+        function IsCallable(argument) {
+            // NOTE: This is an approximation as we cannot check for [[Call]] internal method.
+            return typeof argument === "function";
+        }
+        // 7.2.4 IsConstructor(argument)
+        // https://tc39.github.io/ecma262/#sec-isconstructor
+        function IsConstructor(argument) {
+            // NOTE: This is an approximation as we cannot check for [[Construct]] internal method.
+            return typeof argument === "function";
+        }
+        // 7.2.7 IsPropertyKey(argument)
+        // https://tc39.github.io/ecma262/#sec-ispropertykey
+        function IsPropertyKey(argument) {
+            switch (Type(argument)) {
+                case 3 /* String */: return true;
+                case 4 /* Symbol */: return true;
+                default: return false;
+            }
+        }
+        // 7.3 Operations on Objects
+        // https://tc39.github.io/ecma262/#sec-operations-on-objects
+        // 7.3.9 GetMethod(V, P)
+        // https://tc39.github.io/ecma262/#sec-getmethod
+        function GetMethod(V, P) {
+            var func = V[P];
+            if (func === undefined || func === null)
+                return undefined;
+            if (!IsCallable(func))
+                throw new TypeError();
+            return func;
+        }
+        // 7.4 Operations on Iterator Objects
+        // https://tc39.github.io/ecma262/#sec-operations-on-iterator-objects
+        function GetIterator(obj) {
+            var method = GetMethod(obj, iteratorSymbol);
+            if (!IsCallable(method))
+                throw new TypeError(); // from Call
+            var iterator = method.call(obj);
+            if (!IsObject(iterator))
+                throw new TypeError();
+            return iterator;
+        }
+        // 7.4.4 IteratorValue(iterResult)
+        // https://tc39.github.io/ecma262/2016/#sec-iteratorvalue
+        function IteratorValue(iterResult) {
+            return iterResult.value;
+        }
+        // 7.4.5 IteratorStep(iterator)
+        // https://tc39.github.io/ecma262/#sec-iteratorstep
+        function IteratorStep(iterator) {
+            var result = iterator.next();
+            return result.done ? false : result;
+        }
+        // 7.4.6 IteratorClose(iterator, completion)
+        // https://tc39.github.io/ecma262/#sec-iteratorclose
+        function IteratorClose(iterator) {
+            var f = iterator["return"];
+            if (f)
+                f.call(iterator);
+        }
+        // 9.1 Ordinary Object Internal Methods and Internal Slots
+        // https://tc39.github.io/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots
+        // 9.1.1.1 OrdinaryGetPrototypeOf(O)
+        // https://tc39.github.io/ecma262/#sec-ordinarygetprototypeof
+        function OrdinaryGetPrototypeOf(O) {
+            var proto = Object.getPrototypeOf(O);
+            if (typeof O !== "function" || O === functionPrototype)
+                return proto;
+            // TypeScript doesn't set __proto__ in ES5, as it's non-standard.
+            // Try to determine the superclass constructor. Compatible implementations
+            // must either set __proto__ on a subclass constructor to the superclass constructor,
+            // or ensure each class has a valid `constructor` property on its prototype that
+            // points back to the constructor.
+            // If this is not the same as Function.[[Prototype]], then this is definately inherited.
+            // This is the case when in ES6 or when using __proto__ in a compatible browser.
+            if (proto !== functionPrototype)
+                return proto;
+            // If the super prototype is Object.prototype, null, or undefined, then we cannot determine the heritage.
+            var prototype = O.prototype;
+            var prototypeProto = prototype && Object.getPrototypeOf(prototype);
+            if (prototypeProto == null || prototypeProto === Object.prototype)
+                return proto;
+            // If the constructor was not a function, then we cannot determine the heritage.
+            var constructor = prototypeProto.constructor;
+            if (typeof constructor !== "function")
+                return proto;
+            // If we have some kind of self-reference, then we cannot determine the heritage.
+            if (constructor === O)
+                return proto;
+            // we have a pretty good guess at the heritage.
+            return constructor;
+        }
+        // naive Map shim
+        function CreateMapPolyfill() {
+            var cacheSentinel = {};
+            var arraySentinel = [];
+            var MapIterator = (function () {
+                function MapIterator(keys, values, selector) {
+                    this._index = 0;
+                    this._keys = keys;
+                    this._values = values;
+                    this._selector = selector;
+                }
+                MapIterator.prototype["@@iterator"] = function () { return this; };
+                MapIterator.prototype[iteratorSymbol] = function () { return this; };
+                MapIterator.prototype.next = function () {
+                    var index = this._index;
+                    if (index >= 0 && index < this._keys.length) {
+                        var result = this._selector(this._keys[index], this._values[index]);
+                        if (index + 1 >= this._keys.length) {
+                            this._index = -1;
+                            this._keys = arraySentinel;
+                            this._values = arraySentinel;
+                        }
+                        else {
+                            this._index++;
+                        }
+                        return { value: result, done: false };
+                    }
+                    return { value: undefined, done: true };
+                };
+                MapIterator.prototype.throw = function (error) {
+                    if (this._index >= 0) {
+                        this._index = -1;
+                        this._keys = arraySentinel;
+                        this._values = arraySentinel;
+                    }
+                    throw error;
+                };
+                MapIterator.prototype.return = function (value) {
+                    if (this._index >= 0) {
+                        this._index = -1;
+                        this._keys = arraySentinel;
+                        this._values = arraySentinel;
+                    }
+                    return { value: value, done: true };
+                };
+                return MapIterator;
+            }());
+            return (function () {
+                function Map() {
+                    this._keys = [];
+                    this._values = [];
+                    this._cacheKey = cacheSentinel;
+                    this._cacheIndex = -2;
+                }
+                Object.defineProperty(Map.prototype, "size", {
+                    get: function () { return this._keys.length; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Map.prototype.has = function (key) { return this._find(key, /*insert*/ false) >= 0; };
+                Map.prototype.get = function (key) {
+                    var index = this._find(key, /*insert*/ false);
+                    return index >= 0 ? this._values[index] : undefined;
+                };
+                Map.prototype.set = function (key, value) {
+                    var index = this._find(key, /*insert*/ true);
+                    this._values[index] = value;
+                    return this;
+                };
+                Map.prototype.delete = function (key) {
+                    var index = this._find(key, /*insert*/ false);
+                    if (index >= 0) {
+                        var size = this._keys.length;
+                        for (var i = index + 1; i < size; i++) {
+                            this._keys[i - 1] = this._keys[i];
+                            this._values[i - 1] = this._values[i];
+                        }
+                        this._keys.length--;
+                        this._values.length--;
+                        if (key === this._cacheKey) {
+                            this._cacheKey = cacheSentinel;
+                            this._cacheIndex = -2;
+                        }
+                        return true;
+                    }
+                    return false;
+                };
+                Map.prototype.clear = function () {
+                    this._keys.length = 0;
+                    this._values.length = 0;
+                    this._cacheKey = cacheSentinel;
+                    this._cacheIndex = -2;
+                };
+                Map.prototype.keys = function () { return new MapIterator(this._keys, this._values, getKey); };
+                Map.prototype.values = function () { return new MapIterator(this._keys, this._values, getValue); };
+                Map.prototype.entries = function () { return new MapIterator(this._keys, this._values, getEntry); };
+                Map.prototype["@@iterator"] = function () { return this.entries(); };
+                Map.prototype[iteratorSymbol] = function () { return this.entries(); };
+                Map.prototype._find = function (key, insert) {
+                    if (this._cacheKey !== key) {
+                        this._cacheIndex = this._keys.indexOf(this._cacheKey = key);
+                    }
+                    if (this._cacheIndex < 0 && insert) {
+                        this._cacheIndex = this._keys.length;
+                        this._keys.push(key);
+                        this._values.push(undefined);
+                    }
+                    return this._cacheIndex;
+                };
+                return Map;
+            }());
+            function getKey(key, _) {
+                return key;
+            }
+            function getValue(_, value) {
+                return value;
+            }
+            function getEntry(key, value) {
+                return [key, value];
+            }
+        }
+        // naive Set shim
+        function CreateSetPolyfill() {
+            return (function () {
+                function Set() {
+                    this._map = new _Map();
+                }
+                Object.defineProperty(Set.prototype, "size", {
+                    get: function () { return this._map.size; },
+                    enumerable: true,
+                    configurable: true
+                });
+                Set.prototype.has = function (value) { return this._map.has(value); };
+                Set.prototype.add = function (value) { return this._map.set(value, value), this; };
+                Set.prototype.delete = function (value) { return this._map.delete(value); };
+                Set.prototype.clear = function () { this._map.clear(); };
+                Set.prototype.keys = function () { return this._map.keys(); };
+                Set.prototype.values = function () { return this._map.values(); };
+                Set.prototype.entries = function () { return this._map.entries(); };
+                Set.prototype["@@iterator"] = function () { return this.keys(); };
+                Set.prototype[iteratorSymbol] = function () { return this.keys(); };
+                return Set;
+            }());
+        }
+        // naive WeakMap shim
+        function CreateWeakMapPolyfill() {
+            var UUID_SIZE = 16;
+            var keys = HashMap.create();
+            var rootKey = CreateUniqueKey();
+            return (function () {
+                function WeakMap() {
+                    this._key = CreateUniqueKey();
+                }
+                WeakMap.prototype.has = function (target) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                    return table !== undefined ? HashMap.has(table, this._key) : false;
+                };
+                WeakMap.prototype.get = function (target) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                    return table !== undefined ? HashMap.get(table, this._key) : undefined;
+                };
+                WeakMap.prototype.set = function (target, value) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ true);
+                    table[this._key] = value;
+                    return this;
+                };
+                WeakMap.prototype.delete = function (target) {
+                    var table = GetOrCreateWeakMapTable(target, /*create*/ false);
+                    return table !== undefined ? delete table[this._key] : false;
+                };
+                WeakMap.prototype.clear = function () {
+                    // NOTE: not a real clear, just makes the previous data unreachable
+                    this._key = CreateUniqueKey();
+                };
+                return WeakMap;
+            }());
+            function CreateUniqueKey() {
+                var key;
+                do
+                    key = "@@WeakMap@@" + CreateUUID();
+                while (HashMap.has(keys, key));
+                keys[key] = true;
+                return key;
+            }
+            function GetOrCreateWeakMapTable(target, create) {
+                if (!hasOwn.call(target, rootKey)) {
+                    if (!create)
+                        return undefined;
+                    Object.defineProperty(target, rootKey, { value: HashMap.create() });
+                }
+                return target[rootKey];
+            }
+            function FillRandomBytes(buffer, size) {
+                for (var i = 0; i < size; ++i)
+                    buffer[i] = Math.random() * 0xff | 0;
+                return buffer;
+            }
+            function GenRandomBytes(size) {
+                if (typeof Uint8Array === "function") {
+                    if (typeof crypto !== "undefined")
+                        return crypto.getRandomValues(new Uint8Array(size));
+                    if (typeof msCrypto !== "undefined")
+                        return msCrypto.getRandomValues(new Uint8Array(size));
+                    return FillRandomBytes(new Uint8Array(size), size);
+                }
+                return FillRandomBytes(new Array(size), size);
+            }
+            function CreateUUID() {
+                var data = GenRandomBytes(UUID_SIZE);
+                // mark as random - RFC 4122 § 4.4
+                data[6] = data[6] & 0x4f | 0x40;
+                data[8] = data[8] & 0xbf | 0x80;
+                var result = "";
+                for (var offset = 0; offset < UUID_SIZE; ++offset) {
+                    var byte = data[offset];
+                    if (offset === 4 || offset === 6 || offset === 8)
+                        result += "-";
+                    if (byte < 16)
+                        result += "0";
+                    result += byte.toString(16).toLowerCase();
+                }
+                return result;
+            }
+        }
+        // uses a heuristic used by v8 and chakra to force an object into dictionary mode.
+        function MakeDictionary(obj) {
+            obj.__ = undefined;
+            delete obj.__;
+            return obj;
+        }
+    });
+})(Reflect || (Reflect = {}));
+//# sourceMappingURL=Reflect.js.map
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(31), __webpack_require__(33)))
+
+/***/ }),
+/* 33 */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	// This works if the window reference is available
+	if(typeof window === "object")
+		g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
+
+
+/***/ }),
+/* 34 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolishedModels_1 = __webpack_require__(7);
+var demolishedLoader_1 = __webpack_require__(3);
 var EntityTexture = (function () {
     function EntityTexture(image, name, width, height, assetType) {
         this.image = image;
@@ -14784,25 +17506,1271 @@ exports.ShaderEntity = ShaderEntity;
 
 
 /***/ }),
-/* 24 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var DemloshedTransitionBase = (function () {
-    function DemloshedTransitionBase(entity) {
+var DemlolishedTransitionBase = (function () {
+    function DemlolishedTransitionBase(entity) {
         this.entity = entity;
     }
-    DemloshedTransitionBase.prototype.fadeIn = function (time) {
+    DemlolishedTransitionBase.prototype.fadeIn = function (time) {
         return null;
     };
-    DemloshedTransitionBase.prototype.fadeOut = function (time) {
+    DemlolishedTransitionBase.prototype.fadeOut = function (time) {
         return;
     };
-    return DemloshedTransitionBase;
+    return DemlolishedTransitionBase;
 }());
-exports.DemloshedTransitionBase = DemloshedTransitionBase;
+exports.DemlolishedTransitionBase = DemlolishedTransitionBase;
+
+
+/***/ }),
+/* 36 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["a"] = subscribeMixin;
+/*
+Add events to a class or object:
+    class MyClass {
+        constructor() {
+            subscribeMixin(this); // Add the mixing functions to the class
+            ...
+            this.trigger('something', { owner: this, content: 'that'}); // trigger an event passing some arguments
+
+Subscribe to events by doing:
+    myClass.on('something', (args) => {
+        console.log(args);
+    });
+
+Unsubscribe to events by doing:
+    myClass.off('something');
+
+or more presicelly:
+    myClass.off('something', (args) => {
+        console.log(args);
+    });
+
+Unsubscribe to all events by:
+    myClass.offAll();
+*/
+
+function subscribeMixin (target) {
+    var listeners = new Set();
+
+    return Object.assign(target, {
+
+        on (type, f) {
+            let listener = {};
+            listener[type] = f;
+            listeners.add(listener);
+        },
+
+        off (type, f) {
+            if (f) {
+                let listener = {};
+                listener[type] = f;
+                listeners.delete(listener);
+            }
+            else {
+                for (let item of listeners) {
+                    for (let key of Object.keys(item)) {
+                        if (key === type) {
+                            listeners.delete(item);
+                            return;
+                        }
+                    }
+                }
+            }
+        },
+
+        offAll () {
+            listeners.clear();
+        },
+
+        trigger (event, ...data) {
+            for (var listener of listeners) {
+                if (typeof listener[event] === 'function') {
+                    listener[event](...data);
+                }
+            }
+        },
+
+        listSubscriptions () {
+            for (let item of listeners) {
+                console.log(item);
+            }
+        }
+    });
+}
+
+
+/***/ }),
+/* 37 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Color__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__tools_common__ = __webpack_require__(12);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__ = __webpack_require__(41);
+/*
+Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
+Author: Lou Huang (@saikofish)
+*/
+
+
+
+
+
+
+
+// Some common use variables
+let currentTarget;
+let currentTargetHeight = 0;
+let domCache;
+
+class ColorPicker extends __WEBPACK_IMPORTED_MODULE_0__Picker__["a" /* default */] {
+    constructor (color = 'vec3(1.0,0.0,0.0)', properties = {}) {
+        super('ge_colorpicker_', properties);
+
+        this.width = 250; // in pixels
+        this.height = 250; // in pixels
+
+        this.disc = { width: 200, height: 200 };
+        this.barlum = { width: 25, height: 200 };
+
+        this.setValue(color);
+        this.init();
+    }
+
+    init() {
+        if (!domCache) {
+            let modal = document.createElement('div');
+            let patch = document.createElement('div');
+            let map = document.createElement('div');
+            let disc = document.createElement('canvas');
+            let cover = document.createElement('div');
+            let cursor = document.createElement('div');
+            let barbg = document.createElement('div');
+            let barwhite = document.createElement('div');
+            let barlum = document.createElement('canvas');
+            let barcursors = document.createElement('div');
+            let leftcursor = document.createElement('div');
+            let rightcursor = document.createElement('div');
+
+            modal.className = this.CSS_PREFIX + 'modal ge_picker_modal';
+            modal.style.backgroundColor = this.bgColor;
+            patch.className = this.CSS_PREFIX + 'patch';
+            patch.style.backgroundColor = this.bgColor;
+            map.className = this.CSS_PREFIX + 'hsv-map';
+            disc.className = this.CSS_PREFIX + 'disc';
+            disc.style.backgroundColor = this.bgColor;
+            cover.className = this.CSS_PREFIX + 'disc-cover';
+            cursor.className = this.CSS_PREFIX + 'disc-cursor';
+            barbg.className = this.CSS_PREFIX + 'bar-bg';
+            barwhite.className = this.CSS_PREFIX + 'bar-white';
+            barlum.className = this.CSS_PREFIX + 'bar-luminance';
+            barcursors.className = this.CSS_PREFIX + 'bar-cursors';
+            leftcursor.className = this.CSS_PREFIX + 'bar-cursor-left';
+            rightcursor.className = this.CSS_PREFIX + 'bar-cursor-right';
+
+            map.id = 'cp-map';
+            barcursors.id = 'cp-bar';
+
+            modal.appendChild(patch);
+            modal.appendChild(map);
+
+            map.appendChild(disc);
+            map.appendChild(cover);
+            map.appendChild(cursor);
+            map.appendChild(barbg);
+            map.appendChild(barwhite);
+            map.appendChild(barlum);
+            map.appendChild(barcursors);
+            barcursors.appendChild(leftcursor);
+            barcursors.appendChild(rightcursor);
+
+            domCache = modal;
+        }
+
+        // Returns a clone of the cached document fragment
+        this.el = domCache.cloneNode(true);
+        __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__["a" /* subscribeInteractiveDom */])(this.el, { move: true, resize: false, snap: false });
+
+        // TODO: Improve these references
+        // The caching of references is likely to be important for speed
+        this.dom = {};
+        this.dom.hsvMap = this.el.querySelector('.ge_colorpicker_hsv-map');
+        this.dom.hsvMapCover = this.dom.hsvMap.children[1]; // well...
+        this.dom.hsvMapCursor = this.dom.hsvMap.children[2];
+        this.dom.hsvBarBGLayer = this.dom.hsvMap.children[3];
+        this.dom.hsvBarWhiteLayer = this.dom.hsvMap.children[4];
+        this.dom.hsvBarCursors = this.dom.hsvMap.children[6];
+        this.dom.hsvLeftCursor = this.dom.hsvBarCursors.children[0];
+        this.dom.hsvRightCursor = this.dom.hsvBarCursors.children[1];
+
+        this.dom.colorDisc = this.el.querySelector('.ge_colorpicker_disc');
+        this.dom.luminanceBar = this.el.querySelector('.ge_colorpicker_bar-luminance');
+
+        if (this.link_button) {
+            let lbutton = document.createElement('div');
+            lbutton.innerHTML = '+';
+            lbutton.className = this.CSS_PREFIX + 'link-button';
+            lbutton.style.color = this.fgColor;
+            this.el.appendChild(lbutton);
+
+            lbutton.addEventListener('click', () => {
+                this.trigger('link_button', this.value);
+                if (typeof this.link_button === 'function') {
+                    this.link_button(this.value);
+                }
+                this.removeModal();
+            });
+        }
+    }
+
+    draw () {
+        //  Render color patch
+        let patch = this.el.querySelector('.ge_colorpicker_patch');
+        patch.style.backgroundColor = this.value.getString('rgb');
+
+        //  Render HSV picker
+        let color = this.value.colors;
+        let colorDiscRadius = this.dom.colorDisc.offsetHeight / 2;
+        let pi2 = Math.PI * 2;
+        let x = Math.cos(pi2 - color.hsv.h * pi2);
+        let y = Math.sin(pi2 - color.hsv.h * pi2);
+        let r = color.hsv.s * (colorDiscRadius - 5);
+
+        this.dom.hsvMapCover.style.opacity = 1 - color.hsv.v / 255;
+        // this is the faster version...
+        this.dom.hsvBarWhiteLayer.style.opacity = 1 - color.hsv.s;
+        this.dom.hsvBarBGLayer.style.backgroundColor = 'rgb(' +
+            color.hueRGB.r + ',' +
+            color.hueRGB.g + ',' +
+            color.hueRGB.b + ')';
+
+        this.dom.hsvMapCursor.style.cssText =
+            'left: ' + (x * r + colorDiscRadius) + 'px;' +
+            'top: ' + (y * r + colorDiscRadius) + 'px;' +
+            'border-color: ' + (color.luminance > 0.22 ? '#333;' : '#ddd');
+
+        if (color.luminance > 0.22) {
+            this.dom.hsvBarCursors.classList.add('ge_colorpicker_dark');
+        }
+        else {
+            this.dom.hsvBarCursors.classList.remove('ge_colorpicker_dark');
+        }
+
+        if (this.dom.hsvLeftCursor) {
+            this.dom.hsvLeftCursor.style.top = this.dom.hsvRightCursor.style.top = ((1 - color.hsv.v / 255) * colorDiscRadius * 2) + 'px';
+        }
+    }
+
+    presentModal (x, y) {
+        super.presentModal(x, y);
+
+        // // Listen for interaction on the HSV map
+        this.onHsvDownHandler = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__Picker__["b" /* addEvent */])(this.dom.hsvMap, 'mousedown', this.onHsvDown, this);
+
+        let colorDisc = this.dom.colorDisc;
+
+        if (colorDisc.getContext) {
+            // HSV color wheel with white center
+            let diskContext = colorDisc.getContext('2d');
+            let ratio = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_2__tools_common__["a" /* getDevicePixelRatio */])(diskContext);
+            let width = this.disc.width / ratio;
+            let height = this.disc.height / ratio;
+            this.dom.colorDisc.width = width * ratio;
+            this.dom.colorDisc.height = height * ratio;
+            diskContext.scale(ratio, ratio);
+
+            drawDisk(
+                diskContext,
+                [width / 2, height / 2],
+                [width / 2 - 1, height / 2 - 1],
+                360,
+                function (ctx, angle) {
+                    let gradient = ctx.createRadialGradient(1, 1, 1, 1, 1, 0);
+                    gradient.addColorStop(0, 'hsl(' + (360 - angle + 0) + ', 100%, 50%)');
+                    gradient.addColorStop(1, '#fff');
+
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+            );
+
+            // gray border
+            drawCircle(
+                diskContext,
+                [width / 2, height / 2],
+                [width / 2, height / 2],
+                this.bgColor,// '#303030',
+                2 / ratio
+            );
+
+            // draw the luminanceBar bar
+            let ctx = this.dom.luminanceBar.getContext('2d');
+            this.dom.luminanceBar.width = this.barlum.width;
+            this.dom.luminanceBar.height = this.barlum.height * ratio;
+            ctx.scale(ratio, ratio);
+            let gradient = ctx.createLinearGradient(0, 0, 0, this.barlum.height / ratio);
+
+            gradient.addColorStop(0, 'transparent');
+            gradient.addColorStop(1, 'black');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 30, 200);
+        }
+        this.draw();
+    }
+
+    /**
+     *  Updates only the color value of the color picker
+     *  and the view. Designed to be called by external modules
+     *  so that it can update its internal value from an outside source.
+     *  Does no DOM creation & other initialization work.
+     */
+    setValue (color) {
+        this.value = new __WEBPACK_IMPORTED_MODULE_1__types_Color__["default"](color);
+    }
+
+    /* ---------------------------------- */
+    /* ---- HSV-circle color picker ----- */
+    /* ---------------------------------- */
+
+    // Actions when user mouses down on HSV color map
+    onHsvDown (event) {
+        let target = event.target || event.srcElement;
+        event.preventDefault();
+
+        currentTarget = target.id ? target : target.parentNode;
+        currentTargetHeight = currentTarget.offsetHeight; // as diameter of circle
+
+        // Starts listening for mousemove and mouseup events
+        this.onHsvMoveHandler = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__Picker__["b" /* addEvent */])(this.el, 'mousemove', this.onHsvMove, this);
+        this.onHsvUpHandler = __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__Picker__["b" /* addEvent */])(window, 'mouseup', this.onHsvUp, this);
+
+        this.onHsvMove(event);
+
+        // Hides mouse cursor and begins rendering loop
+        this.dom.hsvMap.classList.add('ge_colorpicker_no-cursor');
+        this.renderer.start();
+    }
+
+    // Actions when user moves around on HSV color map
+    onHsvMove (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        let r, x, y, h, s;
+        if (event.target === this.dom.hsvMapCover && currentTarget === this.dom.hsvMap) { // the circle
+            r = currentTargetHeight / 2,
+            x = event.offsetX - r,
+            y = event.offsetY - r,
+            h = (360 - ((Math.atan2(y, x) * 180 / Math.PI) + (y < 0 ? 360 : 0))) / 360,
+            s = (Math.sqrt((x * x) + (y * y)) / r);
+            this.value.set({ h, s }, 'hsv');
+        }
+        else if (event.target === this.dom.hsvBarCursors && currentTarget === this.dom.hsvBarCursors) { // the luminanceBar
+            let v = (currentTargetHeight - (event.offsetY)) / currentTargetHeight;
+            v = Math.max(0, Math.min(1, v)) * 255;
+            this.value.set({ v: v }, 'hsv');
+        }
+
+        this.trigger('changed', this.value);
+    }
+
+    // Actions when user mouses up on HSV color map
+    onHsvUp (event) {
+        // Stops rendering and returns mouse cursor
+        this.renderer.stop();
+        this.dom.hsvMap.classList.remove('ge_colorpicker_no-cursor');
+        this.destroyEvents();
+    }
+
+    // Destroy event listeners that exist during mousedown colorpicker interaction
+    destroyEvents () {
+        __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__Picker__["c" /* removeEvent */])(this.el, 'mousemove', this.onHsvMoveHandler);
+        this.onHsvMoveHandler = null;
+        __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__Picker__["c" /* removeEvent */])(window, 'mouseup', this.onHsvUpHandler);
+        this.onHsvUpHandler = null;
+    }
+
+    close () {
+        this.destroyEvents();
+        __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__Picker__["c" /* removeEvent */])(this.dom.hsvMap, 'mousedown', this.onHsvDownHandler);
+        this.onHsvDownHandler = null;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["default"] = ColorPicker;
+
+
+// generic function for drawing a canvas disc
+function drawDisk (ctx, coords, radius, steps, colorCallback) {
+    let x = coords[0] || coords; // coordinate on x-axis
+    let y = coords[1] || coords; // coordinate on y-axis
+    let a = radius[0] || radius; // radius on x-axis
+    let b = radius[1] || radius; // radius on y-axis
+    let angle = 360;
+    let coef = Math.PI / 180;
+
+    ctx.save();
+    ctx.translate(x - a, y - b);
+    ctx.scale(a, b);
+
+    steps = (angle / steps) || 360;
+
+    for (; angle > 0 ; angle -= steps) {
+        ctx.beginPath();
+        if (steps !== 360) {
+            ctx.moveTo(1, 1); // stroke
+        }
+        ctx.arc(1, 1, 1,
+            (angle - (steps / 2) - 1) * coef,
+            (angle + (steps / 2) + 1) * coef);
+
+        if (colorCallback) {
+            colorCallback(ctx, angle);
+        }
+        else {
+            ctx.fillStyle = 'black';
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+
+function drawCircle (ctx, coords, radius, color, width) { // uses drawDisk
+    width = width || 1;
+    radius = [
+        (radius[0] || radius) - width / 2,
+        (radius[1] || radius) - width / 2
+    ];
+    drawDisk(ctx, coords, radius, 1, function (ctx, angle) {
+        ctx.restore();
+        ctx.lineWidth = width;
+        ctx.strokeStyle = color || '#000';
+        ctx.stroke();
+    });
+}
+
+
+/***/ }),
+/* 38 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Float__ = __webpack_require__(39);
+
+
+
+class FloatPicker extends __WEBPACK_IMPORTED_MODULE_0__Picker__["a" /* default */] {
+    constructor (number, properties) {
+        super('ge_floatpicker_', properties);
+
+        this.width = this.width || 250;
+        this.height = this.height || 40;
+
+        this.prevOffset = 0;
+        this.scale = 2;
+
+        this.setValue(number || 1);
+        this.create();
+    }
+
+    draw () {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // horizontal line
+        this.ctx.strokeStyle = this.dimColor;
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, 0.5 + this.height * 0.5);
+        this.ctx.lineTo(0 + this.width, 0.5 + this.height * 0.5);
+        this.ctx.closePath();
+        this.ctx.stroke();
+
+        // vertical line
+        this.ctx.strokeStyle = this.fnColor;
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.width * 0.5, 0);
+        this.ctx.lineTo(this.width * 0.5, this.height);
+        this.ctx.closePath();
+        this.ctx.stroke();
+
+        // Triangle line
+        this.ctx.fillStyle = this.overPoint ? this.selColor : this.fnColor;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.width * 0.5, 5);
+        this.ctx.lineTo(this.width * 0.48, 0);
+        this.ctx.lineTo(this.width * 0.52, 0);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        let times = 3;
+        let unit = 40;
+        let step = this.width / unit;
+        let sections = unit * times;
+
+        let offsetX = this.offsetX;
+
+        if (Math.abs(this.offsetX - this.width * 0.5) > this.width * 0.5) {
+            offsetX = (this.offsetX - this.width * 0.5) % (this.width * 0.5) + this.width;
+        }
+
+        this.ctx.strokeStyle = this.dimColor;
+        this.ctx.beginPath();
+        for (let i = 0; i < sections; i++) {
+            let l = (i % (unit / 2) === 0) ? this.height * 0.35 : (i % (unit / 4) === 0) ? this.height * 0.2 : this.height * 0.1;
+            this.ctx.moveTo(i * step - offsetX, this.height * 0.5 - l);
+            this.ctx.lineTo(i * step - offsetX, this.height * 0.5 + l);
+        }
+        this.ctx.stroke();
+
+        let val = Math.round(((this.value - this.min) / this.range) * this.width);
+
+        // point
+        this.ctx.strokeStyle = this.overPoint ? this.selColor : this.fnColor;
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.offsetX + val, this.height * 0.5);
+        this.ctx.lineTo(this.offsetX + val, this.height);
+        this.ctx.closePath();
+        this.ctx.stroke();
+
+        this.overPoint = false;
+    }
+
+    onMouseDown (event) {
+        this.prevOffset = event.offsetX;
+        super.onMouseDown(event);
+    }
+
+    // Actions when user moves around on HSV color map
+    onMouseMove (event) {
+        let x = event.offsetX;
+
+        let vel = x - this.prevOffset;
+        let offset = this.offsetX - vel;
+
+        let center = this.width / this.scale;
+        this.setValue(offset / center);
+        this.prevOffset = x;
+
+        // fire 'changed'
+        var number = new __WEBPACK_IMPORTED_MODULE_1__types_Float__["a" /* default */](this.getValue());
+        this.trigger('changed', number);
+        this.overPoint = true;
+    }
+
+    setValue (value) {
+        if (typeof value === 'string') {
+            this.value = parseFloat(value);
+        }
+        else if (typeof value === 'number') {
+            this.value = value;
+        }
+        let center = (this.width / this.scale);
+        this.offsetX = this.value * center;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["default"] = FloatPicker;
+
+
+
+
+/***/ }),
+/* 39 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+
+class Float {
+    constructor (value) {
+        this.value = value;
+    }
+
+    getString () {
+        return this.value.toFixed(3);
+    }
+
+    uniformType () {
+        return 'float';
+    }
+
+    uniformValue () {
+        return [this.value];
+    }
+
+    uniformMethod () {
+        return '1f';
+    }
+
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Float;
+
+
+
+/***/ }),
+/* 40 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class Vector {
+    constructor (vec, type) {
+        this.value = [0,0];
+        this.dim = 2;
+        this.set(vec, type);
+    }
+
+    set (vec, type) {
+        if (typeof vec === 'number') {
+            type = type || 'vec2';
+            this.set([vec], type);
+        }
+        else if (typeof vec === 'string') {
+            let parts = vec.replace(/(?:#|\)|\]|%)/g, '').split('(');
+            let strValues = (parts[1] || parts[0].replace(/(\[)/g, '')).split(/,\s*/);
+            type = type || (parts[1] ? parts[0].substr(0, 4) : 'vec' + strValues.length);
+            let values = [];
+            for (let i in strValues) {
+                values.push(parseFloat(strValues[i]));
+            }
+            this.set(values, type);
+        }
+        else if (vec) {
+            if (Array.isArray(vec)) {
+                this.value = [];
+                this.value.length = 0;
+                this.dim = type ? Number(type.substr(3, 4)) : vec.length;
+                let filler = vec.length === 1 ? vec[0] : 0;
+                for (let i = 0; i < this.dim; i++) {
+                    this.value.push(vec[i] || filler);
+                }
+            }
+            else if (vec.dim) {
+                this.value = vec.value;
+                this.dim = vec.dim;
+            }
+        }
+    }
+
+    set x (v) {
+        this.value[0] = v;
+    }
+
+    set y (v) {
+        this.value[1] = v;
+    }
+
+    set z (v) {
+        if (this.dim < 3) {
+            while (this.dim < 3) {
+                this.value.push(0);
+            }
+            this.dim = 3;
+        }
+        this.value[2] = v;
+    }
+
+    set w (v) {
+        if (this.dim < 4) {
+            while (this.dim < 4) {
+                this.value.push(0);
+            }
+            this.dim = 4;
+        }
+        this.value[3] = v;
+    }
+
+    get x () {
+        return this.value[0] || 0.0;
+    }
+
+    get y () {
+        return this.value[1] || 0.0;
+    }
+
+    get z () {
+        return this.value[2] || 0.0 ;
+    }
+
+    get w () {
+        return this.value[3] || 0.0;
+    }
+
+    getString(type) {
+        type = type || 'vec' + this.dim;
+
+        let len = this.dim;
+        let str = '';
+        let head = type + '(';
+        let end = ')';
+
+        if (type === 'array') {
+            head = '[';
+            end = ']';
+            len = this.dim;
+        }
+        else {
+            len = Number(type.substr(3, 4));
+        }
+
+        str = head;
+        for (let i = 0; i < len; i++) {
+            str += this.value[i].toFixed(3);
+            if (i !== len - 1) {
+                str += ',';
+            }
+        }
+        return str += end;
+    }
+
+    uniformType () {
+        return 'vec' + this.dim;
+    }
+
+    uniformValue () {
+        var arr = [];
+        for (let i = 0; i < this.dim; i++) {
+            arr.push(this.value[i]);
+        }
+        return arr;
+    }
+
+    uniformMethod () {
+        return this.dim + 'f';
+    }
+
+    // VECTOR OPERATIONS
+
+    add (v) {
+        if (typeof v === 'number') {
+            for (let i = 0; i < this.dim; i++) {
+                this.value[i] = this.value[i] + v;
+            }
+        }
+        else {
+            let A = new Vector(v);
+            let lim = Math.min(this.dim, A.dim);
+            for (let i = 0; i < lim; i++) {
+                this.value[i] = this.value[i] + A.value[i];
+            }
+        }
+    }
+
+    sub (v) {
+        if (typeof v === 'number') {
+            for (let i = 0; i < this.dim; i++) {
+                this.value[i] = this.value[i] - v;
+            }
+        }
+        else {
+            let A = new Vector(v);
+            let lim = Math.min(this.dim, A.dim);
+            for (let i = 0; i < lim; i++) {
+                this.value[i] = this.value[i] - A.value[i];
+            }
+        }
+    }
+
+    mult (v) {
+        if (typeof v === 'number') {
+            // Mulitply by scalar
+            for (let i = 0; i < this.dim; i++) {
+                this.value[i] = this.value[i] * v;
+            }
+        }
+        else {
+            // Multiply two vectors
+            let A = new Vector(v);
+            let lim = Math.min(this.dim, A.dim);
+            for (let i = 0; i < lim; i++) {
+                this.value[i] = this.value[i] * A.value[i];
+            }
+        }
+    }
+
+    div (v) {
+        if (typeof v === 'number') {
+            // Mulitply by scalar
+            for (let i = 0; i < this.dim; i++) {
+                this.value[i] = this.value[i] / v;
+            }
+        }
+        else {
+            // Multiply two vectors
+            let A = new Vector(v);
+            let lim = Math.min(this.dim, A.dim);
+            for (let i = 0; i < lim; i++) {
+                this.value[i] = this.value[i] / A.value[i];
+            }
+        }
+    }
+
+    normalize () {
+        let l = this.getLength();
+        this.div(l);
+    }
+
+    getAdd (v) {
+        var A = new Vector(this);
+        A.add(v);
+        return A;
+    }
+
+    getSub (v) {
+        var A = new Vector(this);
+        A.sub(v);
+        return A;
+    }
+
+    getMult (v) {
+        var A = new Vector(this);
+        A.mult(v);
+        return A;
+    }
+
+    getDiv (v) {
+        var A = new Vector(this);
+        A.div(v);
+        return A;
+    }
+
+    getLengthSq () {
+        if (this.dim === 2) {
+            return (this.value[0] * this.value[0] + this.value[1] * this.value[1]);
+        }
+        else {
+            return (this.value[0] * this.value[0] + this.value[1] * this.value[1] + this.value[2] * this.value[2]);
+        }
+    }
+
+    getLength () {
+        return Math.sqrt(this.getLengthSq());
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Vector;
+
+
+
+/***/ }),
+/* 41 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["a"] = subscribeInteractiveDom;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mixin__ = __webpack_require__(42);
+/*
+ * Original code from: https://twitter.com/blurspline / https://github.com/zz85
+ * See post @ http://www.lab4games.net/zz85/blog/2014/11/15/resizing-moving-snapping-windows-with-js-css/
+ */
+
+
+
+// Thresholds
+var FULLSCREEN_MARGINS = -30;
+var MARGINS = 10;
+
+function setBounds(element, x, y, w, h) {
+    element.style.left = x + 'px';
+    element.style.top = y + 'px';
+    element.style.width = w + 'px';
+    element.style.height = h + 'px';
+}
+
+function subscribeInteractiveDom (dom, options) {
+    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__mixin__["a" /* subscribeMixin */])(dom);
+
+    options = options || {};
+    options.resize = options.resize !== undefined ? options.resize : false;
+    options.move = options.move !== undefined ? options.move : false;
+    options.snap = options.snap !== undefined ? options.snap : false;
+
+    // Minimum resizable area
+    var minWidth = 100;
+    var minHeight = 100;
+
+    // End of what's configurable.
+    var clicked = null;
+    var onRightEdge, onBottomEdge, onLeftEdge, onTopEdge;
+
+    var rightScreenEdge, bottomScreenEdge;
+
+    var preSnapped;
+
+    var b, x, y;
+
+    var redraw = false;
+
+    var ghostdom = document.createElement('div');
+    ghostdom.className = 'ghostdom';
+
+    if (options.snap) {
+        dom.parentElement.appendChild(ghostdom);
+    }
+
+    // Mouse events
+    dom.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+
+    // Touch events
+    dom.addEventListener('touchstart', onTouchDown);
+    document.addEventListener('touchmove', onTouchMove);
+    document.addEventListener('touchend', onTouchEnd);
+
+    function hintHide() {
+        setBounds(ghostdom, b.left, b.top, b.width, b.height);
+        ghostdom.style.opacity = 0;
+    }
+
+    function onTouchDown (event) {
+        onDown(event.touches[0]);
+        e.preventDefault();
+    }
+
+    function onTouchMove (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        onMove(event.touches[0]);
+    }
+
+    function onTouchEnd (event) {
+        if (event.touches.length === 0) {
+            onUp(e.changedTouches[0]);
+        }
+    }
+
+    function onMouseDown (event) {
+        onDown(event);
+        e.preventDefault();
+    }
+
+    function onDown (event) {
+        calc(event);
+        var isResizing = options.resize && (onRightEdge || onBottomEdge || onTopEdge || onLeftEdge);
+        clicked = {
+            x: x,
+            y: y,
+            cx: event.clientX,
+            cy: event.clientY,
+            w: b.width,
+            h: b.height,
+            isResizing: isResizing,
+            isMoving: !isResizing && canMove(),
+            onTopEdge: onTopEdge,
+            onLeftEdge: onLeftEdge,
+            onRightEdge: onRightEdge,
+            onBottomEdge: onBottomEdge
+        };
+    }
+
+    function canMove() {
+        return options.move && (x > 0 && x < b.width && y > 0 && y < b.height);// && y < 30;
+    }
+
+    function calc (event) {
+        b = dom.getBoundingClientRect();
+        x = event.clientX - b.left;
+        y = event.clientY - b.top;
+
+        onTopEdge = y < MARGINS;
+        onLeftEdge = x < MARGINS;
+        onRightEdge = x >= b.width - MARGINS;
+        onBottomEdge = y >= b.height - MARGINS;
+
+        rightScreenEdge = window.innerWidth - MARGINS;
+        bottomScreenEdge = window.innerHeight - MARGINS;
+    }
+
+    var e;
+
+    function onMove(event) {
+        calc(event);
+        e = event;
+        redraw = true;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (!redraw) {
+            return;
+        }
+        redraw = false;
+
+        if (clicked && clicked.isResizing) {
+            if (clicked.onRightEdge) {
+                dom.style.width = Math.max(x, minWidth) + 'px';
+            }
+            if (clicked.onBottomEdge) {
+                dom.style.height = Math.max(y, minHeight) + 'px';
+            }
+
+            if (clicked.onLeftEdge) {
+                var currentWidth = Math.max(clicked.cx - e.clientX + clicked.w, minWidth);
+                if (currentWidth > minWidth) {
+                    dom.style.width = currentWidth + 'px';
+                    dom.style.removeProperty('right');
+                    dom.style.left = e.clientX + 'px';
+                }
+            }
+
+            if (clicked.onTopEdge) {
+                var currentHeight = Math.max(clicked.cy - e.clientY + clicked.h, minHeight);
+                if (currentHeight > minHeight) {
+                    dom.style.height = currentHeight + 'px';
+                    dom.style.removeProperty('bottom');
+                    dom.style.top = e.clientY + 'px';
+                }
+            }
+
+            hintHide();
+            dom.trigger('resize', { finish: false, el: dom });
+            return;
+        }
+
+        if (clicked && clicked.isMoving) {
+            if (options.snap) {
+                if (b.top < FULLSCREEN_MARGINS || b.left < FULLSCREEN_MARGINS || b.right > window.innerWidth - FULLSCREEN_MARGINS || b.bottom > window.innerHeight - FULLSCREEN_MARGINS) {
+                    setBounds(ghostdom, 0, 0, window.innerWidth, window.innerHeight);
+                    ghostdom.style.opacity = 0.2;
+                }
+                else if (b.top < MARGINS) {
+                    setBounds(ghostdom, 0, 0, window.innerWidth, window.innerHeight / 2);
+                    ghostdom.style.opacity = 0.2;
+                }
+                else if (b.left < MARGINS) {
+                    setBounds(ghostdom, 0, 0, window.innerWidth / 2, window.innerHeight);
+                    ghostdom.style.opacity = 0.2;
+                }
+                else if (b.right > rightScreenEdge) {
+                    setBounds(ghostdom, window.innerWidth / 2, 0, window.innerWidth / 2, window.innerHeight);
+                    ghostdom.style.opacity = 0.2;
+                }
+                else if (b.bottom > bottomScreenEdge) {
+                    setBounds(ghostdom, 0, window.innerHeight / 2, window.innerWidth, window.innerWidth / 2);
+                    ghostdom.style.opacity = 0.2;
+                }
+                else {
+                    hintHide();
+                }
+
+                if (preSnapped) {
+                    setBounds(dom,
+                            e.clientX - preSnapped.width / 2,
+                            e.clientY - Math.min(clicked.y, preSnapped.height),
+                            preSnapped.width,
+                            preSnapped.height);
+                    return;
+                }
+
+                // moving
+                dom.style.removeProperty('right');
+                dom.style.removeProperty('bottom');
+                dom.style.top = (e.clientY - clicked.y) + 'px';
+                dom.style.left = (e.clientX - clicked.x) + 'px';
+            }
+            else {
+                let x = (e.clientX - clicked.x);
+                let y = (e.clientY - clicked.y);
+
+                if (x < 0) {
+                    x = 0;
+                }
+                else if (y < 0) {
+                    y = 0;
+                }
+                else if (x + dom.offsetWidth > window.innerWidth) {
+                    x = window.innerWidth - dom.offsetWidth;
+                }
+                else if (y + dom.offsetHeight > window.innerHeight) {
+                    y = window.innerHeight - dom.offsetHeight;
+                }
+
+                dom.style.removeProperty('right');
+                dom.style.removeProperty('bottom');
+                dom.style.left = x + 'px';
+                dom.style.top = y + 'px';
+            }
+
+            dom.trigger('move', { finish: false, el: dom });
+            return;
+        }
+        // This code executes when mouse moves without clicking
+
+        // style cursor
+        if (options.resize && (onRightEdge && onBottomEdge || onLeftEdge && onTopEdge)) {
+            dom.style.cursor = 'nwse-resize';
+        }
+        else if (options.resize && (onRightEdge && onTopEdge || onBottomEdge && onLeftEdge)) {
+            dom.style.cursor = 'nesw-resize';
+        }
+        else if (options.resize && (onRightEdge || onLeftEdge)) {
+            dom.style.cursor = 'ew-resize';
+        }
+        else if (options.resize && (onBottomEdge || onTopEdge)) {
+            dom.style.cursor = 'ns-resize';
+        }
+        else if (canMove()) {
+            dom.style.cursor = 'move';
+        }
+        else {
+            dom.style.cursor = 'default';
+        }
+    }
+    animate();
+
+    function onUp(e) {
+        calc(e);
+
+        if (clicked && clicked.isResizing) {
+            dom.trigger('resize', { finish: true, el: dom });
+        }
+
+        if (options.snap && clicked && clicked.isMoving) {
+            // Snap
+            var snapped = {
+                width: b.width,
+                height: b.height
+            };
+
+            if (b.top < FULLSCREEN_MARGINS || b.left < FULLSCREEN_MARGINS || b.right > window.innerWidth - FULLSCREEN_MARGINS || b.bottom > window.innerHeight - FULLSCREEN_MARGINS) {
+                setBounds(dom, 0, 0, window.innerWidth, window.innerHeight);
+                preSnapped = snapped;
+            }
+            else if (b.top < MARGINS) {
+                setBounds(dom, 0, 0, window.innerWidth, window.innerHeight / 2);
+                preSnapped = snapped;
+            }
+            else if (b.left < MARGINS) {
+                setBounds(dom, 0, 0, window.innerWidth / 2, window.innerHeight);
+                preSnapped = snapped;
+            }
+            else if (b.right > rightScreenEdge) {
+                setBounds(dom, window.innerWidth / 2, 0, window.innerWidth / 2, window.innerHeight);
+                preSnapped = snapped;
+            }
+            else if (b.bottom > bottomScreenEdge) {
+                setBounds(dom, 0, window.innerHeight / 2, window.innerWidth, window.innerWidth / 2);
+                preSnapped = snapped;
+            }
+            else {
+                preSnapped = null;
+            }
+            hintHide();
+            dom.trigger('move', { finish: true, el: dom });
+            dom.trigger('resize', { finish: true, el: dom });
+        }
+        clicked = null;
+    }
+
+    dom.snapRight = function () {
+        var snapped = {
+            width: dom.width,
+            height: dom.height
+        };
+
+        setBounds(dom, window.innerWidth / 2, 0, window.innerWidth / 2, window.innerHeight);
+        preSnapped = snapped;
+        // hintHide();
+        dom.trigger('move', { finish: true, el: dom });
+        dom.trigger('resize', { finish: true, el: dom });
+    }
+
+    return dom;
+}
+
+
+/***/ }),
+/* 42 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["a"] = subscribeMixin;
+/*
+Add events to a class or object:
+    class MyClass {
+        constructor() {
+            subscribeMixin(this); // Add the mixing functions to the class
+            ...
+            this.trigger('something', { owner: this, content: 'that'}); // trigger an event passing some arguments
+
+Subscribe to events by doing:
+    myClass.on('something', (args) => {
+        console.log(args);
+    });
+
+Unsubscribe to events by doing:
+    myClass.off('something');
+
+or more presicelly:
+    myClass.off('something', (args) => {
+        console.log(args);
+    });
+
+Unsubscribe to all events by:
+    myClass.offAll();
+*/
+
+function subscribeMixin (target) {
+    var listeners = new Set();
+
+    return Object.assign(target, {
+
+        on (type, f) {
+            let listener = {};
+            listener[type] = f;
+            listeners.add(listener);
+        },
+
+        off (type, f) {
+            if (f) {
+                let listener = {};
+                listener[type] = f;
+                listeners.delete(listener);
+            }
+            else {
+                for (let item of listeners) {
+                    for (let key of Object.keys(item)) {
+                        if (key === type) {
+                            listeners.delete(item);
+                            return;
+                        }
+                    }
+                }
+            }
+        },
+
+        offAll () {
+            listeners.clear();
+        },
+
+        trigger (event, ...data) {
+            for (var listener of listeners) {
+                if (typeof listener[event] === 'function') {
+                    listener[event](...data);
+                }
+            }
+        },
+
+        listSubscriptions () {
+            for (let item of listeners) {
+                console.log(item);
+            }
+        }
+    });
+}
 
 
 /***/ })
