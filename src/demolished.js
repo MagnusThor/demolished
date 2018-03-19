@@ -53,8 +53,9 @@ var Demolished;
                         var textures = Promise.all(effect.textures.map(function (texture) {
                             return new Promise(function (resolve, reject) {
                                 var image = new Image();
-                                image.src = texture.url;
+                                image.src = texture.src;
                                 image.onload = function () {
+                                    console.log("Texture loaded");
                                     resolve(image);
                                 };
                                 image.onerror = function (err) { return resolve(err); };

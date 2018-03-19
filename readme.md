@@ -1,120 +1,27 @@
 # Demolished
 
-Demolished is a WebGL library for browser 'demos' and shader-fun in general. demolished is and will be TypeScript a 
-framework thing!
+Demolished is a app/library for JavaScript 'browser demos' and shader-fun in general. It includes a web-ui  that gives you the possibillity to 'live code' ( change) the scenes, playpack, timing and audio syncronazation as well add and remove effects to the scenes (demo). You can "build" tiny executables for playback-only or record the playback as video. 
 
-## Install
+Demolished supports audio formats such as streaming (mp3's), SID, and minimalistic music synth's such as Sonant.     
 
-Todo: publish as a npm package  
+## Dox
 
-## Gettings started
+We are currently working on writing a brief documentation, but we are focusing on getting all our ideas in place.
 
-Below you can find a simle guide that shows how you 
-create a demolished application (demo) using TypeSctipt and 
-GLSL.
+## Links
 
-### Folders & files
+https://magnusthor.github.io/demolished/ 
+Early deploy of the editor ( 1 effect + Steaming Music)
 
-    root
-        assets
-            song.mp3
-        entities
-            timeline.json
-            
+https://magnusthor.github.io/demolished/demo.html  
+One effect (shader) and Sonant music synth's audio using 'standard' playback.  Total size 66kb
 
+## Other
 
-### Create an instance of demolished
+In parallel with our free-time-work with demolished we are creating useful help libraries such as procedural texture generation, compression and optimization. Note we are doing this for fun!.
 
-TBD
+One example is this initiative ; https://github.com/MagnusThor/demolishedTexture
 
+## Help us out?
 
-#### Demolished.AudioAnalyzerSettings
-
-
-#### Demolished.World()
-
-
-
-
-### Create a glsl effect
-
-Each effet constits of a vertex.glsl file and a fragment.glsl file.  To add a new effect
-create a folder ( i.e  plasma ) within the entities folder.
-
-
-    root
-        assets
-        entities
-            plasma
-                    vertex.glsl
-                    fragment.glsl
-            
-
-### Add an effect to the demo timeline / story
-
-The demo timeline is located in the assets folder, each effect of the demo is reptresented by the following JSON.  
-
-        {
-        "name": string,
-        "description": string,
-        "start": number 
-        "stop": number,
-        "textures": Array<Asset>
-        }
-
-#### example
-    ..
-     "entities": [{
-        "name": "boxes",
-        "description": "",
-        "start": 0,
-        "stop": 249600,
-        "textures": [
-        ]
-        ...
-
-### Add textures to shader programs
-
-        ..
-        "textures":[
-            {
-                "url" :"/assets/noise.jpg",
-                "uniform" :"uSampler",
-                "width": 1024,
-                "height": 1024
-            },
-            {
-                "url" :"/assets/noise2.png",
-                "uniform" :"uSampler2",
-                "width": 512,
-                "height": 512
-            }
-        ]
-
-
-### DemolishedRecorder
-
-Record the demo playtback as a webm file
-
-    DemolishedRecorder {
-        videoTrack: MediaStreamTrack;
-        audioTrack: MediaStreamTrack;
-        data: Array<Blob>;
-        recorder: any;
-        mediaStream: MediaStream;
-        constructor(videoTrack: MediaStreamTrack, audioTrack: MediaStreamTrack);
-        stop(): void;
-        start(n: number): void;
-    }
-
-
-#### example 
-
-   let videoStream = this.world.canvas["captureStream"](60) as MediaStream;
-                let videoTrack = videoStream.getVideoTracks()[0];
-                let audioTrack = this.world.getAudioTracks()[0];
-
-                this.recorder = new DemolishedRecorder(videoTrack, audioTrack);
-                this.recorder.start(1000);
-            }
-
+If you are interested in helping out, code or just fiddle with demolished, dont hesitate to give as a ping!

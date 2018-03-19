@@ -4,6 +4,8 @@ import {
 
 import { DemolishedSonant } from './src/DemolishedSonant';
 
+
+
 export class Demo {
 
     webGlrendering: Demolished.Rendering;
@@ -35,7 +37,7 @@ export class Demo {
                 document.querySelector(".loader").classList.add("hide");
                 this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"),2);
                 this.webGlrendering.start(0);
-            }, 2000);
+            }, 5000);
 
         }
         this.webGlrendering.onStop = () => {
@@ -51,6 +53,8 @@ export class Demo {
 }
 document.addEventListener("DOMContentLoaded", () => {
         Demo.getIntance();
-});
+ });
+
+
 
 

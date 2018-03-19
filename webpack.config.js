@@ -5,9 +5,9 @@ module.exports = {
    fs: "empty"
   },
   watch: true,
-  entry: './demo.js',
+  entry: './index.js',
   output: {
-    filename: 'demoBundle.js'
+    filename: 'editorBundle.js'
   },
   plugins: [
     	new UglifyJSPlugin()

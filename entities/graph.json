@@ -23,7 +23,7 @@
         {
             "name": "empty",
             "description": "",
-            "textures": []         
+            "textures":[]
         }
     ]
 }

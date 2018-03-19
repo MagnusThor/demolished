@@ -19,7 +19,7 @@ var Demo = (function () {
                 document.querySelector(".loader").classList.add("hide");
                 _this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"), 2);
                 _this.webGlrendering.start(0);
-            }, 2000);
+            }, 5000);
         };
         this.webGlrendering.onStop = function () {
         };

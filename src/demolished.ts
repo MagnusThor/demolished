@@ -114,6 +114,7 @@ export namespace Demolished {
                     let _tf = new TimeFragment(tf.entity, tf.start, tf.stop,tf.useTransitions);
                     this.timeFragments.push(_tf)
                 });
+
                 this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
                     return a.start - b.start;
                 });
@@ -121,9 +122,11 @@ export namespace Demolished {
                     graph.effects.forEach((effect: Effect) => {
                         let textures = Promise.all(effect.textures.map((texture: any) => {
                             return new Promise((resolve, reject) => {
+                              
                                 let image = new Image();
-                                image.src = texture.url;
+                                image.src = texture.src;
                                 image.onload = () => {
+                                    console.log("Texture loaded");
                                     resolve(image);
                                 }
                                 image.onerror = (err) => resolve(err);
