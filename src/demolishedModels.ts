@@ -47,31 +47,48 @@ export class TimeFragment {
  * @export
  * @class Uniforms
  */
-export class Uniforms {
-    @Observe(true)
+export class Uniforms implements IUniforms{
     time: number;
-    @Observe(true)
+    get datetime():Array<number>{
+        let d = new Date();
+        return [ d.getFullYear(),d.getMonth(),d.getDate(),
+            d.getHours()*60.0*60 + d.getMinutes()*60 + d.getSeconds()  + d.getMilliseconds()/1000.0 ];
+       }
     timeTotal: number
-    @Observe(true)
     mouseX: number;
-    @Observe(true)
     mouseY: number;
-    @Observe(true)
     screenWidth: number;
-    @Observe(true)
     screenHeight: number;
-    @Observe(true)    
     alpha:number;
     constructor(width: number, height: number) {
         this.screenWidth = width;
         this.screenHeight = height;
         this.alpha = 0;
+        this.time = 0;
+        this.timeTotal = 0;
+        this.mouseX = 0.5;
+        this.mouseY = 0.5;
+      
+
     }
     setScreen(w: number, h: number) {
         this.screenWidth = w;
         this.screenWidth = h;
     }
 }
+
+export interface IUniforms{
+    time:number;
+    datetime:Array<number>;
+    timeTotal:number;
+    screenWidth:number;
+    screenHeight: number;
+    mouseX:number;
+    mouseY:number;
+    setScreen(w:number,height:number)
+}
+
+
 /**
  * 
  * 

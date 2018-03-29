@@ -1,7 +1,7 @@
 import { Utils } from './demolishedUtils'
 import { SmartArray } from './demolishedSmartArray';
-import { ShaderEntity, EntityTexture, IEntity } from './demolishedEntity'
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings } from './demolishedModels';
+import { ShaderEntity, EntityTexture, IEntity } from './demolishedEntity';
+import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings, IUniforms } from './demolishedModels';
 import loadResource from './demolishedLoader'
 import { IDemolisedAudioContext } from "./demolishedSound";
 import { DemoishedProperty, Observe } from './demolishedProperties';
@@ -24,7 +24,7 @@ export namespace Demolished {
         animationFrameId: number;
         animationOffsetTime: number;
 
-        entitiesCache: Array<ShaderEntity>;i
+        entitiesCache: Array<ShaderEntity>;
         timeFragments: Array<TimeFragment>;
         currentTimeFragment: TimeFragment;
 
@@ -39,7 +39,7 @@ export namespace Demolished {
         resolution : number = 1;
 
         @Observe(true)
-        uniforms: Uniforms;
+        uniforms: IUniforms;
 
         private getRendringContext(): WebGLRenderingContext {
 
@@ -83,20 +83,18 @@ export namespace Demolished {
 
         constructor(public canvas: HTMLCanvasElement,
             public parent: Element,
-            public timelineFile: string,public audio:IDemolisedAudioContext) {
+            public timelineFile?: string,public audio?:IDemolisedAudioContext,
+             uniforms?:IUniforms) {
 
             this.gl = this.getRendringContext();
             
-            let proxy = new DemoishedProperty<Uniforms>( new Uniforms(this.canvas.width, this.canvas.height));
             
-            this.uniforms = proxy.getObserver();
-
-
-            this.uniforms.time = 0;
-            this.uniforms.timeTotal = 0;
-            this.uniforms.mouseX = 0.5;
-            this.uniforms.mouseY = 0.5;
-
+            if(!uniforms){
+                this.uniforms = new Uniforms(this.canvas.width,this.canvas.height);
+            }else{
+                this.uniforms = uniforms;
+            }
+          
             this.entitiesCache = new Array<ShaderEntity>();
             this.timeFragments = new Array<TimeFragment>();
 
@@ -106,6 +104,9 @@ export namespace Demolished {
             this.addEventListeners();
 
             // load and add the entities
+            if(this.timelineFile != ""){
+
+            
             this.loadGraph(this.timelineFile).then((graph: Graph) => {
 
                 let audioSettings: AudioSettings = graph.audioSettings;
@@ -118,7 +119,10 @@ export namespace Demolished {
                 this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
                     return a.start - b.start;
                 });
+
+                    // todo: make method
                     this.audio.createAudio(audioSettings).then((state: boolean) => {
+
                     graph.effects.forEach((effect: Effect) => {
                         let textures = Promise.all(effect.textures.map((texture: any) => {
                             return new Promise((resolve, reject) => {
@@ -126,15 +130,14 @@ export namespace Demolished {
                                 let image = new Image();
                                 image.src = texture.src;
                                 image.onload = () => {
-                                    console.log("Texture loaded");
                                     resolve(image);
                                 }
                                 image.onerror = (err) => resolve(err);
                             }).then((image: HTMLImageElement) => {
                                 return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
                             });
-                        })).then((assets: Array<EntityTexture>) => {
-                            this.addEntity(effect.name, assets);
+                        })).then((textures: Array<EntityTexture>) => {
+                            this.addEntity(effect.name, textures);
                             if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
                                 this.onReady(graph);
                             }
@@ -144,6 +147,7 @@ export namespace Demolished {
                 });
             });
         }
+        }
 
       
         // todo:Rename
@@ -152,23 +156,22 @@ export namespace Demolished {
                 this.uniforms.mouseX = evt.clientX / window.innerWidth;
                 this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
             });
-            // window.addEventListener("resize", () => {
-            //     this.resizeCanvas(this.parent);
-            // });
+        }
+        getEntity(name:string):ShaderEntity{
+            return this.entitiesCache.find ( (p:ShaderEntity) => {
+                    return p.name === name;
+            });
         }
         addEntity(name: string, textures: Array<EntityTexture>
         ): ShaderEntity {
             const entity = new ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
             this.entitiesCache.push(entity);
-            // attach to timeLine
             let tf = this.timeFragments.filter((pre: TimeFragment) => {
                 return pre.entity === name;
             });
-
             tf.forEach((f: TimeFragment) => {
                 f.setEntity(entity)
             });
-
             return entity;
         }
         private tryFindTimeFragment(time: number): TimeFragment {
@@ -301,8 +304,6 @@ export namespace Demolished {
             let width = parent.clientWidth / this.resolution;
             let height = parent.clientHeight / this.resolution;
 
-            console.log(width,height);
-
             this.canvas.width = width;
             this.canvas.height = height;
 
@@ -318,7 +319,6 @@ export namespace Demolished {
 
         }
 
-
         private updateUniforms(){
                 throw "Not yet implemented";
         }
@@ -332,13 +332,15 @@ export namespace Demolished {
 
             gl.useProgram(ent.currentProgram);
 
+        
             gl.uniform1f(ent.uniformsCache.get("timeTotal"),this.uniforms.timeTotal /1000);
             gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
+            gl.uniform4fv(ent.uniformsCache.get("datetime"),this.uniforms.datetime);
 
             gl.uniform1i(ent.uniformsCache.get("frame"),this.animationFrameCount);
 
-            gl.uniform2f(ent.uniformsCache.get('mouse'), this.uniforms.mouseX, this.uniforms.mouseY);
-            gl.uniform2f(ent.uniformsCache.get('resolution'), this.uniforms.screenWidth, this.uniforms.screenHeight);
+            gl.uniform2f(ent.uniformsCache.get("mouse"), this.uniforms.mouseX, this.uniforms.mouseY);
+            gl.uniform2f(ent.uniformsCache.get("resolution"), this.uniforms.screenWidth, this.uniforms.screenHeight);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
             gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
@@ -353,30 +355,36 @@ export namespace Demolished {
             gl.activeTexture(gl.TEXTURE0);
 
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
-
             gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
 
-            let offset = 2;
-            ent.assets.forEach((asset: EntityTexture, index: number) => {              
-                gl.activeTexture(gl.TEXTURE0 + (offset + index));
-                gl.bindTexture(gl.TEXTURE_2D, asset.texture);
-                gl.uniform1i(gl.getUniformLocation(ent.currentProgram, asset.name), offset + index);
+            //let offset = 2;
+            ent.textures.forEach((asset: EntityTexture, index: number) => {      
+                this.bindTexture(ent,asset,index);
             });
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
-
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
-
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
-
             ent.swapBuffers();
 
             this.animationFrameCount ++;
         
-        
         }
+        addTexture(ent:IEntity, entityTexture:EntityTexture){
+                ent.textures.push(entityTexture);
+        }
+        bindTexture(ent:IEntity, entityTexture:EntityTexture,c:number){
+           // let offset = 2;
+            let gl = this.gl;
+            gl.activeTexture(gl.TEXTURE0 + (2 + c));
+            gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
+            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, entityTexture.name), 2 + c);
+        
+
+        }
+        textureCount: number = 0;
     }
 }

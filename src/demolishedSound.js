@@ -11,6 +11,43 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolishedLoader_1 = require("./demolishedLoader");
+var DemolishedSoundPeaks = (function () {
+    function DemolishedSoundPeaks() {
+    }
+    DemolishedSoundPeaks.peaks = function (buffer, size) {
+        var sampleSize = buffer.length / size;
+        var sampleStep = ~~(sampleSize / 10) || 1;
+        var channels = buffer.numberOfChannels;
+        var peaks;
+        for (var c = 0; c < channels; c++) {
+            var chan = buffer.getChannelData(c);
+            for (var i = 0; i < size; i++) {
+                var start = ~~(i * sampleSize);
+                var end = ~~(start + sampleSize);
+                var min = 0;
+                var max = 0;
+                for (var j = start; j < end; j += sampleStep) {
+                    var value = chan[j];
+                    if (value > max) {
+                        max = value;
+                    }
+                    if (value < min) {
+                        min = value;
+                    }
+                }
+                if (c == 0 || max > peaks[2 * i]) {
+                    peaks[2 * i] = max;
+                }
+                if (c == 0 || min < peaks[2 * i + 1]) {
+                    peaks[2 * i + 1] = min;
+                }
+            }
+        }
+        return peaks;
+    };
+    return DemolishedSoundPeaks;
+}());
+exports.DemolishedSoundPeaks = DemolishedSoundPeaks;
 var DemolishedSoundBase = (function () {
     function DemolishedSoundBase() {
     }

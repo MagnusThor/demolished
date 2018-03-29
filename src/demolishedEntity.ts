@@ -8,26 +8,23 @@ export class EntityTexture {
 
 export interface IEntity{
     render()
-    currentProgram:WebGLProgram;
-    assets: Array<EntityTexture>;
+    onError(err:any):void;
     swapBuffers():void;
+    currentProgram:WebGLProgram;
+    textures: Array<EntityTexture>;
     buffer:WebGLBuffer;
     vertexPosition: number;
     positionAttribute: number;
     target: RenderTarget;
     backTarget: RenderTarget;
-    onError(err:any):void;
-        uniformsCache: Map<string, WebGLUniformLocation>;
+    uniformsCache: Map<string, WebGLUniformLocation>;
 }
 export class EntityBase{
      
     currentProgram: WebGLProgram
     uniformsCache: Map<string, WebGLUniformLocation>;
-
     constructor(public gl: WebGLRenderingContext){
-
     }
-
         cacheUniformLocation(label: string) {
         this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
     }
@@ -39,22 +36,19 @@ export class ShaderEntity  extends EntityBase implements IEntity {
     }
     vertexShader: string;
     fragmetShader: string
+    alpha:number;
     buffer: WebGLBuffer;
     vertexPosition: number;
     positionAttribute: number;
-
     target: RenderTarget;
     backTarget: RenderTarget;
-
     uniformsCache: Map<string, WebGLUniformLocation>;
 
     constructor(public gl: WebGLRenderingContext, public name: string, public x: number, public y: number,
-        public assets: Array<EntityTexture>
+        public textures: Array<EntityTexture>
     ) {
         super(gl);
-        
         this.uniformsCache = new Map<string, WebGLUniformLocation>()
-
         this.loadShaders().then(() => {
             this.initShader();
             this.target = this.createRenderTarget(this.x, this.y);
@@ -91,11 +85,9 @@ export class ShaderEntity  extends EntityBase implements IEntity {
     }
 
     private loadShaders(): Promise<boolean> {
-
         let urls = new Array<string>();
         urls.push("entities/" + this.name + "/fragment.glsl");
         urls.push("entities/" + this.name + "/vertex.glsl");
-       
         return Promise.all(urls.map((url: string) =>
             loadResource(url).then(resp => resp.text())
         )).then(result => {
@@ -107,7 +99,6 @@ export class ShaderEntity  extends EntityBase implements IEntity {
             return false;
         });
     }
-
 
     public reCompile(fs:string,vs?:string){
         if(vs){
@@ -134,9 +125,7 @@ export class ShaderEntity  extends EntityBase implements IEntity {
 
         return texture;
     }
-
   
-
     private initShader() {
         let gl = this.gl;
         this.buffer = gl.createBuffer();
@@ -158,10 +147,12 @@ export class ShaderEntity  extends EntityBase implements IEntity {
       
         this.cacheUniformLocation('fft');
         this.cacheUniformLocation('time');
+        this.cacheUniformLocation("datetime");
         this.cacheUniformLocation('frame');
         this.cacheUniformLocation("timeTotal");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
+        this.cacheUniformLocation('alpha');
 
        this.cacheUniformLocation("backbuffer");
 
@@ -172,12 +163,13 @@ export class ShaderEntity  extends EntityBase implements IEntity {
         this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
         gl.enableVertexAttribArray(this.vertexPosition);
 
-        this.assets.forEach((asset: EntityTexture) => {
+        this.textures.forEach((asset: EntityTexture) => {
                 asset.texture = this.createTextureFromData(asset.width, asset.height,asset.image);
         });
+        // this.alpha = gl.getAttribLocation(this.currentProgram,"alpha");
+        // gl.enableVertexAttribArray(this.alpha);
         gl.useProgram(this.currentProgram);
     }
-
     swapBuffers() {
         let tmp = this.target;
         this.target = this.backTarget;

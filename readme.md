@@ -25,3 +25,5 @@ One example is this initiative ; https://github.com/MagnusThor/demolishedTexture
 ## Help us out?
 
 If you are interested in helping out, code or just fiddle with demolished, dont hesitate to give as a ping!
+
+

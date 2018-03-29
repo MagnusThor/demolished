@@ -35,13 +35,13 @@ var EntityBase = (function () {
 exports.EntityBase = EntityBase;
 var ShaderEntity = (function (_super) {
     __extends(ShaderEntity, _super);
-    function ShaderEntity(gl, name, x, y, assets) {
+    function ShaderEntity(gl, name, x, y, textures) {
         var _this = _super.call(this, gl) || this;
         _this.gl = gl;
         _this.name = name;
         _this.x = x;
         _this.y = y;
-        _this.assets = assets;
+        _this.textures = textures;
         _this.uniformsCache = new Map();
         _this.loadShaders().then(function () {
             _this.initShader();
@@ -126,16 +126,18 @@ var ShaderEntity = (function (_super) {
         }
         this.cacheUniformLocation('fft');
         this.cacheUniformLocation('time');
+        this.cacheUniformLocation("datetime");
         this.cacheUniformLocation('frame');
         this.cacheUniformLocation("timeTotal");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
+        this.cacheUniformLocation('alpha');
         this.cacheUniformLocation("backbuffer");
         this.positionAttribute = 0;
         gl.enableVertexAttribArray(this.positionAttribute);
         this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
         gl.enableVertexAttribArray(this.vertexPosition);
-        this.assets.forEach(function (asset) {
+        this.textures.forEach(function (asset) {
             asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
         });
         gl.useProgram(this.currentProgram);

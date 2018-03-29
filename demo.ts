@@ -10,19 +10,18 @@ export class Demo {
 
     webGlrendering: Demolished.Rendering;
     onReady(): void { }
-
-    static getIntance(){
+    static getIntance(): Demo {
         return new this();
     }
 
     constructor() {
-     
+
         let webGlCanvas = document.querySelector("#webgl") as HTMLCanvasElement;
 
         let music = new DemolishedSonant(window["song"]);
 
         for (var t = 0; t < 8; t++) music.generate(t);;
-       
+
         this.webGlrendering = new Demolished.Rendering(webGlCanvas,
             document.querySelector("#shader-view"),
             "entities/graph.json", music);
@@ -35,7 +34,7 @@ export class Demo {
             this.onReady();
             window.setTimeout(() => {
                 document.querySelector(".loader").classList.add("hide");
-                this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"),2);
+                this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"), 2);
                 this.webGlrendering.start(0);
             }, 5000);
 
@@ -52,8 +51,8 @@ export class Demo {
     }
 }
 document.addEventListener("DOMContentLoaded", () => {
-        Demo.getIntance();
- });
+    Demo.getIntance();
+});
 
 
 

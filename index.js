@@ -183,6 +183,10 @@ var DemolishedEd = (function () {
         window.onerror = function () {
             _this.engine.stop();
         };
+        window.onresize = function () {
+            Render2D.canvas.style.width = window.innerWidth + "px";
+            Render2D.canvas.style.height = window.innerHeight + "px";
+        };
     }
     DemolishedEd.getIntance = function () {
         return new DemolishedEd();

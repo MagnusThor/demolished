@@ -1,21 +1,21 @@
 {
     "name": "nine-lives",
     "audioSettings": {
-        "audioFile": "assets/nine-lives.mp3",
+        "audioFile": "assets/plastic.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
             "minDecibels": -90,
             "maxDecibels": -10
         },
-        "duration": 386400,
+        "duration": 211800,
         "bmp": 129
     },
     "timeline": [
         {
             "useTransitions": false,
             "start": 0,
-            "stop": 386400,
+            "stop": 211800,
             "entity": "empty"
         }
     ],
@@ -23,7 +23,20 @@
         {
             "name": "empty",
             "description": "",
-            "textures":[]
+            "textures":[
+                {
+                    "src" :"assets/kali.png",
+                    "uniform": "iChannel0",
+                    "width" : 512,
+                    "height": 512
+                },
+                {
+                    "src" :"assets/height512x512_2.png",
+                    "uniform": "iChannel1",
+                    "width" : 512,
+                    "height": 512
+                }
+            ]
         }
     ]
 }

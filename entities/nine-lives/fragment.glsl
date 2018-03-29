@@ -7,579 +7,423 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
-uniform sampler2D textureA; //<-- eye
-uniform sampler2D textureB; //<-landscape texture
-uniform sampler2D textureC; //<-heightmap
-uniform sampler2D textureD;
-
+uniform sampler2D iChannel0;
 uniform sampler2D fft;
+// #define GOLD
+#define BUMPMAP
+#define MARCHSTEPS 128
+#define MARCHSTEPSREFLECTION 64
+#define SPHERE
+
 float freqs[4];
 
-#define MaxSteps 30
 
-#define MinimumDistance 0.001
-#define normalDistance     0.0005
-
-#define Iterations 7
-#define PI 3.141592
-#define Scale 3.0
-#define FieldOfView 1.0
-#define Jitter 0.05
-#define FudgeFactor 0.6
-
-
-#define Ambient 0.32184
-#define Diffuse 0.5
-#define LightDir vec3(1.0)
-#define LightColor vec3(1.0,1.0,0.858824)
-#define LightDir2 vec3(1.0,-1.0,1.0)
-#define LightColor2 vec3(0.0,0.333333,1.0)
-#define Offset vec3(0.92858,0.92858,0.32858)
-
-
-vec4 orb;
-
-vec2 rotate(vec2 v, float a) {
-	return vec2(cos(a)*v.x + sin(a)*v.y, -sin(a)*v.x + cos(a)*v.y);
-}
-
-
-float trap(vec3 p){
-	return  length(p.x-0.5-0.5*sin(time/10.0)); // <- cube forms 
+vec4 transition(float min,float u,float o){
 	
+	if(time < min) return vec4(0.);
+	float t = (2.*u+1.)*fract(time/(2.*u+1.));
+	
+	float r = (-abs(t - u)+u);
+	float g = (-abs(t - u+o)+u);
+	float b = (-abs(t - u+2.*o)+u);
+	
+	r = clamp(r, 0., 1.);
+	g = clamp(g, 0., 1.);
+	b = clamp(b, 0., 1.);
+	return vec4(vec4(r,g,b,1.0));
 }
 
 
+//----------------------------------------------------------------------
+const vec2 dropPosition = vec2(1.05,2.1);
+const vec3 backgroundColor = vec3(0.9,0.5,0.2);
 
-// Kalidoscope
-float kalidoscope(in vec3 z)
-{	
-	vec3 offset = vec3(1.0+0.2*(cos(time/5.7)),0.3+0.1*(cos(time/1.7)),1.).xzy;
-	z  = abs(1.0-mod(z,2.0));	
-	float d = 1000.0;
-	float r;
-	for (int n = 0; n < Iterations; n++) {
-		z.xz = rotate(z.xz, time/37.0);	
-		if (z.x+z.y<0.0) z.xy = -z.yx;
-		z = abs(z);
-		if (z.x+z.z<0.0) z.xz = -z.zx;
-		z = abs(z);
-		if (z.x-z.y<0.0) z.xy = z.yx;
-		z = abs(z);
-		if (z.x-z.z<0.0) z.xz = z.zx;
-		z = z*Scale - offset*(Scale-1.0);
-		//z.yz = rotate(z.yz -time/18.0);
-		d = min(d, trap(z) * pow(Scale, -float(n+1)));
-	}
+#define stime2 sin(time*2.)
+#define ctime2 cos(time*2.)
+
+//----------------------------------------------------------------------
+// noises
+
+float hash( float n ) {
+    return fract(sin(n)*43758.5453123);
+}
+
+float noise( in vec2 x ) {
+    vec2 p = floor(x);
+    vec2 f = fract(x);
+    f = f*f*(3.0-2.0*f);
+    float n = p.x + p.y*157.0;
+    return mix(mix( hash(n+  0.0), hash(n+  1.0),f.x),
+               mix( hash(n+157.0), hash(n+158.0),f.x),f.y);
+}
+
+const mat2 m2 = mat2( 0.80, -0.60, 0.60, 0.80 );
+
+float fbm( vec2 p ) {
+    float f = 0.0;
+    f += 0.5000*noise( p ); p = m2*p*2.02;
+    f += 0.2500*noise( p ); p = m2*p*2.03;
+    f += 0.1250*noise( p ); p = m2*p*2.01;
+    f += 0.0625*noise( p );
+    
+    return f/0.9375;
+}
+
+mat2 rot(const in float a) {
+	return mat2(cos(a),sin(a),-sin(a),cos(a));	
+}
+
+//----------------------------------------------------------------------
+// distance primitives
+
+float sdBox( in vec3 p, in vec3 b ) {
+    vec3 d = abs(p) - b;
+    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
+float sdSphere( in vec3 p, in float s ) {
+    return length(p)-s;
+}
+
+float sdCylinder( in vec3 p, in vec2 h ) {
+    vec2 d = abs(vec2(length(p.xz),p.y)) - h;
+    return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+float sdPipe( in vec3 p, in vec3 h ) {
+    return length(h.xy-p.xy) - h.z;
+}
+
+float sdPPipe( in vec3 p, in vec3 h ) {
+    return length(h.xy-p.xy) - h.z - 0.02*(max(sin(p.z*20.)-0.8,0.));
+}
+
+//----------------------------------------------------------------------
+// distance operators
+
+float opU( float d2, float d1 ) { return min( d1,d2); }
+float opS( float d2, float d1 ) { return max(-d1,d2); }
+vec2  opU( vec2  d2, vec2  d1 ) { return mix(d1,d2,step(d2.x,d1.x)); }//( d2.x<d1.x)? d2:d1; }
+vec2  opS( vec2  d2, vec2  d1 ) { return mix(-d1,d2,step(-d1.x,d2.x)); }//(-d1.x>d2.x)?-d1:d2; }
+
+//----------------------------------------------------------------------
+// Map functions
+
+#ifdef SPHERE
+vec3 sP;
+#endif
+
+float xoffset( float z) { 
+    return 2.1*sin(z*0.1);
+}
+
+vec2 getSectorId( float z ) {
+    float id = floor( (z+6.)/12.);
+    return vec2( id, hash(id) );
+}
+
+float map( vec3 p ) {
+    float zorig = p.z;
+    p = vec3( p.x+xoffset(p.z), p.y-2., mod( p.z + 6., 12. ) - 6.);
+    
+    float x = p.x*2., y = p.y-0.8, z = p.z;
+    float d =  -sdBox( vec3((x+y)*0.7071, (y-x)*0.7071, z), vec3(3.8,3.8,20.) );
+
+	d = opS( d, sdBox( p, vec3( 2.5, 2., 5.75 ) )  ); 
+    d = opU( d, sdPPipe( vec3(abs(p.x),p.y,p.z), vec3( 2.2, -1.7, 0.25 ) ) );
+    d = opU( d, sdPipe( vec3(p.x,abs(p.y-0.2),p.z), vec3( 2.4, 1.5, 0.1 ) ) ); 
+    d = opU( d, sdPipe( vec3(p.x,p.y+0.6*cos(p.z*3.1415926/12.),p.z), vec3( -2.4, 1.8, 0.12 ) ) );
+    
+    d = opU( d, 2.2-p.y );
+    float l = distance( p.xz, dropPosition );
+	p.y += 0.003*sin(40.*l-6.*time)*exp(-4.*l);
+    
+    d = opU( d, p.y+2.03 );  
+    d = opU( d,  sdSphere( vec3( p.x, p.y-2.3, p.z*0.3), 0.2) );
+    
+    if( getSectorId(zorig).y > 0.75 ) {
+        d = opS( d,  sdCylinder( vec3(p.x, p.y-9., p.z), vec2(1.5,10.) ) );
+
+        vec3 pr = vec3( stime2*p.x+ctime2*p.z, p.y-2.4, stime2*p.z-ctime2*p.x);
+        d = opU( d, sdBox( pr, vec3(3.0,0.1,0.1) ) );
+        d = opU( d, sdBox( pr, vec3(0.1,0.1,3.0) ) );
+    } 
+#ifdef SPHERE
+    d = opU( d,  sdSphere( vec3( p.x, p.y, zorig)-sP, 0.4+2.*freqs[0]) );
+#endif    
 	return d;
 }
 
-float kaliSet( vec3 p )
-{
-	p = abs(1.0-mod(p,2.0));
-	
-	float scale = 1.0;
-
-	orb = vec4(1000.0); 
-	
-	for( int i=0; i<8;i++ )
-	{
-		p = -1.0 + 2.0*fract(0.5*p+0.5);
-
-		float r2 = dot(p,p);
-		
-       		 orb = min( orb, vec4(abs(p),r2) );
-		
-		float k = 1.0/r2;
-		p     *= k;
-		scale *= k;
-	}
-	
-	return 0.25*abs(p.y) / scale;
-}
-
-
-
-float mengerSponge(in vec3 z)
-{
-	orb = vec4(1000.);
-	vec3 op = z;
-	z  = abs(1.0-mod(z,2.));
-	float d = 1000.0;
-	for (int n = 0; n < 7; n++) {
-		op = -1.0 + 2.0*fract(0.5*op+0.5);
-		float r2 = dot(op,op);
-        	orb = min( orb, vec4(abs(op),r2) ); 
-		//z.xy = rotate(z.xy,4.0+2.0*cos( time/16.0));
-		z = abs(z);
-		if (z.x<z.y){ z.xy = z.yx;}
-		if (z.x< z.z){ z.xz = z.zx;}
-		if (z.y<z.z){ z.yz = z.zy;}
-		z = 3.0*z-Offset*(3.0-1.0);
-		if( z.z<-0.5*Offset.z*(3.0-1.0))  z.z+=Offset.z*(3.0-1.0);
-		d = min(d, length(z) * pow(3.0, float(-n)-1.0));
-	}
-	
-	return d-0.0001;
-}
-
-
-float mandelBulb(vec3 p) {
-    	vec3 op = p;
- 	p = abs(1.0-mod(p,2.));
-    	float r = 0., power = 8., dr = 1.;
-    	vec3 z = p;
-	
-	orb = vec4(1000.0); 
-	
-    for (int i = 0; i < 7; i++) {
-	    
-	 op = -1.0 + 2.0*fract(0.5*op+0.5);
-
-	float r2 = dot(op,op);
-		
-        orb = min( orb, vec4(abs(op),r2) );   
-	   
-	    
-        r = length(z);
-	
-	    
-        if (r > 2.) break;
-        float theta = acos(z.z / r) ;//+ fract(time/20.) * 0.3;
-        float phi = atan(z.y, z.x);
-
-        dr = pow(r, power - 1.) * power * dr + 1.;
-        float zr = pow(r, power);
-        theta = theta * power;
-        phi = phi * power;
-        z = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
-        z += p;
-    }
-    return (.5 * log(r) * r / dr) - 0.001;
-}
-
-
-
-float map(vec3 p){
-	float tm = time;	
-	if(tm < 22.0){
-
-	}else
-		if(tm > 22.0 && tm < 40.){
-		return mandelBulb(p);
-		}else
-		return mengerSponge(p);
-	
-		
-	
-}
-
-
-
-vec3 getNormal(in vec3 p) {
-	
- 	vec2 e = vec2(0.005, -0.005); 
- 	return normalize(e.xyy * map(p + e.xyy) + e.yyx * map(p + e.yyx) + e.yxy * map(p + e.yxy) + e.xxx * map(p + e.xxx));
-}
-
-float rand(vec2 co){
-	return fract(cos(dot(co,vec2(4.898,7.23))) * 23421.631);
-}
-
-vec3 getLight(in vec3 color, in vec3 normal, in vec3 dir) {
-	vec3 lightDir = normalize(LightDir);
-	float diffuse = max(0.0,dot(-normal, lightDir)); // Lambertian
-	
-	vec3 lightDir2 = normalize(LightDir2);
-	float diffuse2 = max(0.0,dot(-normal, lightDir2)); // Lambertian
-	
-	return
-	(diffuse*Diffuse)*(LightColor*color) +
-	(diffuse2*Diffuse)*(LightColor2*color);
-}
-
-
-
-vec3 getColor(vec3 normal, vec3 pos) {
-	return vec3(1.);
-}
-
-
-vec4 rayMarch(in vec3 from, in vec3 dir, in vec2 fragCoord) {
-	
-	float totalDistance = Jitter*rand(fragCoord.xy+vec2(time));
-	vec3 dir2 = dir;
-	
-	float distance;
-	int steps = 0;
-	vec3 pos;
-	for (int i=0; i < MaxSteps; i++) {
-		pos = from + totalDistance * dir;
-		
-		distance = map(pos)*FudgeFactor;
-		
-		totalDistance += distance;
-		
-		if (distance < MinimumDistance) break;
-		steps = i;
-	}
-	vec4 tra = orb;
-	
-	 vec3 rgb = vec3(0.0);
-        	rgb = mix( rgb, vec3(1.0,0.80,0.2), clamp(6.0*tra.y,0.0,1.0) );
-        	rgb = mix( rgb, vec3(1.0,0.55,0.0), pow(clamp(1.0-2.0*tra.z,0.0,1.0),8.0) );
-	
-	
-	float smoothStep =   float(steps) + distance/MinimumDistance;
-	float ao = 1.1-smoothStep/float(MaxSteps);
-	
-	
-	vec3 normal = getNormal(pos-dir*normalDistance*3.0);
-	
-	vec3 color = getColor(normal, pos);
-	vec3 light = getLight(rgb, normal, dir);
-	 
+float mapMaterial( vec3 p ) {
+    float zorig = p.z;
+    p = vec3( p.x+xoffset(p.z), p.y-2., mod( p.z + 6., 12. ) - 6.);
     
-	
-	color = color * rgb ;
-	
-	color *= (Ambient+light)*ao;
-	//  (ao * _texture(p)) * (ambient * (2. - LIGHT_COLOR) * .5 + (specular + diffuse) * shadow * LIGHT_COLOR) + glow(p);
-	
-	return vec4(color ,1.0);
+    float x = p.x*2., y = p.y-0.8, z = p.z;
+    vec2 d = vec2( -sdBox( vec3((x+y)*0.7071, (y-x)*0.7071, z), vec3(3.8,3.8,20.) ), 5.);
+
+	d = opS( d, vec2( sdBox( p, vec3( 2.5, 2., 5.75 ) ), 3. ) );
+    d = opU( d, vec2( sdPPipe( vec3(abs(p.x),p.y,p.z), vec3( 2.2, -1.7, 0.25 ) ), 1. ) );    
+    d = opU( d, vec2( sdPipe( vec3(p.x,abs(p.y-0.2),p.z), vec3( 2.4, 1.5, 0.1 ) ), 4. ) );
+    d = opU( d, vec2( sdPipe( vec3(p.x,p.y+0.6*cos(p.z*3.1415926/12.),p.z), vec3( -2.4, 1.8, 0.12 ) ), 4. ) );
+    
+
+    d = opU( d, vec2( 2.2-p.y, 5. ) );
+    d = opU( d, vec2( p.y+2.03, 2. ) );  
+    d = opU( d, vec2( sdSphere( vec3( p.x, p.y-2.3, p.z*0.3), 0.2), 6.) );
+    
+    if( getSectorId(zorig).y > 0.75 ) {
+        d = opS( d, vec2( sdCylinder( vec3(p.x, p.y-4., p.z), vec2(1.5,2.) ), 5.) );
+
+        vec3 pr = vec3( stime2*p.x+ctime2*p.z, p.y-2.4, stime2*p.z-ctime2*p.x);
+        d = opU( d, vec2( sdBox( pr, vec3(3.0,0.1,0.1) ), 4.) );
+        d = opU( d, vec2( sdBox( pr, vec3(0.1,0.1,3.0) ), 4.) );
+    } 
+    
+#ifdef SPHERE
+    d = opU( d,  vec2( sdSphere( vec3( p.x, p.y, zorig)-sP, 0.2), 7.) );
+#endif
+    
+	return abs(d.y);
 }
 
-vec4 morph(vec4 tot){
-	return tot;
+//----------------------------------------------------------------------
+
+vec3 calcNormal( in vec3 pos ) {
+    const vec2 e = vec2(1.0,-1.0)*0.005;
+
+    vec3 n = normalize( e.xyy*map( pos + e.xyy ) + 
+					    e.yyx*map( pos + e.yyx )   + 
+					    e.yxy*map( pos + e.yxy )   + 
+					    e.xxx*map( pos + e.xxx )   );  
+    
+#ifdef BUMPMAP
+    vec3 p = pos * 20.;
+    if( abs(pos.x+xoffset(pos.z))>2.48 )n = normalize( n + 0.1*vec3(0.,fbm(p.yz)-0.5,fbm(p.zy)-0.5));
+#endif
+    
+    return n;
 }
 
-vec4 postProcess(vec4 tot){
+vec3 int1, int2;
+
+float intersect( in vec3 ro, in vec3 rd ) {
+	const float maxd = 60.0;
+	const float precis = 0.001;
+    float h = precis*2.0;
+    float t = 0.;
+    int1.z = -1.;
+    
+	for( int i=0; i < MARCHSTEPS; i++ ) {
+        if( h < precis ) {
+            int1 = ro+rd*t;
+            break;
+        } 
+        h = map( ro+rd*t );
+        t += h;
+    }
+    if( int1.z < 0. ) return -1.;
+
+    ro = ro + rd*t;
+    vec3 nor = calcNormal(ro);           
+    rd = reflect( rd, nor );
+    ro += 0.1 * nor;
+    t = 0.0;
+    h = precis*2.0;
+    
+    for( int i=0; i < MARCHSTEPSREFLECTION; i++ ) {
+        if( h < precis ) {
+            int2 = ro+rd*t;
+            return 1.;
+        }   
+        h = map( ro+rd*t );
+        t += h;
+    }
+
+    return 0.;
+}
+
+float softshadow( in vec3 ro, in vec3 rd, in float mint, in float maxt, in float k ) {
+	float res = 1.0;
+    float t = mint;
+    for( int i=0; i<16; i++ ) {
+		if( t>maxt ) break;
+        float h = map( ro + rd*t );
+        res = min( res, k*h/t );
+        t += 0.03 + h;
+    }
+    return clamp( res, 0.0, 1.0 );
+
+}
+
+float calcOcc( in vec3 pos, in vec3 nor ) {
+	float totao = 0.0;
+    float sca = 1.0;
+    for( int i=0; i<5; i++ )
+    {
+        float h = 0.02 + float(i)/4.0;
+        float d = map( pos + h*nor );
+        totao += clamp(h-d,0.0,1.0)*sca;
+        sca *= 0.4;
+    }
+    return clamp( 1.0 - 2.0*totao, 0.0, 1.0 );
+}
+
+
+//----------------------------------------------------------------------
+// shade
+
+vec4 texcube( sampler2D sam, in vec3 p, in vec3 n )
+{
+//	return vec4(.5,.5,.5,1.0);
+	vec4 x = texture2D( sam, p.yz );
+	vec4 y = texture2D( sam, p.zx );
+	vec4 z = texture2D( sam, p.xy );
+	return x*abs(n.x) + y*abs(n.y) + z*abs(n.z);
+}
+
+float calcLightning( in vec3 pos, in vec3 light, in vec3 nor, in float maxDist, in bool shadow ) {
+    float sh = 1.;
+    vec3 lig = ( light-pos );
+    float im = length( lig );
+	lig /= im;
+   	if(shadow) sh = softshadow( pos, lig, 1.02, im, 32.0  );
+    sh /= im;
+    sh *= clamp(dot(nor,lig),0.,1.);
+    return sh * (1.-smoothstep(0.,maxDist,im));
+}
+
+vec3 shade( in vec3 ro, in vec3 pos, in bool shadow, in float m, in float r ) {
+    vec3 light, col = vec3(0.);
+    vec3 nor = calcNormal(pos);
+    
+	vec2 id = getSectorId(pos.z);
+
+    float occ = calcOcc( pos, nor );
+    float dist, sh = 1., xo = xoffset(pos.z);
+
+    float rc = hash(id.x+43.);
+    float gc = hash(id.x+153.);
+    vec3 lc = normalize(vec3( max(rc,gc), min(rc,gc), 0.1 ) );
+    
+    if( id.y > 0.75 ) {
+    	light = vec3( -xo, 6.5, id*12. );
+        light.xz += vec2( hash(id.x+56423.), hash(id.x+124.) ) - 0.5;
+        sh =  8.;
+        dist = 8.;
+    } else {
+	    light = vec3( -xo, 3.9, id*12. );
+        sh = 3.;
+        dist = 5.3;
+        if( hash(id.x+234.) < 0.15 ) lc *= 1.-clamp( 10.*(fbm( vec2(time*10., id.x) )-2.5*id.y), 0., 1.);
+        if( pos.y > 4. ) sh*=0.5;
+    }
+    
+    sh *=  calcLightning( pos, light, nor, dist, shadow );
+    
+       
+    if( m < 6.5 ) col = texcube( iChannel0, pos*0.5, nor ).xyz;
+    if( m == 1. ) col *= 0.05;
+    if( m == 4. && pos.y > 2. ) col *= vec3(0.1,0.,0.);
+    if( m == 4. && pos.y < 2. ) col *= vec3(0.1,0.4,1.2);
+    
+    if( m == 5. ) col *= (1.+0.5*fbm(pos.yz*2.))*vec3(0.2,0.1,0.05);
+    if( m == 2. ) col *= vec3(0.8,0.6,0.4);
+    
+    col *= lc * occ * sh;  
+    
+    if( m == 6. ) col = mix( 0.1*col, col*fbm(pos.xz*10.) + 0.8*lc, 
+                           (1.-smoothstep( 4.15, 4.2,pos.y)) *
+                           smoothstep( 0.01, 0.04,abs(mod(pos.z+0.15,0.3)-0.15)) *
+                           smoothstep( 0.01, 0.02,abs(pos.x+xo)));
+
+    col *= clamp(1.-2.*r, 0.65, 1.);
+    
+	col = mix(  0.05*backgroundColor, col, exp( -0.04*distance(pos, ro) ) );
+  
+
+    return col;
+}
+
+
+//----------------------------------------------------------------------
+// postprocess
+vec3 postprocess(vec3 col){
+
+	col = pow( clamp(col*2.,0.0,1.0), vec3(0.4545) );
+	col *= 1.2*vec3(1.,0.99,0.95);   
+	col = clamp(1.06*col-0.03, 0., 1.);   
+//   col *= mod(gl_FragCoord.y, 4.0)<2.0 ? 0.6 : 1.0;
+	return col;
+}
+
+//----------------------------------------------------------------------
+// main
+
+void main() {    
 	
-	return tot;
-}
-
-
-vec3 blenders(vec2 p){
-		
 	freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
 	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
 	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
-	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;
+	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;	
 	
-	float a = abs(fract(freqs[0]))*6.284;
-	float b = abs(fract(freqs[1]))*6.284;
-	float c = abs(fract(freqs[2]))*6.284;
-		
-	vec2 pa = p + normalize(vec2(sin(a),-sin(a))) * freqs[0];
-	vec2 pb = p+ normalize(vec2(sin(b),-sin(c))) * freqs[3];
+    vec2 q = gl_FragCoord.xy / resolution.xy;
+	vec2 p = -1.0 + 2.0*q;
+	p.x *= resolution.x / resolution.y;
+       
+    if (q.y < .12 || q.y >= .88) {
+		gl_FragColor=vec4(0.,0.,0.,1.);
+		return;
+	}
+    
+    // camera
+    float o = 0.2*noise(vec2(time,0.));
+    float z = 10.*time+o;
+    float x = -0.95*xoffset(z);
+	vec3 ro = vec3(x,1.7+0.02*sin(time*1.13*2.*3.1415926+o), z-1.);
+    vec3 ta = vec3(x,1.7, z+5.);
 	
-	vec2 q = pb  + mod(fract(pa) * pa*1000.,14. + freqs[0]);
-	
-	float blenders = abs(length(pa/q) * 0.1);
-	
-	
-	return vec3(1.0,1.0,1.) * blenders;		    
-	
-}
+	sP = vec3(sin(time), 1.6*cos(time*0.4), ro.z+9.+6.*sin(time*0.15) );
+    
+    vec3 ww = normalize( ta - ro );
+    vec3 uu = normalize( cross(ww,vec3(0.0,1.0,0.0) ) );
+    vec3 vv = normalize( cross(uu,ww));
 
+	vec3 rd = normalize( -p.x*uu + p.y*vv + 2.2*ww );
+    
+    vec3 col = 0.035*backgroundColor;
 
-
-void main( void ) {
-
-
-	vec2 uv = (gl_FragCoord.xy / resolution.xy) ;
-
-	float t = time ;
-
-
-	if(t <22.){
-		vec4 eye = texture2D(textureA,-uv);
-		vec4 al = vec4(blenders(uv),1.0);
-		gl_FragColor = mix(al,eye,.7);
-	}else{
-
-	
-	vec3 camPos = .1*t*vec3(0.0,0.,0.5);	
-	//  camPos = vec3(0.0, 0., -2.5);
-	
-	vec3 target = camPos + vec3(1.,0.0*cos(t),0.);
-	//vec3 target = camPos + vec3(1.0,0.0*cos(t),0.0*sin(0.4*t));
-	vec3 camUp  = vec3(1.0,0,1.);
-	
-	// Calculate orthonormal camera reference system
-	vec3 camDir   = normalize(target-camPos); // direction for center ray
-		
-	camUp = normalize(camUp-dot(camDir,camUp)*camDir); // orthogonalize
-	vec3 camRight = normalize(cross(camDir,camUp));
-	
-	vec2 coord = -1.+2.*gl_FragCoord.xy/resolution.xy;
-	
-	coord.x *= resolution.x/resolution.y;
-	
-	
-	vec3 rd = normalize(camDir + (coord.x*camRight + coord.y*camUp)*FieldOfView);
-	
-	vec4 tot = postProcess(rayMarch(camPos, rd, coord ));
-	
-	gl_FragColor =  tot * 0.5;
-
+    // raymarch
+    float ints = intersect(ro ,rd );
+    if(  ints > -0.5 ) {
+        float m = mapMaterial(int1);        
+   
+        float xo = xoffset(int1.z);
+    	vec3 p = vec3( int1.x+xo, int1.y-2., mod( int1.z + 6., 12. ) - 6.);
+        float l = m == 2.?exp(-2.*distance( p.xz, dropPosition )):0.;
+        
+        float r = 0.6 * clamp(2.*(fbm( int1.xz )-0.6+l), 0.0125, 1.)*clamp(2.-int1.y, 0., 1.);
+        if(m == 1.) r = 0.05+0.3 * fbm( int1.xz * 20. );
+         if(m == 7.) r = .8;       
+        
+        if(abs(int1.x+xo) > 2.49) {
+            r = fbm(int1.yz*0.5)*0.4*
+            clamp(2.*(fbm( int1.yz*vec2(3.2,24.)+vec2(0.5*time,0.) )-0.5+l), 0.0, 1.)
+            *clamp(0.5*int1.y, 0., 1.);
+        }
+        if(m == 4.) { r = 0.1; }
+        col = shade( ro, int1.xyz, true, m, r );
+        
+        if( ints > 0.5 ) {
+            col += r * shade( int1.xyz, int2.xyz, false, mapMaterial(int2), 0. );
+        }
 	}
 
+	
+	
+    // gamma
+	 col = postprocess(col);
+
+ //   col *= mod(gl_FragCoord.y, 4.0)<2.0 ? 0.6 : 1.0;
+
+    gl_FragColor = vec4( col, 1.0 ) * transition(3.,20.5,0.5);
 }
-
-
-
-// /*
-// 	Nine Lives 	
-// 	Code & Visuals 	- Magnus | 
-// 	Music 		- Doe | 
-// 	Art		-// uniform sampler2D fft;
-// float freqs[4]; JL
-// */
-
-// #ifdef GL_ES
-// precision highp float;
-// #endif
-
-
-// #extension GL_OES_standard_derivatives : enable
-
-// uniform float time;
-// uniform vec2 mouse;
-// uniform vec2 resolution;
-
-
-
-
-// #define PI 3.1415926535898
-
-// #define max_ray_steps 12;
-// #define max_de_steps 14;
-
-
-//  mat4 M = mat4
-// 	(
-// 		-5.740254e-01,
-// 		4.547220e-01,
-// 		1.309093e+00,
-// 		0.000000e+00,
-// 		-4.547220e-01,
-// 		1.276698e+00,
-// 		-6.428610e-01,
-// 		0.000000e+00,
-// 		-1.309093e+00,
-// 		-6.428610e-01,
-// 		-3.507233e-01,
-// 		-0.000000e+00,
-// 		3.896400e-01,
-// 		-1.814425e-01,
-// 		-5.258469e-02,
-// 		1.000000e+00
-// 	);
-
-// float aspect_ratio = resolution.y / resolution.x;
-// float ray_scale = (1. / max(resolution.x, resolution.y)) * .47;
-// //float fov = tan(45. * 0.017453292 * .67);
-// float fov = tan(45. * 0.17453292 * .7);
-// float ot=0.;
-// float det=0.;
-// const float detail=.1;
-// vec3 lightdir=normalize(vec3(-0.,-0.5,-1.));
-
-
-// float box(vec3 p){
-// 	vec4 q = vec4(p,.5);
-// 	for(int i=0;i<14;i++){
-// 		q = M * abs(q);	
-// 	}
-// 	float d = length(q) * pow(1.5,-14.);
-// 	return d;
-// }
-
-// float bulb(vec3 p){
-// 	float r =0.,power = 8.,dr = 1.;
-// 	vec3 z = p;
-// 	for(int i=0;i<10;i++){
-// 		r = length(z);
-// 		if(r > 4.) break;
-// 		float theta = acos(z.z / r) ;//+ fract(t/20.) * 6.3;
-// 		float phi = atan(z.y,z.x);
-		
-// 		dr = pow(r,power-1.)*power*dr+1.;
-// 		float zr =  pow(r,power);
-// 		theta = theta * power;
-// 		phi = phi*power;
-// 		z =  zr*vec3(sin(theta) * cos(phi),sin(phi) * sin(theta),cos(theta)) ;
-// 		z += p;
-		
-		
-// 	}
-	
-// 	return .5 * log(r) * r / dr;
-	
-// }
-
-
-// float sirpinsky(vec3 z){
-// 	float r;
-// 	float Scale= 2.;
-	
-// 	float Offset= 0.3;
-		
-// 	for(int n= 0; n< 8;n++){
-// 		if(z.x+z.y <0.) z.xy = -z.yx; // fold1;
-// 		if(z.x+z.z <0.) z.xz = -z.zx; // fold2;
-// 		if(z.y+z.z <0.) z.zy = -z.yz; // fold3;
-// 		z = z*Scale - Offset*(Scale-1.0);
-		
-		
-// 	}
-// 	return (length(z)) * pow(2.0, -float(8));
-// 	return 1.;
-	
-// }
-
-
-
-
-
-// float shadow(vec3 pos, vec3 sdir) {
-// 		float totalDist =2.0*det, sh=1.;
-//  		for (int steps=0; steps<30; steps++) {
-// 			if (totalDist<1.) {
-// 				vec3 p = pos - totalDist * sdir;
-// 				float dist = de(p)*1.5;
-// 				if (dist < detail)  sh=0.;
-// 				totalDist += max(0.05,dist);
-// 			}
-// 		}
-// 		return max(0.,sh);	
-// }
-
-// float calcAO( const vec3 pos, const vec3 nor ) {
-// 	float aodet=detail*10.;
-// 	float totao = 0.0;
-//     float sca = 10.0;
-//     for( int aoi=0; aoi<5; aoi++ ) {
-//         float hr = aodet + aodet*float(aoi*aoi);
-//         vec3 aopos =  nor * hr + pos;
-//         float dd = de( aopos );
-//         totao += -(dd-hr)*sca;
-//         sca *= 0.15;
-//     }
-//     return clamp( 1.0 - 5.0*totao, 0.0, 1.0 );
-// }
-
-
-
-// vec3 raymarch(in vec3 from, in vec3 dir) {
-		
-// 	float l = 0.; 
-// 	float d = 0.; 
-// 	float e = 0.00001; 
-// 	float it = 0.;
-	
-// 	for(int i=0;i<12;i++){
-// 		if(time < 1000. ){
-// 			d = de2(from);
-// 		}else d = de(from);
-		
-// 		from += d * dir;
-// 		l += d;
-// 		if(d<e) break;
-		
-// 		e = ray_scale * l;
-// 		it++;	
-// 	}	
-// 	float f = 1. - (it / float(12));
-// 	return  vec3(f);
-// }
-
-
-// // FFT alpha blende's
-// vec3 blenders(vec2 p){
-		
-// 	freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
-// 	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
-// 	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
-// 	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;
-	
-// 	float a = abs(fract(freqs[0]))*6.284;
-// 	float b = abs(fract(freqs[1]))*6.284;
-// 	float c = abs(fract(freqs[2]))*6.284;
-		
-// 	vec2 pa = p + normalize(vec2(sin(a),-sin(a))) * freqs[0];
-// 	vec2 pb = p+ normalize(vec2(sin(b),-sin(c))) * freqs[3];
-	
-// 	vec2 q = pb  + mod(fract(pa) * pa*1000.,14. + freqs[0]);
-	
-// 	float blenders = abs(length(pa/q) * 0.1);
-	
-	
-// 	return vec3(1.0,1.0,1.) * blenders;		    
-	
-// }
-
-// float de3(vec3 z0){
-	
-// 	vec4 c = vec4(z0,1.0),z = c;
-	
-// 	float r = length(z.xyz);
-// 	float zr,zo,zi,pwr = 8.;
-// 	for(int n=0;n<7  ;n++){
-// 		zo = asin(z.z  * r) * pwr;
-// 		zi = atan(z.y,z.x) * pwr;
-// 		zr = pow(r,pwr -1.);
-// 		z = zr*vec4(r*vec3(cos(zo)*vec2(cos(zi),sin(zi)),sin(zo)),z.w*pwr)+c;
-// 		r = length(z.xyz);
-// 		//if (r > 2.) break;
-// 	}
-
-// 	 return 0.5 *log(r) * r / z.w;
-// }
-
-
-
-// void main(){
-	
-// 		vec2 tx = (gl_FragCoord.xy / resolution) - .5;
-	
-	
-// 	float a = time * 0.1;
-// 	float sa = sin(a);
-// 	float ca = cos(a);
-	
-// 	float fov  = tan(45. * 0.17453292 * sin(time*.05));
-	
-	
-// 	vec3 dir = vec3(tx.x * fov, tx.y * fov * aspect_ratio, 1.);
-	
-	
-// 	dir.xy = vec2(dir.x * ca - dir.y * sa,dir.x * sa + dir.y * ca);
-// 	dir.xz = vec2(dir.x * ca - dir.z * sa, dir.x  * sa + dir.z * ca); 
-	
-// 	vec3 cam = vec3(0.0,0.,-4.5 );
-// 		cam.xz = vec2(cam.x * ca - cam.z * sa, cam.x * sa + cam.z * ca);
-	
-// 	float ao=calcAO(cam,dir);
-	
-// 	vec3 col = raymarch(cam,dir);
-	
-	
-// 	vec3 r = reflect(lightdir,col);
-	
-
-	
-// 	col =  col + r * ao;
-
-	
-	
-	
-	
-// 	col = mix(blenders(tx),col,.7);
-	
-// 	gl_FragColor = vec4(  col  ,1.0);
-
-
-	
-// }

@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 app.use("/demolished", express.static("."));
 app.use("/vendor", express.static("node_modules"));
+app.use("/build", express.static("build"));
 app.use("/libs", express.static("libs"));
 
 

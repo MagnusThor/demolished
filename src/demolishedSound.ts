@@ -1,5 +1,44 @@
 
 import loadResource from "./demolishedLoader";
+
+
+export class DemolishedSoundPeaks{
+
+    static peaks(buffer:AudioBuffer, size:number):Array<number> {
+        let sampleSize = buffer.length / size;
+        let sampleStep = ~~(sampleSize / 10) || 1;
+        let channels = buffer.numberOfChannels;
+        let peaks : Array<number>;
+      
+        for (var c = 0; c < channels; c++) {
+          const chan = buffer.getChannelData(c);
+          for (var i = 0; i < size; i++) {
+            var start = ~~(i * sampleSize); 
+            var end = ~~(start + sampleSize);
+            var min = 0;
+            var max = 0;
+            for (var j = start; j < end; j += sampleStep) {
+              var value = chan[j];
+              if (value > max) {
+                max = value;
+              }
+              if (value < min) {
+                min = value;
+              }
+            }
+           if (c == 0 || max > peaks[2 * i]) {
+            peaks[2 * i] = max;
+           }
+           if (c == 0 || min < peaks[2 * i + 1]) {
+            peaks[2 * i + 1] = min;
+           }
+          }
+        }
+        return peaks;
+      }    
+}
+
+
 /**
  * 
  * 
@@ -44,10 +83,8 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
     get textureSize(){
         return 16;
     }
-
     constructor() {
-        super();
-      
+        super(); 
     }
     play() {
         this.sid.play();
@@ -61,8 +98,6 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
     getFrequenceData():Uint8Array {
         return this.sid.getFreqByteData();
     }
-
-
     get duration(): number{
         return 0;
     }
@@ -101,6 +136,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
     constructor() {
         super();
     }
+  
     get textureSize(){
         return 32;
     }

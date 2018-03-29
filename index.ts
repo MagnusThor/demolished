@@ -49,6 +49,7 @@ export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
 
     frequencData:Uint8Array
 
+    // todo: scale_average must be relative
     update(time:number){
         let sum = 0;
         let binSize = Math.floor(8192 / this.bars);
@@ -233,6 +234,11 @@ export class DemolishedEd {
         window.onerror = () => {
             this.engine.stop();
         }
+        window.onresize = () =>{
+            Render2D.canvas.style.width = window.innerWidth + "px";
+            Render2D.canvas.style.height = window.innerHeight + "px";
+        }
+        
     }
 }
 

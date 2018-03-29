@@ -11,6 +11,8 @@ precision highp int;
 attribute float vertexId;
 attribute vec3 position;
 attribute vec2 surfacePosAttrib;
+attribute float alpha;
+
 varying vec2 surfacePosition;
 
 void main() {

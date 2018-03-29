@@ -1,17 +1,7 @@
 "use strict";
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
 var demolishedTransitions_1 = require("./demolishedTransitions");
-var demolishedProperties_1 = require("./demolishedProperties");
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -48,39 +38,24 @@ var Uniforms = (function () {
         this.screenWidth = width;
         this.screenHeight = height;
         this.alpha = 0;
+        this.time = 0;
+        this.timeTotal = 0;
+        this.mouseX = 0.5;
+        this.mouseY = 0.5;
     }
+    Object.defineProperty(Uniforms.prototype, "datetime", {
+        get: function () {
+            var d = new Date();
+            return [d.getFullYear(), d.getMonth(), d.getDate(),
+                d.getHours() * 60.0 * 60 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000.0];
+        },
+        enumerable: true,
+        configurable: true
+    });
     Uniforms.prototype.setScreen = function (w, h) {
         this.screenWidth = w;
         this.screenWidth = h;
     };
-    __decorate([
-        demolishedProperties_1.Observe(true),
-        __metadata("design:type", Number)
-    ], Uniforms.prototype, "time", void 0);
-    __decorate([
-        demolishedProperties_1.Observe(true),
-        __metadata("design:type", Number)
-    ], Uniforms.prototype, "timeTotal", void 0);
-    __decorate([
-        demolishedProperties_1.Observe(true),
-        __metadata("design:type", Number)
-    ], Uniforms.prototype, "mouseX", void 0);
-    __decorate([
-        demolishedProperties_1.Observe(true),
-        __metadata("design:type", Number)
-    ], Uniforms.prototype, "mouseY", void 0);
-    __decorate([
-        demolishedProperties_1.Observe(true),
-        __metadata("design:type", Number)
-    ], Uniforms.prototype, "screenWidth", void 0);
-    __decorate([
-        demolishedProperties_1.Observe(true),
-        __metadata("design:type", Number)
-    ], Uniforms.prototype, "screenHeight", void 0);
-    __decorate([
-        demolishedProperties_1.Observe(true),
-        __metadata("design:type", Number)
-    ], Uniforms.prototype, "alpha", void 0);
     return Uniforms;
 }());
 exports.Uniforms = Uniforms;
