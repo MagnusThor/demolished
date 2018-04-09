@@ -76,8 +76,11 @@ var DemolishedEd = (function () {
         var sound = demolishedUtils_1.Utils.$("#toggle-sound");
         var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
         var immediate = demolishedUtils_1.Utils.$(".immediate");
+        var resetTimers = demolishedUtils_1.Utils.$("#reset-clocks");
         var timeLine = demolishedUtils_1.Utils.$("#current-time");
         var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
+        resetTimers.addEventListener("click", function () {
+        });
         timeEl.addEventListener("click", function () {
             _this.engine.uniforms.time = 0;
             _this.engine.resetClock(0);
@@ -130,7 +133,8 @@ var DemolishedEd = (function () {
         this.engine.onStop = function () {
         };
         this.engine.onStart = function () {
-            var shader = _this.engine.currentTimeFragment.entityShader.fragmetShader;
+            var shader = _this.engine.currentTimeFragment.entityShader.fragmentShader;
+            _this.engine.currentTimeFragment.init();
             var mirror = demolishedUtils_1.Utils.$("#fragment");
             mirror.textContent = shader;
             var lastCompile = performance.now();
@@ -170,7 +174,7 @@ var DemolishedEd = (function () {
                 shaderErrors.forEach(function (el) {
                     el.classList.remove("error-info");
                 });
-                _this.engine.currentTimeFragment.entityShader.reCompile(fs);
+                _this.engine.currentTimeFragment.entityShader.compile(fs);
             };
             editor.on("change", function (cm) {
                 var fs = cm.getValue();

@@ -7,25 +7,31 @@ export class BaseEntity2D {
     }
     update(t:number){
     }
+
+    getPixels():ImageData{
+        return this.ctx.getImageData(0,0,this.width,this.height);
+    }
+    putPixels(){
+        throw "not implemented";
+    }
+
 }
 export interface IEntity2D{
-    update:(time) => void
+    update:(time:number) => void
     start:number;
     stop:number;
     active:boolean;
 }
 
 export class Demolished2D{
-
     public ctx:CanvasRenderingContext2D
-
     private entities: Array<BaseEntity2D>;
-
-    constructor(public canvas:HTMLCanvasElement){
+    constructor(public canvas:HTMLCanvasElement,public w?:number,h?:number){
         this.entities  = new Array<BaseEntity2D>();
         this.ctx = canvas.getContext("2d");
         this.animationStartTime  = 0;
-        this.resizeCanvas();
+        if( !w && !h)
+            this.resizeCanvas();
     }
 
     clear(){
@@ -47,20 +53,14 @@ export class Demolished2D{
         this.entities.push(ent);
     }
 
-
     private resizeCanvas(){
         
-
             let width = window.innerWidth / 2
             let height = window.innerHeight / 2;
-
             this.canvas.width = width;
             this.canvas.height = height;
-
             this.canvas.style.width = window.innerWidth + 'px';
             this.canvas.style.height = window.innerHeight + 'px';
-
-
     }
 
     private renderEntities(time:number){

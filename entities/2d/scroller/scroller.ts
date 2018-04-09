@@ -16,7 +16,7 @@ export class Scroller2D extends BaseEntity2D implements IEntity2D {
 
     constructor(ctx: CanvasRenderingContext2D, public text: string) {
         super("scroller", ctx);
-        this.font = "64px 'DoubletwoStudiosXXIIBlackmetalWarrior'";
+        this.font = "64px 'Arial'";
         this.x = ctx.canvas.width;
         ctx.fillStyle = "#FFFFFF";
        

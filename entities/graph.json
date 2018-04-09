@@ -13,15 +13,15 @@
     },
     "timeline": [
         {
-            "useTransitions": false,
             "start": 0,
             "stop": 211800,
-            "entity": "empty"
+            "entity": "miami",
+            "subeffects":[10,20,30,200]
         }
     ],
     "effects": [
         {
-            "name": "empty",
+            "name": "miami",
             "description": "",
             "textures":[
                 {

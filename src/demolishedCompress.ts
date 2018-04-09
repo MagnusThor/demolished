@@ -17,7 +17,6 @@ export class DemolishedCompressor {
                 });
         }
 
-
         load(file:string):Promise<any>{
                 return new Promise((resolve, reject) =>{
                         let xhr = new XMLHttpRequest(); 

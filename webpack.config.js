@@ -7,7 +7,8 @@ module.exports = {
   entry: {
     editor: './index.js',
     ninelives:'./ninelives.js',
-    demo: './demo.js'
+    demo: './demo.js',
+    lab: './lab2d.js'
   },
   output: {
     path: __dirname + '/dist',

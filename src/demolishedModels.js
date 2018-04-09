@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
-var demolishedTransitions_1 = require("./demolishedTransitions");
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -18,17 +17,31 @@ var Graph = (function () {
 }());
 exports.Graph = Graph;
 var TimeFragment = (function () {
-    function TimeFragment(entity, start, stop, useTransitions) {
+    function TimeFragment(entity, start, stop, subeffects) {
         this.entity = entity;
         this.start = start;
         this.stop = stop;
-        this.useTransitions = useTransitions;
+        subeffects ? this.subeffects = subeffects : this.subeffects = new Array();
+        this._subeffects = subeffects;
     }
+    TimeFragment.prototype.reset = function () {
+        this.subeffects = this.subeffects;
+    };
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;
-        if (this.useTransitions) {
-            this.transition = new demolishedTransitions_1.DemlolishedTransitionBase(this.entityShader);
-        }
+    };
+    TimeFragment.prototype.init = function () {
+        var _this = this;
+        this.subeffects.forEach(function (interval) {
+            var shader = _this.entityShader;
+            shader.addAction("$subeffects", function (ent, tm) {
+                if (_this.subeffects.find(function (a) { return a <= tm; })) {
+                    ent.subEffectId++;
+                    _this.subeffects.shift();
+                    console.log(_this.subeffects, shader.subEffectId, tm);
+                }
+            });
+        });
     };
     return TimeFragment;
 }());
@@ -37,7 +50,6 @@ var Uniforms = (function () {
     function Uniforms(width, height) {
         this.screenWidth = width;
         this.screenHeight = height;
-        this.alpha = 0;
         this.time = 0;
         this.timeTotal = 0;
         this.mouseX = 0.5;
@@ -78,7 +90,11 @@ var AudioAnalyzerSettings = (function () {
 }());
 exports.AudioAnalyzerSettings = AudioAnalyzerSettings;
 var AudioSettings = (function () {
-    function AudioSettings() {
+    function AudioSettings(audioFile, audioAnalyzerSettings, duration, bpm) {
+        this.audioAnalyzerSettings = audioAnalyzerSettings;
+        this.bpm = bpm;
+        this.audioFile;
+        this.duration = duration;
     }
     return AudioSettings;
 }());

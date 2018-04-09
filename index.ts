@@ -25,7 +25,7 @@ import 'codemirror/keymap/sublime';
 
 import { Utils, ShaderCompiler, ShaderError } from './src/demolishedUtils'
 import { SmartArray } from './src/demolishedSmartArray';
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './src/demolishedModels'
+import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './src/demolishedModels';
 
 import { DemolishedStreamingMusic, DemolishedSIDMusic } from "./src/demolishedSound";
 import { DemolishedDialogBuilder } from './src/demolishedProperties';
@@ -107,13 +107,21 @@ export class DemolishedEd {
         let sound = Utils.$("#toggle-sound");
         let fullscreen = Utils.$("#btn-fullscreen");
         let immediate = Utils.$(".immediate");
+        let resetTimers = Utils.$("#reset-clocks");
         let timeLine = Utils.$("#current-time") as HTMLInputElement;
         let shaderResolution = Utils.$("#shader-resolution") as HTMLInputElement;
 
 
+        resetTimers.addEventListener("click", ()=>{
+            // get all timers for the current entity
+         //       this.engine.currentTimeFragment.entityShader.destroyTimer();
+
+        });
+
         timeEl.addEventListener("click", () => {
             this.engine.uniforms.time = 0;
             this.engine.resetClock(0);
+            
         });
         Utils.$("#btn-showconsole").addEventListener("click", () => {
             Utils.$(".immediate").classList.toggle("hide");
@@ -126,7 +134,6 @@ export class DemolishedEd {
 
 
         shaderResolution.addEventListener("change", (evt:Event) => {
-
             this.engine.resizeCanvas(Utils.$("#shader-view"),
             parseInt(shaderResolution.value));
         });
@@ -174,7 +181,10 @@ export class DemolishedEd {
         this.engine.onStop = () => {
         }
         this.engine.onStart = () => {
-            let shader = this.engine.currentTimeFragment.entityShader.fragmetShader;
+            let shader = this.engine.currentTimeFragment.entityShader.fragmentShader;
+            
+            this.engine.currentTimeFragment.init();
+
             let mirror = Utils.$("#fragment") as HTMLDivElement;
             mirror.textContent = shader;
             let lastCompile = performance.now();
@@ -220,7 +230,7 @@ export class DemolishedEd {
                 shaderErrors.forEach( (el:Element) => {
                     el.classList.remove("error-info");
                 });
-                this.engine.currentTimeFragment.entityShader.reCompile(fs);  
+                this.engine.currentTimeFragment.entityShader.compile(fs);  
             }
 
             editor.on("change", (cm: CodeMirror) => {

@@ -1,6 +1,6 @@
 
-@import url(https://fonts.googleapis.com/css?family=Open+Sans);
-@import url(https://fonts.googleapis.com/css?family=Bree+Serif);
+/* @import url(https://fonts.googleapis.com/css?family=Open+Sans);
+@import url(https://fonts.googleapis.com/css?family=Bree+Serif); */
 
 body {
 		background: #000;
@@ -110,11 +110,21 @@ body {
 		opacity: 0.1;
 	}
 
+	#btn-showuniforms{
+		position: absolute;
+		z-index: 1090;
+		right: 100px;
+		top: 8px;
+		height: 2em;
+		margin-top: 2px;
+		border: 0;
+	}
+
 	#btn-showconsole{
 		position: absolute;
 		z-index: 1090;
 		right: 20px;
-		top: 48px;
+		top: 8px;
 		height: 2em;
 		margin-top: 2px;
 		border: 0;

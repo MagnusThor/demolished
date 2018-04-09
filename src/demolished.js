@@ -27,7 +27,6 @@ var Demolished;
             this.centerX = 0;
             this.centerY = 0;
             this.resolution = 1;
-            this.textureCount = 0;
             this.gl = this.getRendringContext();
             if (!uniforms) {
                 this.uniforms = new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height);
@@ -44,7 +43,7 @@ var Demolished;
                 this.loadGraph(this.timelineFile).then(function (graph) {
                     var audioSettings = graph.audioSettings;
                     graph.timeline.forEach(function (tf) {
-                        var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.useTransitions);
+                        var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.subeffects);
                         _this.timeFragments.push(_tf);
                     });
                     _this.timeFragments.sort(function (a, b) {
@@ -133,9 +132,12 @@ var Demolished;
             return entity;
         };
         Rendering.prototype.tryFindTimeFragment = function (time) {
-            return this.timeFragments.find(function (tf) {
+            var fragment = this.timeFragments.find(function (tf) {
                 return time < tf.stop && time >= tf.start;
             });
+            if (fragment)
+                fragment.init();
+            return fragment;
         };
         Rendering.prototype.resetClock = function (time) {
             this.uniforms.timeTotal = time;
@@ -143,6 +145,7 @@ var Demolished;
             this.animationOffsetTime = time;
             this.animationStartTime = performance.now();
             this.audio.currentTime = (time / 1000) % 60;
+            this.currentTimeFragment.reset();
         };
         Rendering.prototype.start = function (time) {
             this.uniforms.timeTotal = time;
@@ -193,9 +196,7 @@ var Demolished;
         Rendering.prototype.animate = function (time) {
             var _this = this;
             var animationTime = time - this.animationStartTime;
-            this.animationFrameId = requestAnimationFrame(function (_time) {
-                _this.animate(_time);
-            });
+            this.animationFrameId = requestAnimationFrame(function (_time) { return _this.animate(_time); });
             if (this.audio) {
                 this.updateTextureData(this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());
             }
@@ -203,9 +204,8 @@ var Demolished;
                 this.updateTextureData(this.fftTexture, this.audio.textureSize, new Uint8Array(1024));
             }
             if (this.currentTimeFragment) {
-                if (animationTime >= this.currentTimeFragment.stop) {
+                if (animationTime >= this.currentTimeFragment.stop)
                     this.currentTimeFragment = this.tryFindTimeFragment(time);
-                }
                 this.currentTimeFragment ?
                     this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0);
             }
@@ -247,6 +247,9 @@ var Demolished;
             this.surfaceCorners();
             this.setViewPort(this.canvas.width, this.canvas.height);
         };
+        Rendering.prototype.getCurrentUniforms = function () {
+            return this.currentTimeFragment.entityShader.uniformsCache;
+        };
         Rendering.prototype.updateUniforms = function () {
             throw "Not yet implemented";
         };
@@ -255,11 +258,12 @@ var Demolished;
             var gl = this.gl;
             this.uniforms.time = ts;
             this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
-            gl.useProgram(ent.currentProgram);
+            gl.useProgram(ent.glProgram);
             gl.uniform1f(ent.uniformsCache.get("timeTotal"), this.uniforms.timeTotal / 1000);
             gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
             gl.uniform4fv(ent.uniformsCache.get("datetime"), this.uniforms.datetime);
             gl.uniform1i(ent.uniformsCache.get("frame"), this.animationFrameCount);
+            gl.uniform1i(ent.uniformsCache.get("subEffectId"), ent.subEffectId);
             gl.uniform2f(ent.uniformsCache.get("mouse"), this.uniforms.mouseX, this.uniforms.mouseY);
             gl.uniform2f(ent.uniformsCache.get("resolution"), this.uniforms.screenWidth, this.uniforms.screenHeight);
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
@@ -268,10 +272,10 @@ var Demolished;
             gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "backbuffer"), 1);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "backbuffer"), 1);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
             ent.textures.forEach(function (asset, index) {
                 _this.bindTexture(ent, asset, index);
             });
@@ -282,6 +286,7 @@ var Demolished;
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             ent.swapBuffers();
+            ent.runAction("$subeffects", this.uniforms.time / 1000);
             this.animationFrameCount++;
         };
         Rendering.prototype.addTexture = function (ent, entityTexture) {
@@ -291,7 +296,7 @@ var Demolished;
             var gl = this.gl;
             gl.activeTexture(gl.TEXTURE0 + (2 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, entityTexture.name), 2 + c);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 2 + c);
         };
         __decorate([
             demolishedProperties_1.Observe(true),

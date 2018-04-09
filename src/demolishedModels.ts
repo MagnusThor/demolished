@@ -2,11 +2,20 @@
 import { ShaderEntity} from './demolishedEntity'
 import { DemlolishedTransitionBase } from "./demolishedTransitions";
 import { Observe } from './demolishedProperties';
-
 export class RenderTarget {
     constructor(public frameBuffer: WebGLFramebuffer, public renderBuffer: WebGLFramebuffer,
         public texture: WebGLTexture) { }
 }
+
+
+export interface IGraph{
+    audioSettings: any;
+    effects: Array<Effect>;
+    name: string;
+    timeline: Array<TimeFragment>;    
+}
+
+
 /**
  * 
  * 
@@ -27,18 +36,30 @@ export class Graph {
  */
 export class TimeFragment {
     entityShader: ShaderEntity;
-    useTransitions: boolean
-    transition: DemlolishedTransitionBase;
+    subeffects:Array<number> 
+    private _subeffects:Array<number>;
     constructor(public entity: string, public start: number, public stop: number,
-    useTransitions: boolean) {
-        this.useTransitions = useTransitions;
+        subeffects?: Array<number>) {
+            subeffects ? this.subeffects = subeffects : this.subeffects = new Array<number>();
+          this._subeffects = subeffects;   
+    }
+    reset(){
+        this.subeffects = this.subeffects;
     }
     setEntity(ent: ShaderEntity) {
         this.entityShader = ent;
-         if(this.useTransitions){
-
-                this.transition = new DemlolishedTransitionBase(this.entityShader);
-        }
+    }
+    init(){
+        this.subeffects.forEach ( (interval:number) => {
+            let shader = this.entityShader;
+            shader.addAction("$subeffects", (ent:ShaderEntity,tm:number) =>{
+                if(this.subeffects.find( (a:number) => { return a <= tm })){
+                    ent.subEffectId++;
+                    this.subeffects.shift();
+                    console.log(this.subeffects,shader.subEffectId,tm);
+                }
+            });
+        });
     }
 }
 /**
@@ -63,7 +84,6 @@ export class Uniforms implements IUniforms{
     constructor(width: number, height: number) {
         this.screenWidth = width;
         this.screenHeight = height;
-        this.alpha = 0;
         this.time = 0;
         this.timeTotal = 0;
         this.mouseX = 0.5;
@@ -109,7 +129,8 @@ export class Effect {
   * 
   * @export
   * @class AudioAnalyzerSettings
-  */ export class AudioAnalyzerSettings {
+  */ 
+    export class AudioAnalyzerSettings {
         constructor(public fftSize: number, public smoothingTimeConstant: number,
             public minDecibels: number, public maxDecibels: number,
         ) { }
@@ -125,7 +146,11 @@ export class AudioSettings{
             audioAnalyzerSettings: AudioAnalyzerSettings
             duration:number;
             bpm: number
-            constructor(){
-
+            constructor(audioFile:string,audioAnalyzerSettings:AudioAnalyzerSettings,duration:number,
+            bpm:number){
+                this.audioAnalyzerSettings = audioAnalyzerSettings;
+                this.bpm = bpm;
+                this.audioFile;
+                this.duration = duration;
             }
 }

@@ -26,32 +26,45 @@ exports.EntityTexture = EntityTexture;
 var EntityBase = (function () {
     function EntityBase(gl) {
         this.gl = gl;
+        this.actions = new Map();
     }
     EntityBase.prototype.cacheUniformLocation = function (label) {
-        this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
+        this.uniformsCache.set(label, this.gl.getUniformLocation(this.glProgram, label));
     };
     return EntityBase;
 }());
 exports.EntityBase = EntityBase;
 var ShaderEntity = (function (_super) {
     __extends(ShaderEntity, _super);
-    function ShaderEntity(gl, name, x, y, textures) {
+    function ShaderEntity(gl, name, w, h, textures) {
         var _this = _super.call(this, gl) || this;
         _this.gl = gl;
         _this.name = name;
-        _this.x = x;
-        _this.y = y;
+        _this.w = w;
+        _this.h = h;
         _this.textures = textures;
         _this.uniformsCache = new Map();
         _this.loadShaders().then(function () {
             _this.initShader();
-            _this.target = _this.createRenderTarget(_this.x, _this.y);
-            _this.backTarget = _this.createRenderTarget(_this.x, _this.y);
+            _this.target = _this.createRenderTarget(_this.w, _this.h);
+            _this.backTarget = _this.createRenderTarget(_this.w, _this.h);
         });
         return _this;
     }
     ShaderEntity.prototype.render = function () {
         throw "Not yet implemented";
+    };
+    ShaderEntity.prototype.addAction = function (key, fn) {
+        this.actions.set(key, fn);
+    };
+    ShaderEntity.prototype.runAction = function (key, tm) {
+        this.actions.get(key)(this, tm);
+    };
+    ShaderEntity.prototype.removeAction = function (key) {
+        return this.actions.delete(key);
+    };
+    ShaderEntity.prototype.reset = function () {
+        throw "not yet implemented";
     };
     ShaderEntity.prototype.createRenderTarget = function (width, height) {
         var gl = this.gl;
@@ -80,7 +93,7 @@ var ShaderEntity = (function (_super) {
         return Promise.all(urls.map(function (url) {
             return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });
         })).then(function (result) {
-            _this.fragmetShader = result[0];
+            _this.fragmentShader = result[0];
             _this.vertexShader = result[1];
             return true;
         }).catch(function (reason) {
@@ -88,11 +101,11 @@ var ShaderEntity = (function (_super) {
             return false;
         });
     };
-    ShaderEntity.prototype.reCompile = function (fs, vs) {
+    ShaderEntity.prototype.compile = function (fs, vs) {
         if (vs) {
             this.vertexShader = vs;
         }
-        this.fragmetShader = fs;
+        this.fragmentShader = fs;
         this.initShader();
     };
     ShaderEntity.prototype.onError = function (err) {
@@ -113,34 +126,36 @@ var ShaderEntity = (function (_super) {
         var _this = this;
         var gl = this.gl;
         this.buffer = gl.createBuffer();
-        this.currentProgram = gl.createProgram();
+        this.glProgram = gl.createProgram();
         var vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
-        var fs = this.createShader(gl, this.fragmetShader, gl.FRAGMENT_SHADER);
-        gl.attachShader(this.currentProgram, vs);
-        gl.attachShader(this.currentProgram, fs);
-        gl.linkProgram(this.currentProgram);
-        if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
-            var info = gl.getProgramInfoLog(this.currentProgram);
-            var error = gl.getProgramParameter(this.currentProgram, gl.VALIDATE_STATUS);
+        var fs = this.createShader(gl, this.fragmentShader, gl.FRAGMENT_SHADER);
+        gl.attachShader(this.glProgram, vs);
+        gl.attachShader(this.glProgram, fs);
+        gl.linkProgram(this.glProgram);
+        if (!gl.getProgramParameter(this.glProgram, gl.LINK_STATUS)) {
+            var info = gl.getProgramInfoLog(this.glProgram);
+            var error = gl.getProgramParameter(this.glProgram, gl.VALIDATE_STATUS);
             this.onError(info);
         }
         this.cacheUniformLocation('fft');
         this.cacheUniformLocation('time');
         this.cacheUniformLocation("datetime");
-        this.cacheUniformLocation('frame');
+        this.cacheUniformLocation('frameId');
         this.cacheUniformLocation("timeTotal");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
-        this.cacheUniformLocation('alpha');
+        this.cacheUniformLocation("subEffectId");
         this.cacheUniformLocation("backbuffer");
+        this.subEffectId = 0;
+        this.frameId = 0;
         this.positionAttribute = 0;
         gl.enableVertexAttribArray(this.positionAttribute);
-        this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
+        this.vertexPosition = gl.getAttribLocation(this.glProgram, "position");
         gl.enableVertexAttribArray(this.vertexPosition);
         this.textures.forEach(function (asset) {
             asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
         });
-        gl.useProgram(this.currentProgram);
+        gl.useProgram(this.glProgram);
     };
     ShaderEntity.prototype.swapBuffers = function () {
         var tmp = this.target;

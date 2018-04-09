@@ -63,12 +63,12 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 37);
+/******/ 	return __webpack_require__(__webpack_require__.s = 36);
 /******/ })
 /************************************************************************/
-/******/ ([
-/* 0 */,
-/* 1 */
+/******/ ({
+
+/***/ 1:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -154,14 +154,14 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 2 */
+
+/***/ 2:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 ;
-var demolishedTransitions_1 = __webpack_require__(10);
 var RenderTarget = (function () {
     function RenderTarget(frameBuffer, renderBuffer, texture) {
         this.frameBuffer = frameBuffer;
@@ -178,17 +178,31 @@ var Graph = (function () {
 }());
 exports.Graph = Graph;
 var TimeFragment = (function () {
-    function TimeFragment(entity, start, stop, useTransitions) {
+    function TimeFragment(entity, start, stop, subeffects) {
         this.entity = entity;
         this.start = start;
         this.stop = stop;
-        this.useTransitions = useTransitions;
+        subeffects ? this.subeffects = subeffects : this.subeffects = new Array();
+        this._subeffects = subeffects;
     }
+    TimeFragment.prototype.reset = function () {
+        this.subeffects = this.subeffects;
+    };
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;
-        if (this.useTransitions) {
-            this.transition = new demolishedTransitions_1.DemlolishedTransitionBase(this.entityShader);
-        }
+    };
+    TimeFragment.prototype.init = function () {
+        var _this = this;
+        this.subeffects.forEach(function (interval) {
+            var shader = _this.entityShader;
+            shader.addAction("$subeffects", function (ent, tm) {
+                if (_this.subeffects.find(function (a) { return a <= tm; })) {
+                    ent.subEffectId++;
+                    _this.subeffects.shift();
+                    console.log(_this.subeffects, shader.subEffectId, tm);
+                }
+            });
+        });
     };
     return TimeFragment;
 }());
@@ -197,7 +211,6 @@ var Uniforms = (function () {
     function Uniforms(width, height) {
         this.screenWidth = width;
         this.screenHeight = height;
-        this.alpha = 0;
         this.time = 0;
         this.timeTotal = 0;
         this.mouseX = 0.5;
@@ -238,7 +251,11 @@ var AudioAnalyzerSettings = (function () {
 }());
 exports.AudioAnalyzerSettings = AudioAnalyzerSettings;
 var AudioSettings = (function () {
-    function AudioSettings() {
+    function AudioSettings(audioFile, audioAnalyzerSettings, duration, bpm) {
+        this.audioAnalyzerSettings = audioAnalyzerSettings;
+        this.bpm = bpm;
+        this.audioFile;
+        this.duration = duration;
     }
     return AudioSettings;
 }());
@@ -246,7 +263,8 @@ exports.AudioSettings = AudioSettings;
 
 
 /***/ }),
-/* 3 */
+
+/***/ 3:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -279,7 +297,6 @@ var Demolished;
             this.centerX = 0;
             this.centerY = 0;
             this.resolution = 1;
-            this.textureCount = 0;
             this.gl = this.getRendringContext();
             if (!uniforms) {
                 this.uniforms = new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height);
@@ -296,7 +313,7 @@ var Demolished;
                 this.loadGraph(this.timelineFile).then(function (graph) {
                     var audioSettings = graph.audioSettings;
                     graph.timeline.forEach(function (tf) {
-                        var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.useTransitions);
+                        var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.subeffects);
                         _this.timeFragments.push(_tf);
                     });
                     _this.timeFragments.sort(function (a, b) {
@@ -385,9 +402,12 @@ var Demolished;
             return entity;
         };
         Rendering.prototype.tryFindTimeFragment = function (time) {
-            return this.timeFragments.find(function (tf) {
+            var fragment = this.timeFragments.find(function (tf) {
                 return time < tf.stop && time >= tf.start;
             });
+            if (fragment)
+                fragment.init();
+            return fragment;
         };
         Rendering.prototype.resetClock = function (time) {
             this.uniforms.timeTotal = time;
@@ -395,6 +415,7 @@ var Demolished;
             this.animationOffsetTime = time;
             this.animationStartTime = performance.now();
             this.audio.currentTime = (time / 1000) % 60;
+            this.currentTimeFragment.reset();
         };
         Rendering.prototype.start = function (time) {
             this.uniforms.timeTotal = time;
@@ -445,9 +466,7 @@ var Demolished;
         Rendering.prototype.animate = function (time) {
             var _this = this;
             var animationTime = time - this.animationStartTime;
-            this.animationFrameId = requestAnimationFrame(function (_time) {
-                _this.animate(_time);
-            });
+            this.animationFrameId = requestAnimationFrame(function (_time) { return _this.animate(_time); });
             if (this.audio) {
                 this.updateTextureData(this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());
             }
@@ -455,9 +474,8 @@ var Demolished;
                 this.updateTextureData(this.fftTexture, this.audio.textureSize, new Uint8Array(1024));
             }
             if (this.currentTimeFragment) {
-                if (animationTime >= this.currentTimeFragment.stop) {
+                if (animationTime >= this.currentTimeFragment.stop)
                     this.currentTimeFragment = this.tryFindTimeFragment(time);
-                }
                 this.currentTimeFragment ?
                     this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0);
             }
@@ -499,6 +517,9 @@ var Demolished;
             this.surfaceCorners();
             this.setViewPort(this.canvas.width, this.canvas.height);
         };
+        Rendering.prototype.getCurrentUniforms = function () {
+            return this.currentTimeFragment.entityShader.uniformsCache;
+        };
         Rendering.prototype.updateUniforms = function () {
             throw "Not yet implemented";
         };
@@ -507,11 +528,12 @@ var Demolished;
             var gl = this.gl;
             this.uniforms.time = ts;
             this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
-            gl.useProgram(ent.currentProgram);
+            gl.useProgram(ent.glProgram);
             gl.uniform1f(ent.uniformsCache.get("timeTotal"), this.uniforms.timeTotal / 1000);
             gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
             gl.uniform4fv(ent.uniformsCache.get("datetime"), this.uniforms.datetime);
             gl.uniform1i(ent.uniformsCache.get("frame"), this.animationFrameCount);
+            gl.uniform1i(ent.uniformsCache.get("subEffectId"), ent.subEffectId);
             gl.uniform2f(ent.uniformsCache.get("mouse"), this.uniforms.mouseX, this.uniforms.mouseY);
             gl.uniform2f(ent.uniformsCache.get("resolution"), this.uniforms.screenWidth, this.uniforms.screenHeight);
             gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
@@ -520,10 +542,10 @@ var Demolished;
             gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "backbuffer"), 1);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "backbuffer"), 1);
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
             ent.textures.forEach(function (asset, index) {
                 _this.bindTexture(ent, asset, index);
             });
@@ -534,6 +556,7 @@ var Demolished;
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             ent.swapBuffers();
+            ent.runAction("$subeffects", this.uniforms.time / 1000);
             this.animationFrameCount++;
         };
         Rendering.prototype.addTexture = function (ent, entityTexture) {
@@ -543,7 +566,7 @@ var Demolished;
             var gl = this.gl;
             gl.activeTexture(gl.TEXTURE0 + (2 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, entityTexture.name), 2 + c);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 2 + c);
         };
         __decorate([
             demolishedProperties_1.Observe(true),
@@ -556,7 +579,321 @@ var Demolished;
 
 
 /***/ }),
-/* 4 */
+
+/***/ 32:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolishedSound_1 = __webpack_require__(5);
+var DemolishedSonant = (function (_super) {
+    __extends(DemolishedSonant, _super);
+    function DemolishedSonant(song) {
+        var _this = _super.call(this) || this;
+        _this.song = song;
+        _this.WAVE_SPS = 44100;
+        _this.WAVE_CHAN = 2;
+        _this.generate = function (track) {
+            var oscillators = [
+                this.osc_sin,
+                this.osc_square,
+                this.osc_saw,
+                this.osc_tri
+            ];
+            var i, j, k, b, p, row, n, currentpos, cp, c1, c2, q, low, band, high, t, lfor, e, x, rsample, f, da, o1t, o2t;
+            var chnBuf = this.chnBufWork, mixBuf = this.mixBufWork, waveSamples = this.WAVE_SIZE, waveBytes = this.WAVE_SIZE * this.WAVE_CHAN * 2, instr = this.song.songData[track], rowLen = this.song.rowLen, osc_lfo = oscillators[instr.lfo_waveform], osc1 = oscillators[instr.osc1_waveform], osc2 = oscillators[instr.osc2_waveform], attack = instr.env_attack, sustain = instr.env_sustain, release = instr.env_release, panFreq = Math.pow(2, instr.fx_pan_freq - 8) / rowLen, lfoFreq = Math.pow(2, instr.lfo_freq - 8) / rowLen;
+            for (b = 0; b < waveBytes; b += 2) {
+                chnBuf[b] = 0;
+                chnBuf[b + 1] = 128;
+            }
+            currentpos = 0;
+            for (p = 0; p < this.song.endPattern - 1; ++p) {
+                cp = instr.p[p];
+                for (row = 0; row < 32; ++row) {
+                    if (cp) {
+                        n = instr.c[cp - 1].n[row];
+                        if (n) {
+                            c1 = c2 = 0;
+                            o1t = this.getnotefreq(n + (instr.osc1_oct - 8) * 12 + instr.osc1_det) * (1 + 0.0008 * instr.osc1_detune);
+                            o2t = this.getnotefreq(n + (instr.osc2_oct - 8) * 12 + instr.osc2_det) * (1 + 0.0008 * instr.osc2_detune);
+                            q = instr.fx_resonance / 255;
+                            low = band = 0;
+                            for (j = attack + sustain + release - 1; j >= 0; --j) {
+                                k = j + currentpos;
+                                lfor = osc_lfo(k * lfoFreq) * instr.lfo_amt / 512 + 0.5;
+                                e = 1;
+                                if (j < attack)
+                                    e = j / attack;
+                                else if (j >= attack + sustain)
+                                    e -= (j - attack - sustain) / release;
+                                t = o1t;
+                                if (instr.lfo_osc1_freq)
+                                    t += lfor;
+                                if (instr.osc1_xenv)
+                                    t *= e * e;
+                                c1 += t;
+                                rsample = osc1(c1) * instr.osc1_vol;
+                                t = o2t;
+                                if (instr.osc2_xenv)
+                                    t *= e * e;
+                                c2 += t;
+                                rsample += osc2(c2) * instr.osc2_vol;
+                                if (instr.noise_fader)
+                                    rsample += (2 * Math.random() - 1) * instr.noise_fader * e;
+                                rsample *= e / 255;
+                                f = instr.fx_freq;
+                                if (instr.lfo_fx_freq)
+                                    f *= lfor;
+                                f = 1.5 * Math.sin(f * 3.141592 / this.WAVE_SPS);
+                                low += f * band;
+                                high = q * (rsample - band) - low;
+                                band += f * high;
+                                switch (instr.fx_filter) {
+                                    case 1:
+                                        rsample = high;
+                                        break;
+                                    case 2:
+                                        rsample = low;
+                                        break;
+                                    case 3:
+                                        rsample = band;
+                                        break;
+                                    case 4:
+                                        rsample = low + high;
+                                    default:
+                                }
+                                t = this.osc_sin(k * panFreq) * instr.fx_pan_amt / 512 + 0.5;
+                                rsample *= 39 * instr.env_master;
+                                k <<= 2;
+                                x = chnBuf[k] + (chnBuf[k + 1] << 8) + rsample * (1 - t);
+                                chnBuf[k] = x & 255;
+                                chnBuf[k + 1] = (x >> 8) & 255;
+                                x = chnBuf[k + 2] + (chnBuf[k + 3] << 8) + rsample * t;
+                                chnBuf[k + 2] = x & 255;
+                                chnBuf[k + 3] = (x >> 8) & 255;
+                            }
+                        }
+                    }
+                    currentpos += rowLen;
+                }
+            }
+            p = (instr.fx_delay_time * rowLen) >> 1;
+            t = instr.fx_delay_amt / 255;
+            for (n = 0; n < waveSamples - p; ++n) {
+                b = 4 * n;
+                k = 4 * (n + p);
+                x = chnBuf[k] + (chnBuf[k + 1] << 8) +
+                    (chnBuf[b + 2] + (chnBuf[b + 3] << 8) - 32768) * t;
+                chnBuf[k] = x & 255;
+                chnBuf[k + 1] = (x >> 8) & 255;
+                x = chnBuf[k + 2] + (chnBuf[k + 3] << 8) +
+                    (chnBuf[b] + (chnBuf[b + 1] << 8) - 32768) * t;
+                chnBuf[k + 2] = x & 255;
+                chnBuf[k + 3] = (x >> 8) & 255;
+            }
+            for (b = 0; b < waveBytes; b += 2) {
+                x = mixBuf[b] + (mixBuf[b + 1] << 8) + chnBuf[b] + (chnBuf[b + 1] << 8) - 32768;
+                mixBuf[b] = x & 255;
+                mixBuf[b + 1] = (x >> 8) & 255;
+            }
+        };
+        _this.WAVE_SIZE = _this.WAVE_SPS * song.songLen;
+        var size = Math.ceil(Math.sqrt(_this.WAVE_SIZE * _this.WAVE_CHAN / 2));
+        var ctx = document.createElement('canvas').getContext('2d');
+        _this.chnBufWork = ctx.createImageData(size, size).data;
+        var b, mixBuf = ctx.createImageData(size, size).data;
+        for (b = size * size * 4 - 2; b >= 0; b -= 2) {
+            mixBuf[b] = 0;
+            mixBuf[b + 1] = 128;
+        }
+        _this.mixBufWork = mixBuf;
+        return _this;
+    }
+    DemolishedSonant.prototype.createAudio = function (settings) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var b, k, x, wave, l1, l2, s, y;
+            var mixBuf = _this.mixBufWork, waveBytes = _this.WAVE_SIZE * _this.WAVE_CHAN * 2;
+            _this.chnBufWork = null;
+            l1 = waveBytes - 8;
+            l2 = l1 - 36;
+            wave = String.fromCharCode(82, 73, 70, 70, l1 & 255, (l1 >> 8) & 255, (l1 >> 16) & 255, (l1 >> 24) & 255, 87, 65, 86, 69, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 2, 0, 68, 172, 0, 0, 16, 177, 2, 0, 4, 0, 16, 0, 100, 97, 116, 97, l2 & 255, (l2 >> 8) & 255, (l2 >> 16) & 255, (l2 >> 24) & 255);
+            for (b = 0; b < waveBytes;) {
+                x = "";
+                for (k = 0; k < 256 && b < waveBytes; ++k, b += 2) {
+                    y = 4 * (mixBuf[b] + (mixBuf[b + 1] << 8) - 32768);
+                    y = y < -32768 ? -32768 : (y > 32767 ? 32767 : y);
+                    x += String.fromCharCode(y & 255, (y >> 8) & 255);
+                }
+                wave += x;
+            }
+            s = "data:audio/wav;base64," + btoa(wave);
+            wave = null;
+            var audioCtx = new AudioContext();
+            var audioEl = new Audio();
+            audioEl.preload = "auto";
+            audioEl.crossOrigin = "anonymous";
+            audioEl.src = s;
+            var onLoad = function () {
+                var source = audioCtx.createMediaElementSource(audioEl);
+                var analyser = audioCtx.createAnalyser();
+                analyser.smoothingTimeConstant = 0.85;
+                analyser.fftSize = 8192;
+                _this.audio = audioEl;
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                _this.audioAnalyser = analyser;
+                resolve(true);
+            };
+            onLoad();
+        });
+    };
+    DemolishedSonant.prototype.play = function () {
+        this.audio.play();
+    };
+    DemolishedSonant.prototype.stop = function () {
+        this.audio.pause();
+    };
+    DemolishedSonant.prototype.mute = function (ismuted) {
+        this.audio.muted = ismuted;
+    };
+    Object.defineProperty(DemolishedSonant.prototype, "currentTime", {
+        get: function () {
+            return this.audio.currentTime;
+        },
+        set: function (time) {
+            this.audio.currentTime = time;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    DemolishedSonant.prototype.getFrequenceData = function () {
+        var bufferLength = this.audioAnalyser.frequencyBinCount;
+        var freqArray = new Uint8Array(bufferLength);
+        this.audioAnalyser.getByteFrequencyData(freqArray);
+        return freqArray;
+    };
+    DemolishedSonant.prototype.osc_sin = function (value) {
+        return Math.sin(value * 6.283184);
+    };
+    DemolishedSonant.prototype.osc_square = function (value) {
+        if (this.osc_sin(value) < 0)
+            return -1;
+        return 1;
+    };
+    DemolishedSonant.prototype.osc_saw = function (value) {
+        return (value % 1) - 0.5;
+    };
+    DemolishedSonant.prototype.osc_tri = function (value) {
+        var v2 = (value % 1) * 4;
+        if (v2 < 2)
+            return v2 - 1;
+        return 3 - v2;
+    };
+    DemolishedSonant.prototype.getnotefreq = function (n) {
+        return 0.00390625 * Math.pow(1.059463094, n - 128);
+    };
+    DemolishedSonant.prototype.getData = function (t, n) {
+        for (var i = Math.floor(t * this.WAVE_SPS), j = 0, d = [], b = this.mixBufWork; j < 2 * n; j += 2) {
+            var k = 4 * (i + j) + 1;
+            d.push(t > 0 && k < b.length ? (b[k] + b[k - 1] / 256) / 256 : 0.5);
+        }
+        return d;
+    };
+    ;
+    return DemolishedSonant;
+}(demolishedSound_1.DemolishedSoundBase));
+exports.DemolishedSonant = DemolishedSonant;
+var DemolishedSoundBox = (function (_super) {
+    __extends(DemolishedSoundBox, _super);
+    function DemolishedSoundBox() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    DemolishedSoundBox.prototype.createAudio = function (settings) {
+        throw new Error("Method not implemented.");
+    };
+    DemolishedSoundBox.prototype.play = function (tm) {
+        throw new Error("Method not implemented.");
+    };
+    DemolishedSoundBox.prototype.stop = function (tm) {
+        throw new Error("Method not implemented.");
+    };
+    DemolishedSoundBox.prototype.mute = function (ismuted) {
+        throw new Error("Method not implemented.");
+    };
+    DemolishedSoundBox.prototype.getFrequenceData = function () {
+        throw new Error("Method not implemented.");
+    };
+    return DemolishedSoundBox;
+}(demolishedSound_1.DemolishedSoundBase));
+exports.DemolishedSoundBox = DemolishedSoundBox;
+
+
+/***/ }),
+
+/***/ 36:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolished_1 = __webpack_require__(3);
+var DemolishedSonant_1 = __webpack_require__(32);
+var Demo = (function () {
+    function Demo() {
+        var _this = this;
+        var webGlCanvas = document.querySelector("#webgl");
+        var music = new DemolishedSonant_1.DemolishedSonant(window["song"]);
+        for (var t = 0; t < 8; t++)
+            music.generate(t);
+        ;
+        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, document.querySelector("#shader-view"), "entities/graph.json", music);
+        this.webGlrendering.onFrame = function (frame) {
+        };
+        this.webGlrendering.onReady = function () {
+            _this.onReady();
+            window.setTimeout(function () {
+                document.querySelector(".loader").classList.add("hide");
+                _this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"), 2);
+                _this.webGlrendering.start(0);
+            }, 5000);
+        };
+        this.webGlrendering.onStop = function () {
+        };
+        this.webGlrendering.onStart = function () {
+        };
+        this.webGlrendering.onNext = function (frameInfo) {
+        };
+        window.onerror = function () {
+            _this.webGlrendering.stop();
+        };
+    }
+    Demo.prototype.onReady = function () { };
+    Demo.getIntance = function () {
+        return new this();
+    };
+    return Demo;
+}());
+exports.Demo = Demo;
+document.addEventListener("DOMContentLoaded", function () {
+    Demo.getIntance();
+});
+
+
+/***/ }),
+
+/***/ 4:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -588,32 +925,45 @@ exports.EntityTexture = EntityTexture;
 var EntityBase = (function () {
     function EntityBase(gl) {
         this.gl = gl;
+        this.actions = new Map();
     }
     EntityBase.prototype.cacheUniformLocation = function (label) {
-        this.uniformsCache.set(label, this.gl.getUniformLocation(this.currentProgram, label));
+        this.uniformsCache.set(label, this.gl.getUniformLocation(this.glProgram, label));
     };
     return EntityBase;
 }());
 exports.EntityBase = EntityBase;
 var ShaderEntity = (function (_super) {
     __extends(ShaderEntity, _super);
-    function ShaderEntity(gl, name, x, y, textures) {
+    function ShaderEntity(gl, name, w, h, textures) {
         var _this = _super.call(this, gl) || this;
         _this.gl = gl;
         _this.name = name;
-        _this.x = x;
-        _this.y = y;
+        _this.w = w;
+        _this.h = h;
         _this.textures = textures;
         _this.uniformsCache = new Map();
         _this.loadShaders().then(function () {
             _this.initShader();
-            _this.target = _this.createRenderTarget(_this.x, _this.y);
-            _this.backTarget = _this.createRenderTarget(_this.x, _this.y);
+            _this.target = _this.createRenderTarget(_this.w, _this.h);
+            _this.backTarget = _this.createRenderTarget(_this.w, _this.h);
         });
         return _this;
     }
     ShaderEntity.prototype.render = function () {
         throw "Not yet implemented";
+    };
+    ShaderEntity.prototype.addAction = function (key, fn) {
+        this.actions.set(key, fn);
+    };
+    ShaderEntity.prototype.runAction = function (key, tm) {
+        this.actions.get(key)(this, tm);
+    };
+    ShaderEntity.prototype.removeAction = function (key) {
+        return this.actions.delete(key);
+    };
+    ShaderEntity.prototype.reset = function () {
+        throw "not yet implemented";
     };
     ShaderEntity.prototype.createRenderTarget = function (width, height) {
         var gl = this.gl;
@@ -642,7 +992,7 @@ var ShaderEntity = (function (_super) {
         return Promise.all(urls.map(function (url) {
             return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });
         })).then(function (result) {
-            _this.fragmetShader = result[0];
+            _this.fragmentShader = result[0];
             _this.vertexShader = result[1];
             return true;
         }).catch(function (reason) {
@@ -650,11 +1000,11 @@ var ShaderEntity = (function (_super) {
             return false;
         });
     };
-    ShaderEntity.prototype.reCompile = function (fs, vs) {
+    ShaderEntity.prototype.compile = function (fs, vs) {
         if (vs) {
             this.vertexShader = vs;
         }
-        this.fragmetShader = fs;
+        this.fragmentShader = fs;
         this.initShader();
     };
     ShaderEntity.prototype.onError = function (err) {
@@ -675,34 +1025,36 @@ var ShaderEntity = (function (_super) {
         var _this = this;
         var gl = this.gl;
         this.buffer = gl.createBuffer();
-        this.currentProgram = gl.createProgram();
+        this.glProgram = gl.createProgram();
         var vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
-        var fs = this.createShader(gl, this.fragmetShader, gl.FRAGMENT_SHADER);
-        gl.attachShader(this.currentProgram, vs);
-        gl.attachShader(this.currentProgram, fs);
-        gl.linkProgram(this.currentProgram);
-        if (!gl.getProgramParameter(this.currentProgram, gl.LINK_STATUS)) {
-            var info = gl.getProgramInfoLog(this.currentProgram);
-            var error = gl.getProgramParameter(this.currentProgram, gl.VALIDATE_STATUS);
+        var fs = this.createShader(gl, this.fragmentShader, gl.FRAGMENT_SHADER);
+        gl.attachShader(this.glProgram, vs);
+        gl.attachShader(this.glProgram, fs);
+        gl.linkProgram(this.glProgram);
+        if (!gl.getProgramParameter(this.glProgram, gl.LINK_STATUS)) {
+            var info = gl.getProgramInfoLog(this.glProgram);
+            var error = gl.getProgramParameter(this.glProgram, gl.VALIDATE_STATUS);
             this.onError(info);
         }
         this.cacheUniformLocation('fft');
         this.cacheUniformLocation('time');
         this.cacheUniformLocation("datetime");
-        this.cacheUniformLocation('frame');
+        this.cacheUniformLocation('frameId');
         this.cacheUniformLocation("timeTotal");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
-        this.cacheUniformLocation('alpha');
+        this.cacheUniformLocation("subEffectId");
         this.cacheUniformLocation("backbuffer");
+        this.subEffectId = 0;
+        this.frameId = 0;
         this.positionAttribute = 0;
         gl.enableVertexAttribArray(this.positionAttribute);
-        this.vertexPosition = gl.getAttribLocation(this.currentProgram, "position");
+        this.vertexPosition = gl.getAttribLocation(this.glProgram, "position");
         gl.enableVertexAttribArray(this.vertexPosition);
         this.textures.forEach(function (asset) {
             asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
         });
-        gl.useProgram(this.currentProgram);
+        gl.useProgram(this.glProgram);
     };
     ShaderEntity.prototype.swapBuffers = function () {
         var tmp = this.target;
@@ -721,7 +1073,8 @@ exports.ShaderEntity = ShaderEntity;
 
 
 /***/ }),
-/* 5 */
+
+/***/ 5:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -936,7 +1289,8 @@ exports.DemolishedStreamingMusic = DemolishedStreamingMusic;
 
 
 /***/ }),
-/* 6 */
+
+/***/ 6:
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -1126,7 +1480,8 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 7 */
+
+/***/ 7:
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process, global) {/*! *****************************************************************************
@@ -2264,7 +2619,8 @@ var Reflect;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6), __webpack_require__(8)))
 
 /***/ }),
-/* 8 */
+
+/***/ 8:
 /***/ (function(module, exports) {
 
 var g;
@@ -2291,7 +2647,8 @@ module.exports = g;
 
 
 /***/ }),
-/* 9 */
+
+/***/ 9:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2369,363 +2726,6 @@ var DemolishedDialogBuilder = (function () {
 exports.DemolishedDialogBuilder = DemolishedDialogBuilder;
 
 
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var DemlolishedTransitionBase = (function () {
-    function DemlolishedTransitionBase(entity) {
-        this.entity = entity;
-    }
-    DemlolishedTransitionBase.prototype.fadeIn = function (time) {
-        return null;
-    };
-    DemlolishedTransitionBase.prototype.fadeOut = function (time) {
-        return;
-    };
-    return DemlolishedTransitionBase;
-}());
-exports.DemlolishedTransitionBase = DemlolishedTransitionBase;
-
-
-/***/ }),
-/* 11 */,
-/* 12 */,
-/* 13 */,
-/* 14 */,
-/* 15 */,
-/* 16 */,
-/* 17 */,
-/* 18 */,
-/* 19 */,
-/* 20 */,
-/* 21 */,
-/* 22 */,
-/* 23 */,
-/* 24 */,
-/* 25 */,
-/* 26 */,
-/* 27 */,
-/* 28 */,
-/* 29 */,
-/* 30 */,
-/* 31 */,
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedSound_1 = __webpack_require__(5);
-var DemolishedSonant = (function (_super) {
-    __extends(DemolishedSonant, _super);
-    function DemolishedSonant(song) {
-        var _this = _super.call(this) || this;
-        _this.song = song;
-        _this.WAVE_SPS = 44100;
-        _this.WAVE_CHAN = 2;
-        _this.generate = function (track) {
-            var oscillators = [
-                this.osc_sin,
-                this.osc_square,
-                this.osc_saw,
-                this.osc_tri
-            ];
-            var i, j, k, b, p, row, n, currentpos, cp, c1, c2, q, low, band, high, t, lfor, e, x, rsample, f, da, o1t, o2t;
-            var chnBuf = this.chnBufWork, mixBuf = this.mixBufWork, waveSamples = this.WAVE_SIZE, waveBytes = this.WAVE_SIZE * this.WAVE_CHAN * 2, instr = this.song.songData[track], rowLen = this.song.rowLen, osc_lfo = oscillators[instr.lfo_waveform], osc1 = oscillators[instr.osc1_waveform], osc2 = oscillators[instr.osc2_waveform], attack = instr.env_attack, sustain = instr.env_sustain, release = instr.env_release, panFreq = Math.pow(2, instr.fx_pan_freq - 8) / rowLen, lfoFreq = Math.pow(2, instr.lfo_freq - 8) / rowLen;
-            for (b = 0; b < waveBytes; b += 2) {
-                chnBuf[b] = 0;
-                chnBuf[b + 1] = 128;
-            }
-            currentpos = 0;
-            for (p = 0; p < this.song.endPattern - 1; ++p) {
-                cp = instr.p[p];
-                for (row = 0; row < 32; ++row) {
-                    if (cp) {
-                        n = instr.c[cp - 1].n[row];
-                        if (n) {
-                            c1 = c2 = 0;
-                            o1t = this.getnotefreq(n + (instr.osc1_oct - 8) * 12 + instr.osc1_det) * (1 + 0.0008 * instr.osc1_detune);
-                            o2t = this.getnotefreq(n + (instr.osc2_oct - 8) * 12 + instr.osc2_det) * (1 + 0.0008 * instr.osc2_detune);
-                            q = instr.fx_resonance / 255;
-                            low = band = 0;
-                            for (j = attack + sustain + release - 1; j >= 0; --j) {
-                                k = j + currentpos;
-                                lfor = osc_lfo(k * lfoFreq) * instr.lfo_amt / 512 + 0.5;
-                                e = 1;
-                                if (j < attack)
-                                    e = j / attack;
-                                else if (j >= attack + sustain)
-                                    e -= (j - attack - sustain) / release;
-                                t = o1t;
-                                if (instr.lfo_osc1_freq)
-                                    t += lfor;
-                                if (instr.osc1_xenv)
-                                    t *= e * e;
-                                c1 += t;
-                                rsample = osc1(c1) * instr.osc1_vol;
-                                t = o2t;
-                                if (instr.osc2_xenv)
-                                    t *= e * e;
-                                c2 += t;
-                                rsample += osc2(c2) * instr.osc2_vol;
-                                if (instr.noise_fader)
-                                    rsample += (2 * Math.random() - 1) * instr.noise_fader * e;
-                                rsample *= e / 255;
-                                f = instr.fx_freq;
-                                if (instr.lfo_fx_freq)
-                                    f *= lfor;
-                                f = 1.5 * Math.sin(f * 3.141592 / this.WAVE_SPS);
-                                low += f * band;
-                                high = q * (rsample - band) - low;
-                                band += f * high;
-                                switch (instr.fx_filter) {
-                                    case 1:
-                                        rsample = high;
-                                        break;
-                                    case 2:
-                                        rsample = low;
-                                        break;
-                                    case 3:
-                                        rsample = band;
-                                        break;
-                                    case 4:
-                                        rsample = low + high;
-                                    default:
-                                }
-                                t = this.osc_sin(k * panFreq) * instr.fx_pan_amt / 512 + 0.5;
-                                rsample *= 39 * instr.env_master;
-                                k <<= 2;
-                                x = chnBuf[k] + (chnBuf[k + 1] << 8) + rsample * (1 - t);
-                                chnBuf[k] = x & 255;
-                                chnBuf[k + 1] = (x >> 8) & 255;
-                                x = chnBuf[k + 2] + (chnBuf[k + 3] << 8) + rsample * t;
-                                chnBuf[k + 2] = x & 255;
-                                chnBuf[k + 3] = (x >> 8) & 255;
-                            }
-                        }
-                    }
-                    currentpos += rowLen;
-                }
-            }
-            p = (instr.fx_delay_time * rowLen) >> 1;
-            t = instr.fx_delay_amt / 255;
-            for (n = 0; n < waveSamples - p; ++n) {
-                b = 4 * n;
-                k = 4 * (n + p);
-                x = chnBuf[k] + (chnBuf[k + 1] << 8) +
-                    (chnBuf[b + 2] + (chnBuf[b + 3] << 8) - 32768) * t;
-                chnBuf[k] = x & 255;
-                chnBuf[k + 1] = (x >> 8) & 255;
-                x = chnBuf[k + 2] + (chnBuf[k + 3] << 8) +
-                    (chnBuf[b] + (chnBuf[b + 1] << 8) - 32768) * t;
-                chnBuf[k + 2] = x & 255;
-                chnBuf[k + 3] = (x >> 8) & 255;
-            }
-            for (b = 0; b < waveBytes; b += 2) {
-                x = mixBuf[b] + (mixBuf[b + 1] << 8) + chnBuf[b] + (chnBuf[b + 1] << 8) - 32768;
-                mixBuf[b] = x & 255;
-                mixBuf[b + 1] = (x >> 8) & 255;
-            }
-        };
-        _this.WAVE_SIZE = _this.WAVE_SPS * song.songLen;
-        var size = Math.ceil(Math.sqrt(_this.WAVE_SIZE * _this.WAVE_CHAN / 2));
-        var ctx = document.createElement('canvas').getContext('2d');
-        _this.chnBufWork = ctx.createImageData(size, size).data;
-        var b, mixBuf = ctx.createImageData(size, size).data;
-        for (b = size * size * 4 - 2; b >= 0; b -= 2) {
-            mixBuf[b] = 0;
-            mixBuf[b + 1] = 128;
-        }
-        _this.mixBufWork = mixBuf;
-        return _this;
-    }
-    DemolishedSonant.prototype.createAudio = function (settings) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var b, k, x, wave, l1, l2, s, y;
-            var mixBuf = _this.mixBufWork, waveBytes = _this.WAVE_SIZE * _this.WAVE_CHAN * 2;
-            _this.chnBufWork = null;
-            l1 = waveBytes - 8;
-            l2 = l1 - 36;
-            wave = String.fromCharCode(82, 73, 70, 70, l1 & 255, (l1 >> 8) & 255, (l1 >> 16) & 255, (l1 >> 24) & 255, 87, 65, 86, 69, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 2, 0, 68, 172, 0, 0, 16, 177, 2, 0, 4, 0, 16, 0, 100, 97, 116, 97, l2 & 255, (l2 >> 8) & 255, (l2 >> 16) & 255, (l2 >> 24) & 255);
-            for (b = 0; b < waveBytes;) {
-                x = "";
-                for (k = 0; k < 256 && b < waveBytes; ++k, b += 2) {
-                    y = 4 * (mixBuf[b] + (mixBuf[b + 1] << 8) - 32768);
-                    y = y < -32768 ? -32768 : (y > 32767 ? 32767 : y);
-                    x += String.fromCharCode(y & 255, (y >> 8) & 255);
-                }
-                wave += x;
-            }
-            s = "data:audio/wav;base64," + btoa(wave);
-            wave = null;
-            var audioCtx = new AudioContext();
-            var audioEl = new Audio();
-            audioEl.preload = "auto";
-            audioEl.crossOrigin = "anonymous";
-            audioEl.src = s;
-            var onLoad = function () {
-                var source = audioCtx.createMediaElementSource(audioEl);
-                var analyser = audioCtx.createAnalyser();
-                analyser.smoothingTimeConstant = 0.85;
-                analyser.fftSize = 8192;
-                _this.audio = audioEl;
-                source.connect(analyser);
-                analyser.connect(audioCtx.destination);
-                _this.audioAnalyser = analyser;
-                resolve(true);
-            };
-            onLoad();
-        });
-    };
-    DemolishedSonant.prototype.play = function () {
-        this.audio.play();
-    };
-    DemolishedSonant.prototype.stop = function () {
-        this.audio.pause();
-    };
-    DemolishedSonant.prototype.mute = function (ismuted) {
-        this.audio.muted = ismuted;
-    };
-    Object.defineProperty(DemolishedSonant.prototype, "currentTime", {
-        get: function () {
-            return this.audio.currentTime;
-        },
-        set: function (time) {
-            this.audio.currentTime = time;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedSonant.prototype.getFrequenceData = function () {
-        var bufferLength = this.audioAnalyser.frequencyBinCount;
-        var freqArray = new Uint8Array(bufferLength);
-        this.audioAnalyser.getByteFrequencyData(freqArray);
-        return freqArray;
-    };
-    DemolishedSonant.prototype.osc_sin = function (value) {
-        return Math.sin(value * 6.283184);
-    };
-    DemolishedSonant.prototype.osc_square = function (value) {
-        if (this.osc_sin(value) < 0)
-            return -1;
-        return 1;
-    };
-    DemolishedSonant.prototype.osc_saw = function (value) {
-        return (value % 1) - 0.5;
-    };
-    DemolishedSonant.prototype.osc_tri = function (value) {
-        var v2 = (value % 1) * 4;
-        if (v2 < 2)
-            return v2 - 1;
-        return 3 - v2;
-    };
-    DemolishedSonant.prototype.getnotefreq = function (n) {
-        return 0.00390625 * Math.pow(1.059463094, n - 128);
-    };
-    DemolishedSonant.prototype.getData = function (t, n) {
-        for (var i = Math.floor(t * this.WAVE_SPS), j = 0, d = [], b = this.mixBufWork; j < 2 * n; j += 2) {
-            var k = 4 * (i + j) + 1;
-            d.push(t > 0 && k < b.length ? (b[k] + b[k - 1] / 256) / 256 : 0.5);
-        }
-        return d;
-    };
-    ;
-    return DemolishedSonant;
-}(demolishedSound_1.DemolishedSoundBase));
-exports.DemolishedSonant = DemolishedSonant;
-var DemolishedSoundBox = (function (_super) {
-    __extends(DemolishedSoundBox, _super);
-    function DemolishedSoundBox() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    DemolishedSoundBox.prototype.createAudio = function (settings) {
-        throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.play = function (tm) {
-        throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.stop = function (tm) {
-        throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.mute = function (ismuted) {
-        throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.getFrequenceData = function () {
-        throw new Error("Method not implemented.");
-    };
-    return DemolishedSoundBox;
-}(demolishedSound_1.DemolishedSoundBase));
-exports.DemolishedSoundBox = DemolishedSoundBox;
-
-
-/***/ }),
-/* 33 */,
-/* 34 */,
-/* 35 */,
-/* 36 */,
-/* 37 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolished_1 = __webpack_require__(3);
-var DemolishedSonant_1 = __webpack_require__(32);
-var Demo = (function () {
-    function Demo() {
-        var _this = this;
-        var webGlCanvas = document.querySelector("#webgl");
-        var music = new DemolishedSonant_1.DemolishedSonant(window["song"]);
-        for (var t = 0; t < 8; t++)
-            music.generate(t);
-        ;
-        this.webGlrendering = new demolished_1.Demolished.Rendering(webGlCanvas, document.querySelector("#shader-view"), "entities/graph.json", music);
-        this.webGlrendering.onFrame = function (frame) {
-        };
-        this.webGlrendering.onReady = function () {
-            _this.onReady();
-            window.setTimeout(function () {
-                document.querySelector(".loader").classList.add("hide");
-                _this.webGlrendering.resizeCanvas(document.querySelector("#shader-view"), 2);
-                _this.webGlrendering.start(0);
-            }, 5000);
-        };
-        this.webGlrendering.onStop = function () {
-        };
-        this.webGlrendering.onStart = function () {
-        };
-        this.webGlrendering.onNext = function (frameInfo) {
-        };
-        window.onerror = function () {
-            _this.webGlrendering.stop();
-        };
-    }
-    Demo.prototype.onReady = function () { };
-    Demo.getIntance = function () {
-        return new this();
-    };
-    return Demo;
-}());
-exports.Demo = Demo;
-document.addEventListener("DOMContentLoaded", function () {
-    Demo.getIntance();
-});
-
-
 /***/ })
-/******/ ]);
+
+/******/ });

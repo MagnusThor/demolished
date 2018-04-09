@@ -14,13 +14,10 @@ const float radius = 0.008;
 const float bph = 1.0;
 const float bps = 2.0;
 
-
-void main(void){
-    vec2 uv = -1. + 2.*gl_FragCoord.xy / resolution.xy;
-    uv.x *= resolution.x / resolution.y;
-    vec3 color = vec3(0.);
-
-    for(int i=0;i<64;i++){
+vec3 lens(vec2 uv){
+	 vec3 color = vec3(0.);
+	
+	 for(int i=0;i<64;i++){
         float pha = tan(float(i)*6.+1.0)* .5 + .5;
           float siz = pow(cos(float(i)*2.4+4.0)*.5 + ySpeed,4.);
 
@@ -34,21 +31,33 @@ void main(void){
             float dis = length(uv-pos);        
 
             vec3 col = mix(
-                        vec3(0.3,0.5,0.1),vec3(0.2,0.3,0.6),0.2+0.2*sin(float(i)*sin(time*pox*0.03)+1.9));
+                        vec3(0.1,0.1,0.1),vec3(0.2,0.3,0.6),0.2+0.2*sin(float(i)*sin(time*pox*0.03)+1.9));
 
                 color += col.xyz * (1. -smoothstep(rad*(0.65+0.20*sin(pox*time)),rad,dis))*(1.0-cos(pox*time));
         
    }
+	return color;
+}
 
-//    if(timeTotal < 10.){
-           gl_FragColor = vec4(color,.0);
+void main(void){
+	
+    vec2 q = gl_FragCoord.xy / resolution.xy;
+	
+    vec2 uv =-1.0 + 2.0*q;
+	
+    uv.x *= resolution.x / resolution.y;
+	
+	  if (q.y < .12 || q.y >= .88) {
+		gl_FragColor=vec4(0.,0.,0.,1.);
+		return;
+	}
 
-//    }else{
-      //  vec3 fade = mix(color,vec3(1.),0.2);
-//        gl_FragColor =texture2D(backbuffer,gl_FragCoord.xy);
-     
+vec3 color = lens(uv);
+   
+
+   gl_FragColor = vec4(color,.0);
       
-//    }
+   
   
 
 }

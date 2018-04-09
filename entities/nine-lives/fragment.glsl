@@ -8,7 +8,10 @@ uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
 uniform sampler2D iChannel0;
+uniform sampler2D iChannel1;
 uniform sampler2D fft;
+uniform float effectId;
+
 // #define GOLD
 #define BUMPMAP
 #define MARCHSTEPS 128
@@ -16,13 +19,72 @@ uniform sampler2D fft;
 #define SPHERE
 
 float freqs[4];
+float zoom = .18;
+float fshape=0.;
+vec3 fcolor=vec3(0.),randcol;
 
+void formula(vec2 z, float c) {
+	float t = time* 0.02;
+	float minit=0.;
+	float o,ot2,ot=ot2=1000.;
+	for (int i=0; i<9; i++) {
+		z=abs(z)/clamp(dot(z,z),.1,.5)-c;
+		float l=length(z);
+		o=min(max(abs(min(z.x,z.y)),-l+.25),abs(l-.25));
+		ot=min(ot,o);
+		ot2=min(l*.1,ot2);
+		minit=max(minit,float(i)*(1.-abs(sign(ot-o))));
+	}
+	minit+=1.;
+	float w=0.005*minit*2.;
+	float circ=pow(max(0.,w-ot2)/w,6.);
+	fshape+=max(pow(max(0.,w-ot)/w,.25),circ);
+	vec3 col=normalize(.1+texture2D(iChannel1,vec2(minit*.1)).rgb);
+	fcolor+=col*(.4+mod(minit/9.-t*10.+ot2*2.,1.)*1.6);
+    
+	fcolor+=vec3(1.,.7,.3)*circ*(10.-minit)*3.*smoothstep(0.,.5,.15+texture2D(iChannel0,vec2(.0,1.)).x-.5);
+}
 
-vec4 transition(float min,float u,float o){
+//----------------------------------------------------------------------
+// kalicircuts - thanks to Kali for a great job
 	
+vec3 kalicircuts(vec2 pos){
+
+	//vec3 color;
+	float t = time * 0.02;
+	vec2 uv = pos;
+	
+	float sph = length(uv); 
+    sph = sqrt(1. - sph*sph)*1.5; // curve for spheric distortion
+	uv=normalize(vec3(uv,sph)).xy;
+	float a=t+mod(t,1.)*.5;
+  	vec3 f = vec3(-0.080,0.290,0.000);
+	vec2 luv=uv;
+	float b=a*5.48535;
+	
+	uv*=mat2(cos(b),sin(b),-sin(b),cos(b));
+	uv+=vec2(sin(a),cos(a*.5))*8.;
+	
+	uv*=0.18;
+	
+    float pix=.5/resolution.x*zoom/sph;
+	float dof=max(1.,(10.-mod(t,1.)/.01));
+	float c=1.5+mod(floor(t),6.)*.125;
+	
+    for (int aa=0; aa<36; aa++) {
+		vec2 aauv=floor(vec2(float(aa)/6.,mod(float(aa),6.)));
+		formula(uv+aauv*pix*dof,c);
+	}
+	fshape/=36.; fcolor/=36.;
+	vec3 col=mix(vec3(.15),fcolor,fshape)*(1.-length(pos))*min(1.,abs(.5-mod(t+.5,1.))*10.);	
+	col*=vec3(1.2,1.1,1.0);
+	
+	return col;
+}
+
+vec4 transition(float min,float u,float o){	
 	if(time < min) return vec4(0.);
 	float t = (2.*u+1.)*fract(time/(2.*u+1.));
-	
 	float r = (-abs(t - u)+u);
 	float g = (-abs(t - u+o)+u);
 	float b = (-abs(t - u+2.*o)+u);
@@ -30,11 +92,12 @@ vec4 transition(float min,float u,float o){
 	r = clamp(r, 0., 1.);
 	g = clamp(g, 0., 1.);
 	b = clamp(b, 0., 1.);
+
 	return vec4(vec4(r,g,b,1.0));
 }
 
-
 //----------------------------------------------------------------------
+
 const vec2 dropPosition = vec2(1.05,2.1);
 const vec3 backgroundColor = vec3(0.9,0.5,0.2);
 
@@ -43,7 +106,6 @@ const vec3 backgroundColor = vec3(0.9,0.5,0.2);
 
 //----------------------------------------------------------------------
 // noises
-
 float hash( float n ) {
     return fract(sin(n)*43758.5453123);
 }
@@ -343,40 +405,10 @@ vec3 shade( in vec3 ro, in vec3 pos, in bool shadow, in float m, in float r ) {
 
     return col;
 }
-
-
 //----------------------------------------------------------------------
-// postprocess
-vec3 postprocess(vec3 col){
-
-	col = pow( clamp(col*2.,0.0,1.0), vec3(0.4545) );
-	col *= 1.2*vec3(1.,0.99,0.95);   
-	col = clamp(1.06*col-0.03, 0., 1.);   
-//   col *= mod(gl_FragCoord.y, 4.0)<2.0 ? 0.6 : 1.0;
-	return col;
-}
-
-//----------------------------------------------------------------------
-// main
-
-void main() {    
-	
-	freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
-	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
-	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
-	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;	
-	
-    vec2 q = gl_FragCoord.xy / resolution.xy;
-	vec2 p = -1.0 + 2.0*q;
-	p.x *= resolution.x / resolution.y;
-       
-    if (q.y < .12 || q.y >= .88) {
-		gl_FragColor=vec4(0.,0.,0.,1.);
-		return;
-	}
-    
-    // camera
-    float o = 0.2*noise(vec2(time,0.));
+// tunnel
+vec3 tunnel(vec2 p){
+ float o = 0.2*noise(vec2(time,0.));
     float z = 10.*time+o;
     float x = -0.95*xoffset(z);
 	vec3 ro = vec3(x,1.7+0.02*sin(time*1.13*2.*3.1415926+o), z-1.);
@@ -417,13 +449,48 @@ void main() {
             col += r * shade( int1.xyz, int2.xyz, false, mapMaterial(int2), 0. );
         }
 	}
+	return col;
+}
+//----------------------------------------------------------------------
+// postprocess
+vec3 postprocess(vec3 col){
 
+	col = pow( clamp(col*2.,0.0,1.0), vec3(0.4545) );
+	col *= 1.2*vec3(1.,0.99,0.95);   
+	col = clamp(1.06*col-0.03, 0., 1.);   
+//   col *= mod(gl_FragCoord.y, 4.0)<2.0 ? 0.6 : 1.0;
+	return col;
+}
+
+//----------------------------------------------------------------------
+// scene(s)
+vec4 scene(vec2 uv){
+	vec3 col = tunnel(uv);
+	col = postprocess(col);
+	//col *= mod(gl_FragCoord.y, 4.0)<2.0 ? 0.6 : 1.0;
+	if(effectId == 0.){
+		
+	return vec4( col, 1.0 ) * transition(0.,20.5,0.5);
+	}else{
+		return vec4(kalicircuts(uv),1.0) * transition(0.,200.5,0.5);
+	}
+}
+//----------------------------------------------------------------------
+// main
+void main() {    
 	
+	freqs[0] = texture2D( fft, vec2( 0.01, 0.0 ) ).x;
+	freqs[1] = texture2D( fft, vec2( 0.07, 0.0 ) ).x;
+	freqs[2] = texture2D( fft, vec2( 0.15, 0.0 ) ).x;
+	freqs[3] = texture2D( fft, vec2( 0.30, 0.0 ) ).x;	
 	
-    // gamma
-	 col = postprocess(col);
-
- //   col *= mod(gl_FragCoord.y, 4.0)<2.0 ? 0.6 : 1.0;
-
-    gl_FragColor = vec4( col, 1.0 ) * transition(3.,20.5,0.5);
+    vec2 q = gl_FragCoord.xy / resolution.xy;
+	vec2 p = -1.0 + 2.0*q;
+	p.x *= resolution.x / resolution.y;
+    if (q.y < .12 || q.y >= .88) {
+		gl_FragColor=vec4(0.,0.,0.,1.);
+		return;
+	}
+    
+    gl_FragColor = scene(p);
 }

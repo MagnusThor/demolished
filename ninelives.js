@@ -61,13 +61,13 @@ var MyDemo;
             var as = new demolishedModels_1.AudioSettings();
             as.audioFile = "assets/plastic.mp3";
             as.bpm = 129;
-            as.duration = 384000;
+            as.duration = 211800;
             as.audioAnalyzerSettings = new demolishedModels_1.AudioAnalyzerSettings(8192, .85, -90, -10);
             audio.createAudio(as).then(function () {
                 demo.resizeCanvas(document.querySelector(".demo"), 2);
                 demo.start(0);
             });
-            var part = new demolishedModels_1.TimeFragment("nine-lives", 0, 384000, false);
+            var part = new demolishedModels_1.TimeFragment("nine-lives", 0, 384000);
             demo.timeFragments.push(part);
             demo.addEntity("nine-lives", assets);
             document.querySelector(".demo").appendChild(canvas);

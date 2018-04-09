@@ -9,16 +9,24 @@ var BaseEntity2D = (function () {
     }
     BaseEntity2D.prototype.update = function (t) {
     };
+    BaseEntity2D.prototype.getPixels = function () {
+        return this.ctx.getImageData(0, 0, this.width, this.height);
+    };
+    BaseEntity2D.prototype.putPixels = function () {
+        throw "not implemented";
+    };
     return BaseEntity2D;
 }());
 exports.BaseEntity2D = BaseEntity2D;
 var Demolished2D = (function () {
-    function Demolished2D(canvas) {
+    function Demolished2D(canvas, w, h) {
         this.canvas = canvas;
+        this.w = w;
         this.entities = new Array();
         this.ctx = canvas.getContext("2d");
         this.animationStartTime = 0;
-        this.resizeCanvas();
+        if (!w && !h)
+            this.resizeCanvas();
     }
     Demolished2D.prototype.clear = function () {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);

@@ -1,7 +1,7 @@
 import { Utils } from './demolishedUtils'
 import { SmartArray } from './demolishedSmartArray';
 import { ShaderEntity, EntityTexture, IEntity } from './demolishedEntity';
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings, IUniforms } from './demolishedModels';
+import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings, IUniforms, IGraph } from './demolishedModels';
 import loadResource from './demolishedLoader'
 import { IDemolisedAudioContext } from "./demolishedSound";
 import { DemoishedProperty, Observe } from './demolishedProperties';
@@ -14,7 +14,7 @@ export namespace Demolished {
         onNext(frame: any):void {}
         onStart(): void { }
         onStop(): void { }
-        onReady(graph:Graph): void { }
+        onReady(graph:IGraph): void { }
 
         gl: WebGLRenderingContext | any;
         webGLbuffer: WebGLBuffer
@@ -68,15 +68,17 @@ export namespace Demolished {
 
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
 
-            renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);
+            renderingContext.bufferData(renderingContext.ARRAY_BUFFER,
+                 new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]),
+                  renderingContext.STATIC_DRAW);
 
             return renderingContext;
         }
 
-        loadGraph(graphFile: string): Promise<Graph> {
+        loadGraph(graphFile: string): Promise<IGraph> {
             return loadResource(graphFile).then((response: Response) => {
                 return response.json();
-            }).then((graph: Graph) => {
+            }).then((graph: IGraph) => {
                 return graph;
             });
         }
@@ -105,51 +107,46 @@ export namespace Demolished {
 
             // load and add the entities
             if(this.timelineFile != ""){
-
-            
-            this.loadGraph(this.timelineFile).then((graph: Graph) => {
+        
+            this.loadGraph(this.timelineFile).then((graph: IGraph) => {
 
                 let audioSettings: AudioSettings = graph.audioSettings;
 
                 graph.timeline.forEach((tf: TimeFragment) => {
-                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop,tf.useTransitions);
+                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop,tf.subeffects);
                     this.timeFragments.push(_tf)
                 });
 
-                this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
-                    return a.start - b.start;
-                });
-
-                    // todo: make method
-                    this.audio.createAudio(audioSettings).then((state: boolean) => {
-
-                    graph.effects.forEach((effect: Effect) => {
-                        let textures = Promise.all(effect.textures.map((texture: any) => {
-                            return new Promise((resolve, reject) => {
-                              
-                                let image = new Image();
-                                image.src = texture.src;
-                                image.onload = () => {
-                                    resolve(image);
-                                }
-                                image.onerror = (err) => resolve(err);
-                            }).then((image: HTMLImageElement) => {
-                                return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
-                            });
-                        })).then((textures: Array<EntityTexture>) => {
-                            this.addEntity(effect.name, textures);
-                            if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
-                                this.onReady(graph);
-                            }
-                        });
+                    this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
+                        return a.start - b.start;
                     });
-                       this.resizeCanvas(this.parent);
+
+                    // todo: make method 
+                    this.audio.createAudio(audioSettings).then((state: boolean) => {
+                        graph.effects.forEach((effect: Effect) => {
+                            let textures = Promise.all(effect.textures.map((texture: any) => {
+                                return new Promise((resolve, reject) => {
+                                    let image = new Image();
+                                    image.src = texture.src;
+                                    image.onload = () => {
+                                        resolve(image);
+                                    }
+                                    image.onerror = (err) => resolve(err);
+                                }).then((image: HTMLImageElement) => {
+                                    return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
+                                });
+                            })).then((textures: Array<EntityTexture>) => {
+                                this.addEntity(effect.name, textures);
+                                if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
+                                    this.onReady(graph);
+                                }
+                            });
+                        });
+                        this.resizeCanvas(this.parent);
                 });
             });
+            }
         }
-        }
-
-      
         // todo:Rename
         private addEventListeners() {
             document.addEventListener("mousemove", (evt: MouseEvent) => {
@@ -175,9 +172,11 @@ export namespace Demolished {
             return entity;
         }
         private tryFindTimeFragment(time: number): TimeFragment {
-           return this.timeFragments.find((tf: TimeFragment) => {
+           let fragment = this.timeFragments.find((tf: TimeFragment) => {
                 return time < tf.stop && time >= tf.start
             });
+            if(fragment) fragment.init();
+            return fragment;
         }
 
        resetClock(time:number){
@@ -186,6 +185,9 @@ export namespace Demolished {
         this.animationOffsetTime = time;
         this.animationStartTime= performance.now();
         this.audio.currentTime = (time / 1000) % 60;
+
+        this.currentTimeFragment.reset();
+        
        } 
 
         start(time: number) {
@@ -193,6 +195,7 @@ export namespace Demolished {
             this.animationFrameCount = 0;
             this.animationOffsetTime = time;
             this.currentTimeFragment = this.tryFindTimeFragment(time);
+
             this.animationStartTime = performance.now();
             this.animate(time);
            
@@ -202,8 +205,7 @@ export namespace Demolished {
                 this.onStart();
         }
 
-        stop(): number {
-         
+        stop(): number {     
             this.audio.stop();
             cancelAnimationFrame(this.animationFrameId);;
             this.onStop();
@@ -212,18 +214,16 @@ export namespace Demolished {
 
         mute(){
             this.isSoundMuted = !this.isSoundMuted;
-             this.audio.mute(this.isSoundMuted);
+            this.audio.mute(this.isSoundMuted);
         }
 
         pause():number{
             if(!this.isPaused){
                 this.isPaused = true;
-            
                 this.stop();
             }else{
                 this.isPaused = false;
-      
-                   this.resume( this.uniforms.time); 
+                this.resume( this.uniforms.time); 
             }
            
             return this.uniforms.time;
@@ -243,13 +243,17 @@ export namespace Demolished {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
 
-
+        /**
+         *  animation loop
+         *  todo: needs to be refactored
+         * @private
+         * @param {number} time 
+         * @memberof Rendering
+         */
         private animate(time: number) {
             let animationTime = time - this.animationStartTime;
 
-            this.animationFrameId = requestAnimationFrame((_time: number) => {
-                this.animate(_time);
-            });
+            this.animationFrameId = requestAnimationFrame((_time: number) => this.animate(_time));
             if (this.audio) {
                 this.updateTextureData(
                     this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());
@@ -260,12 +264,12 @@ export namespace Demolished {
             }
             
             if (this.currentTimeFragment) {
-                if (animationTime >= this.currentTimeFragment.stop) {
+                if (animationTime >= this.currentTimeFragment.stop) 
                     this.currentTimeFragment = this.tryFindTimeFragment(time);
-
-                }
+                
                 this.currentTimeFragment ?
                     this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0)
+
             }
 
             this.onFrame({
@@ -300,7 +304,7 @@ export namespace Demolished {
         resizeCanvas(parent:Element,resolution?:number) {
 
             if(resolution) this.resolution = resolution;
-
+            
             let width = parent.clientWidth / this.resolution;
             let height = parent.clientHeight / this.resolution;
 
@@ -319,10 +323,12 @@ export namespace Demolished {
 
         }
 
+        getCurrentUniforms():Map<string,WebGLUniformLocation>{
+            return this.currentTimeFragment.entityShader.uniformsCache;
+        }
         private updateUniforms(){
                 throw "Not yet implemented";
         }
-      
         renderEntities(ent: IEntity, ts: number) {
 
             let gl = this.gl;
@@ -330,14 +336,15 @@ export namespace Demolished {
             this.uniforms.time = ts; 
             this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
 
-            gl.useProgram(ent.currentProgram);
-
-        
+            gl.useProgram(ent.glProgram);
+  
             gl.uniform1f(ent.uniformsCache.get("timeTotal"),this.uniforms.timeTotal /1000);
             gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
             gl.uniform4fv(ent.uniformsCache.get("datetime"),this.uniforms.datetime);
 
             gl.uniform1i(ent.uniformsCache.get("frame"),this.animationFrameCount);
+
+            gl.uniform1i(ent.uniformsCache.get("subEffectId"),ent.subEffectId);
 
             gl.uniform2f(ent.uniformsCache.get("mouse"), this.uniforms.mouseX, this.uniforms.mouseY);
             gl.uniform2f(ent.uniformsCache.get("resolution"), this.uniforms.screenWidth, this.uniforms.screenHeight);
@@ -351,13 +358,12 @@ export namespace Demolished {
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
 
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram,"backbuffer"),1);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram,"backbuffer"),1);
             gl.activeTexture(gl.TEXTURE0);
 
             gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, "fft"), 0);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
 
-            //let offset = 2;
             ent.textures.forEach((asset: EntityTexture, index: number) => {      
                 this.bindTexture(ent,asset,index);
             });
@@ -370,21 +376,18 @@ export namespace Demolished {
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             ent.swapBuffers();
 
+            ent.runAction("$subeffects",this.uniforms.time / 1000);
             this.animationFrameCount ++;
-        
         }
         addTexture(ent:IEntity, entityTexture:EntityTexture){
                 ent.textures.push(entityTexture);
         }
         bindTexture(ent:IEntity, entityTexture:EntityTexture,c:number){
-           // let offset = 2;
             let gl = this.gl;
             gl.activeTexture(gl.TEXTURE0 + (2 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.currentProgram, entityTexture.name), 2 + c);
-        
-
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 2 + c);
         }
-        textureCount: number = 0;
+        
     }
 }

@@ -81,7 +81,7 @@ export namespace MyDemo {
 
                         })
 
-                        let part = new TimeFragment("nine-lives", 0, 384000, false);
+                        let part = new TimeFragment("nine-lives", 0, 384000, );
 
                         demo.timeFragments.push(part);
 
