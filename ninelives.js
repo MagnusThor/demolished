@@ -14,7 +14,7 @@ var demolished_1 = require("./src/demolished");
 var demolishedSound_1 = require("./src/demolishedSound");
 var demolishedEntity_1 = require("./src/demolishedEntity");
 var demolishedModels_1 = require("./src/demolishedModels");
-var demolishedTexture_1 = require("./src/demolishedTexture");
+var demolishedtexture_1 = require("demolishedtexture");
 var $ = document.querySelector;
 var Ninelives;
 (function (Ninelives_1) {
@@ -73,7 +73,7 @@ var Ninelives;
             return new Ninelives();
         };
         Ninelives.prototype.renderTexture = function (fn) {
-            var base64 = demolishedTexture_1.DemolishedTextureGen.createTexture(512, 512, fn);
+            var base64 = demolishedtexture_1.DemolishedTextureGen.createTexture(512, 512, fn);
             var image = new Image();
             image.src = base64;
             return image;

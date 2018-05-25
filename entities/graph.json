@@ -21,7 +21,7 @@
         {
             "start": 150200,
             "stop": 250200,
-            "entity": "iq-template",
+            "entity": "nebula",
             "subeffects":[]
         }
     ],

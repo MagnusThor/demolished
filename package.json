@@ -2,7 +2,7 @@
   "name": "demolished",
   "version": "1.0.1",
   "description": "...",
-  "main": "main.js",
+  "main": "server.js",
   "author": {
     "name": "Magnus Thor",
     "email": "magnus.thor74@gmail.com"
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "codemirror": "^5.30.0",
+    "demolishedtexture": "^1.0.1",
     "reflect-metadata": "^0.1.12"
   }
 }

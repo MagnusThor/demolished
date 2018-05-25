@@ -3,7 +3,7 @@ import { DemolishedStreamingMusic } from './src/demolishedSound';
 import { ShaderEntity, EntityTexture } from './src/demolishedEntity';
 import { TimeFragment, Uniforms, Graph, AudioSettings, AudioAnalyzerSettings } from './src/demolishedModels';
 import loadResource from "./src/demolishedLoader";
-import { DemolishedTextureGen } from './src/demolishedTexture';
+import { DemolishedTextureGen } from 'demolishedtexture';
 
 let $ =  document.querySelector;
 
@@ -92,5 +92,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let p = Ninelives.Ninelives.instance();
 
-        window["_demo"] = p;
+
 });
