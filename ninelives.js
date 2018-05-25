@@ -15,8 +15,9 @@ var demolishedSound_1 = require("./src/demolishedSound");
 var demolishedEntity_1 = require("./src/demolishedEntity");
 var demolishedModels_1 = require("./src/demolishedModels");
 var demolishedTexture_1 = require("./src/demolishedTexture");
-var MyDemo;
-(function (MyDemo) {
+var $ = document.querySelector;
+var Ninelives;
+(function (Ninelives_1) {
     var CustomUniforms = (function (_super) {
         __extends(CustomUniforms, _super);
         function CustomUniforms(w, h) {
@@ -29,7 +30,7 @@ var MyDemo;
             var canvas = document.createElement("canvas");
             var audio = new demolishedSound_1.DemolishedStreamingMusic();
             var uniforms = new CustomUniforms(canvas.width, canvas.height);
-            var demo = new demolished_1.Demolished.Rendering(canvas, document.querySelector(".demo"), "", audio, uniforms);
+            var demo = new demolished_1.Demolished.Rendering(canvas, $(".demo"), "", audio, uniforms);
             var assets = new Array();
             assets.push(new demolishedEntity_1.EntityTexture(this.renderTexture(function (pixel, x, y, w, h) {
                 var t = this, m = Math;
@@ -58,19 +59,14 @@ var MyDemo;
                 r = g = b = Math.round(255 * n);
                 return [r, g, b];
             }), "iChannel1", 512, 512, 0));
-            var as = new demolishedModels_1.AudioSettings();
-            as.audioFile = "assets/plastic.mp3";
-            as.bpm = 129;
-            as.duration = 211800;
-            as.audioAnalyzerSettings = new demolishedModels_1.AudioAnalyzerSettings(8192, .85, -90, -10);
-            audio.createAudio(as).then(function () {
-                demo.resizeCanvas(document.querySelector(".demo"), 2);
+            audio.createAudio(new demolishedModels_1.AudioSettings("assets/plastic.mp3", new demolishedModels_1.AudioAnalyzerSettings(8192, .85, -90, -10), 211800, 129)).then(function () {
+                demo.resizeCanvas($(".demo"), 2);
                 demo.start(0);
             });
-            var part = new demolishedModels_1.TimeFragment("nine-lives", 0, 384000);
+            var part = new demolishedModels_1.TimeFragment("nine-lives", 0, 211800);
             demo.timeFragments.push(part);
             demo.addEntity("nine-lives", assets);
-            document.querySelector(".demo").appendChild(canvas);
+            $(".demo").appendChild(canvas);
             this.demolished = demo;
         }
         Ninelives.instance = function () {
@@ -84,9 +80,9 @@ var MyDemo;
         };
         return Ninelives;
     }());
-    MyDemo.Ninelives = Ninelives;
-})(MyDemo = exports.MyDemo || (exports.MyDemo = {}));
+    Ninelives_1.Ninelives = Ninelives;
+})(Ninelives = exports.Ninelives || (exports.Ninelives = {}));
 document.addEventListener("DOMContentLoaded", function () {
-    var p = MyDemo.Ninelives.instance();
+    var p = Ninelives.Ninelives.instance();
     window["_demo"] = p;
 });

@@ -1,5 +1,7 @@
 import { Demolished2D, BaseEntity2D, IEntity2D } from './src/demolished2D';
 import { Utils } from './src/demolishedUtils';
+import { DemolishedConfig } from './src/demolishedConfig';
+import { TimeFragment } from './src/demolishedModels';
 
 export class TextEffect extends BaseEntity2D implements IEntity2D {
     dx:number;
@@ -45,9 +47,27 @@ export class Lab2d{
 
     constructor(el:HTMLCanvasElement){
         let Render2D = new Demolished2D(el,512,512);
-        Render2D.addEntity(new TextEffect("textBlock",Render2D.ctx,"GIN & TONIC",60,240,"128px 'Arial'"));
-        Render2D.addEntity(new TextEffect("textBlock",Render2D.ctx,"JENNY",80,380,"bold 128px 'Arial'"));
+
+        Render2D.addEntity(new TextEffect("textBlock",Render2D.ctx,"CODE",60,240,"128px 'Arial'"));
+        Render2D.addEntity(new TextEffect("textBlock",Render2D.ctx,"FOO BAR",80,380,"bold 128px 'Arial'"));
         Render2D.start(0);
+
+        let store = new DemolishedConfig();
+
+        store.loadStore();
+
+            store.save("foo",1);
+            store.save("bar","Hello World");
+            store.save<TimeFragment>("timeFragment",new TimeFragment("shader",0,2000,[100,200]));
+
+            let tf = store.load<TimeFragment>("timeFragment");
+
+        store.updateStore();
+
+
+
+
+
     }
 
 }

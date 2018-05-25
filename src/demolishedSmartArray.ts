@@ -8,7 +8,7 @@ export class SmartArray<T> extends Array {
             this.dataArray = new Array<T>();
             this.currentIndex  =0;
     }
-    get mode() {
+    get interpolate() {
         if (!this.dataArray.length) return 0;
         const counts = {};
         let mode = null;

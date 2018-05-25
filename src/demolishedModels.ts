@@ -41,10 +41,12 @@ export class TimeFragment {
     constructor(public entity: string, public start: number, public stop: number,
         subeffects?: Array<number>) {
             subeffects ? this.subeffects = subeffects : this.subeffects = new Array<number>();
-          this._subeffects = subeffects;   
+
+          this._subeffects = this.subeffects.map( (a) => {return a});   
     }
     reset(){
-        this.subeffects = this.subeffects;
+        this.subeffects = this._subeffects.map( (a) => {return a});
+        console.log(this.subeffects);
     }
     setEntity(ent: ShaderEntity) {
         this.entityShader = ent;
@@ -108,7 +110,6 @@ export interface IUniforms{
     setScreen(w:number,height:number)
 }
 
-
 /**
  * 
  * 
@@ -146,8 +147,8 @@ export class AudioSettings{
             audioAnalyzerSettings: AudioAnalyzerSettings
             duration:number;
             bpm: number
-            constructor(audioFile:string,audioAnalyzerSettings:AudioAnalyzerSettings,duration:number,
-            bpm:number){
+            constructor(audioFile?:string,audioAnalyzerSettings?:AudioAnalyzerSettings,duration?:number,
+            bpm?:number){
                 this.audioAnalyzerSettings = audioAnalyzerSettings;
                 this.bpm = bpm;
                 this.audioFile;

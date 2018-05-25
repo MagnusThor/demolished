@@ -32,6 +32,7 @@ var demolishedUtils_1 = require("./src/demolishedUtils");
 var demolishedSound_1 = require("./src/demolishedSound");
 var demoishedEditorHelper_1 = require("./src/ui/editor/demoishedEditorHelper");
 var demolished2D_1 = require("./src/demolished2D");
+var demolishedRecoder_1 = require("./src/demolishedRecoder");
 var SpectrumAnalyzer = (function (_super) {
     __extends(SpectrumAnalyzer, _super);
     function SpectrumAnalyzer(ctx) {
@@ -73,15 +74,42 @@ var DemolishedEd = (function () {
         this.engine = new demolished_1.Demolished.Rendering(demolishedUtils_1.Utils.$("#webgl"), demolishedUtils_1.Utils.$("#shader-view"), "entities/graph.json", this.music);
         var timeEl = demolishedUtils_1.Utils.$(".time");
         var playback = demolishedUtils_1.Utils.$("#toogle-playback");
+        var vertextCode = demolishedUtils_1.Utils.$("#vertex");
         var sound = demolishedUtils_1.Utils.$("#toggle-sound");
         var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
         var immediate = demolishedUtils_1.Utils.$(".immediate");
         var resetTimers = demolishedUtils_1.Utils.$("#reset-clocks");
         var timeLine = demolishedUtils_1.Utils.$("#current-time");
         var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
-        resetTimers.addEventListener("click", function () {
+        var shaderWin = demolishedUtils_1.Utils.$("#shader-win");
+        var record = demolishedUtils_1.Utils.$("#btn-record");
+        record.addEventListener("click", function (evt) {
+            var videoTrack = _this.engine.canvas["captueSteam"](60);
+            _this.recordset = new demolishedRecoder_1.DemolishedRecorder(videoTrack, _this.engine.audio.getTracks());
         });
-        timeEl.addEventListener("click", function () {
+        var tabButtons = demolishedUtils_1.Utils.$$(".tab-caption");
+        var tabs = demolishedUtils_1.Utils.$$(".tab");
+        tabButtons.forEach(function (el, idx) {
+            el.addEventListener("click", function (evt) {
+                tabs.forEach(function (b) {
+                    b.classList.add("hide");
+                    console.log(b);
+                });
+                tabButtons.forEach(function (b) {
+                    b.classList.remove("tab-active");
+                });
+                console.log(el.dataset.target);
+                var src = evt.srcElement;
+                src.classList.add("tab-active");
+                demolishedUtils_1.Utils.$("#" + src.dataset.target).classList.remove("hide");
+            });
+        });
+        shaderWin.addEventListener("dragend", function (evt) {
+            var win = evt.target;
+            win.style.left = (evt.clientX).toString() + "px";
+            win.style.top = evt.clientY.toString() + "px";
+        });
+        resetTimers.addEventListener("click", function () {
             _this.engine.uniforms.time = 0;
             _this.engine.resetClock(0);
         });
@@ -202,5 +230,6 @@ var DemolishedEd = (function () {
 }());
 exports.DemolishedEd = DemolishedEd;
 document.addEventListener("DOMContentLoaded", function () {
-    DemolishedEd.getIntance();
+    var p = DemolishedEd.getIntance();
+    console.log(p);
 });

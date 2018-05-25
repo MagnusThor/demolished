@@ -11,6 +11,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolished2D_1 = require("./src/demolished2D");
+var demolishedConfig_1 = require("./src/demolishedConfig");
+var demolishedModels_1 = require("./src/demolishedModels");
 var TextEffect = (function (_super) {
     __extends(TextEffect, _super);
     function TextEffect(name, ctx, text, x, y, font) {
@@ -46,9 +48,16 @@ exports.TextEffect = TextEffect;
 var Lab2d = (function () {
     function Lab2d(el) {
         var Render2D = new demolished2D_1.Demolished2D(el, 512, 512);
-        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "GIN & TONIC", 60, 240, "128px 'Arial'"));
-        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "JENNY", 80, 380, "bold 128px 'Arial'"));
+        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "CODE", 60, 240, "128px 'Arial'"));
+        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "FOO BAR", 80, 380, "bold 128px 'Arial'"));
         Render2D.start(0);
+        var store = new demolishedConfig_1.DemolishedConfig();
+        store.loadStore();
+        store.save("foo", 1);
+        store.save("bar", "Hello World");
+        store.save("timeFragment", new demolishedModels_1.TimeFragment("shader", 0, 2000, [100, 200]));
+        var tf = store.load("timeFragment");
+        store.updateStore();
     }
     Lab2d.getInstance = function (el) {
         return new this(el);

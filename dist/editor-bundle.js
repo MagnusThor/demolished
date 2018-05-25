@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 37);
+/******/ 	return __webpack_require__(__webpack_require__.s = 39);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -9713,6 +9713,115 @@ return CodeMirror$1;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+;
+var RenderTarget = (function () {
+    function RenderTarget(frameBuffer, renderBuffer, texture) {
+        this.frameBuffer = frameBuffer;
+        this.renderBuffer = renderBuffer;
+        this.texture = texture;
+    }
+    return RenderTarget;
+}());
+exports.RenderTarget = RenderTarget;
+var Graph = (function () {
+    function Graph() {
+    }
+    return Graph;
+}());
+exports.Graph = Graph;
+var TimeFragment = (function () {
+    function TimeFragment(entity, start, stop, subeffects) {
+        this.entity = entity;
+        this.start = start;
+        this.stop = stop;
+        subeffects ? this.subeffects = subeffects : this.subeffects = new Array();
+        this._subeffects = this.subeffects.map(function (a) { return a; });
+    }
+    TimeFragment.prototype.reset = function () {
+        this.subeffects = this._subeffects.map(function (a) { return a; });
+        console.log(this.subeffects);
+    };
+    TimeFragment.prototype.setEntity = function (ent) {
+        this.entityShader = ent;
+    };
+    TimeFragment.prototype.init = function () {
+        var _this = this;
+        this.subeffects.forEach(function (interval) {
+            var shader = _this.entityShader;
+            shader.addAction("$subeffects", function (ent, tm) {
+                if (_this.subeffects.find(function (a) { return a <= tm; })) {
+                    ent.subEffectId++;
+                    _this.subeffects.shift();
+                    console.log(_this.subeffects, shader.subEffectId, tm);
+                }
+            });
+        });
+    };
+    return TimeFragment;
+}());
+exports.TimeFragment = TimeFragment;
+var Uniforms = (function () {
+    function Uniforms(width, height) {
+        this.screenWidth = width;
+        this.screenHeight = height;
+        this.time = 0;
+        this.timeTotal = 0;
+        this.mouseX = 0.5;
+        this.mouseY = 0.5;
+    }
+    Object.defineProperty(Uniforms.prototype, "datetime", {
+        get: function () {
+            var d = new Date();
+            return [d.getFullYear(), d.getMonth(), d.getDate(),
+                d.getHours() * 60.0 * 60 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000.0];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Uniforms.prototype.setScreen = function (w, h) {
+        this.screenWidth = w;
+        this.screenWidth = h;
+    };
+    return Uniforms;
+}());
+exports.Uniforms = Uniforms;
+var Effect = (function () {
+    function Effect() {
+        this.textures = new Array();
+        this.type = 0;
+    }
+    return Effect;
+}());
+exports.Effect = Effect;
+var AudioAnalyzerSettings = (function () {
+    function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {
+        this.fftSize = fftSize;
+        this.smoothingTimeConstant = smoothingTimeConstant;
+        this.minDecibels = minDecibels;
+        this.maxDecibels = maxDecibels;
+    }
+    return AudioAnalyzerSettings;
+}());
+exports.AudioAnalyzerSettings = AudioAnalyzerSettings;
+var AudioSettings = (function () {
+    function AudioSettings(audioFile, audioAnalyzerSettings, duration, bpm) {
+        this.audioAnalyzerSettings = audioAnalyzerSettings;
+        this.bpm = bpm;
+        this.audioFile;
+        this.duration = duration;
+    }
+    return AudioSettings;
+}());
+exports.AudioSettings = AudioSettings;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
 function loadResource(file) {
     var promise = new Promise(function (resolve, reject) {
         var wrapper = new XMLHttpRequestWrapper(file, resolve, reject);
@@ -9793,114 +9902,6 @@ exports.ResponseWrapper = ResponseWrapper;
 
 
 /***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-;
-var RenderTarget = (function () {
-    function RenderTarget(frameBuffer, renderBuffer, texture) {
-        this.frameBuffer = frameBuffer;
-        this.renderBuffer = renderBuffer;
-        this.texture = texture;
-    }
-    return RenderTarget;
-}());
-exports.RenderTarget = RenderTarget;
-var Graph = (function () {
-    function Graph() {
-    }
-    return Graph;
-}());
-exports.Graph = Graph;
-var TimeFragment = (function () {
-    function TimeFragment(entity, start, stop, subeffects) {
-        this.entity = entity;
-        this.start = start;
-        this.stop = stop;
-        subeffects ? this.subeffects = subeffects : this.subeffects = new Array();
-        this._subeffects = subeffects;
-    }
-    TimeFragment.prototype.reset = function () {
-        this.subeffects = this.subeffects;
-    };
-    TimeFragment.prototype.setEntity = function (ent) {
-        this.entityShader = ent;
-    };
-    TimeFragment.prototype.init = function () {
-        var _this = this;
-        this.subeffects.forEach(function (interval) {
-            var shader = _this.entityShader;
-            shader.addAction("$subeffects", function (ent, tm) {
-                if (_this.subeffects.find(function (a) { return a <= tm; })) {
-                    ent.subEffectId++;
-                    _this.subeffects.shift();
-                    console.log(_this.subeffects, shader.subEffectId, tm);
-                }
-            });
-        });
-    };
-    return TimeFragment;
-}());
-exports.TimeFragment = TimeFragment;
-var Uniforms = (function () {
-    function Uniforms(width, height) {
-        this.screenWidth = width;
-        this.screenHeight = height;
-        this.time = 0;
-        this.timeTotal = 0;
-        this.mouseX = 0.5;
-        this.mouseY = 0.5;
-    }
-    Object.defineProperty(Uniforms.prototype, "datetime", {
-        get: function () {
-            var d = new Date();
-            return [d.getFullYear(), d.getMonth(), d.getDate(),
-                d.getHours() * 60.0 * 60 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000.0];
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Uniforms.prototype.setScreen = function (w, h) {
-        this.screenWidth = w;
-        this.screenWidth = h;
-    };
-    return Uniforms;
-}());
-exports.Uniforms = Uniforms;
-var Effect = (function () {
-    function Effect() {
-        this.textures = new Array();
-        this.type = 0;
-    }
-    return Effect;
-}());
-exports.Effect = Effect;
-var AudioAnalyzerSettings = (function () {
-    function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {
-        this.fftSize = fftSize;
-        this.smoothingTimeConstant = smoothingTimeConstant;
-        this.minDecibels = minDecibels;
-        this.maxDecibels = maxDecibels;
-    }
-    return AudioAnalyzerSettings;
-}());
-exports.AudioAnalyzerSettings = AudioAnalyzerSettings;
-var AudioSettings = (function () {
-    function AudioSettings(audioFile, audioAnalyzerSettings, duration, bpm) {
-        this.audioAnalyzerSettings = audioAnalyzerSettings;
-        this.bpm = bpm;
-        this.audioFile;
-        this.duration = duration;
-    }
-    return AudioSettings;
-}());
-exports.AudioSettings = AudioSettings;
-
-
-/***/ }),
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -9917,8 +9918,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolishedEntity_1 = __webpack_require__(4);
-var demolishedModels_1 = __webpack_require__(2);
-var demolishedLoader_1 = __webpack_require__(1);
+var demolishedModels_1 = __webpack_require__(1);
+var demolishedLoader_1 = __webpack_require__(2);
 var demolishedProperties_1 = __webpack_require__(9);
 var Demolished;
 (function (Demolished) {
@@ -9996,13 +9997,12 @@ var Demolished;
                     this.canvas.getContext('webgl', contextAttributes) ||
                     this.canvas.getContext('experimental-webgl', contextAttributes);
             renderingContext.getExtension('OES_standard_derivatives');
-            renderingContext.getExtension("OES_texture_float");
-            renderingContext.getExtension("OES_texture_half_float");
-            renderingContext.getExtension("OES_texture_half_float_linear");
-            renderingContext.getExtension("WEBGL_draw_buffers");
+            renderingContext.getExtension('OES_texture_float_linear');
+            renderingContext.getExtension('OES_texture_half_float_linear');
+            renderingContext.getExtension('EXT_texture_filter_anisotropic');
+            renderingContext.getExtension('EXT_color_buffer_float');
             renderingContext.getExtension("WEBGL_depth_texture");
             renderingContext.getExtension("EXT_shader_texture_lod");
-            renderingContext.getExtension("EXT_texture_filter_anisotropic");
             this.webGLbuffer = renderingContext.createBuffer();
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);
@@ -10047,12 +10047,9 @@ var Demolished;
             return fragment;
         };
         Rendering.prototype.resetClock = function (time) {
-            this.uniforms.timeTotal = time;
-            this.animationFrameCount = 0;
-            this.animationOffsetTime = time;
-            this.animationStartTime = performance.now();
-            this.audio.currentTime = (time / 1000) % 60;
             this.currentTimeFragment.reset();
+            this.stop();
+            this.start(time);
         };
         Rendering.prototype.start = function (time) {
             this.uniforms.timeTotal = time;
@@ -10161,39 +10158,10 @@ var Demolished;
             throw "Not yet implemented";
         };
         Rendering.prototype.renderEntities = function (ent, ts) {
-            var _this = this;
-            var gl = this.gl;
             this.uniforms.time = ts;
             this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
-            gl.useProgram(ent.glProgram);
-            gl.uniform1f(ent.uniformsCache.get("timeTotal"), this.uniforms.timeTotal / 1000);
-            gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
-            gl.uniform4fv(ent.uniformsCache.get("datetime"), this.uniforms.datetime);
-            gl.uniform1i(ent.uniformsCache.get("frame"), this.animationFrameCount);
-            gl.uniform1i(ent.uniformsCache.get("subEffectId"), ent.subEffectId);
-            gl.uniform2f(ent.uniformsCache.get("mouse"), this.uniforms.mouseX, this.uniforms.mouseY);
-            gl.uniform2f(ent.uniformsCache.get("resolution"), this.uniforms.screenWidth, this.uniforms.screenHeight);
-            gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
-            gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.webGLbuffer);
-            gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "backbuffer"), 1);
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
-            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
-            ent.textures.forEach(function (asset, index) {
-                _this.bindTexture(ent, asset, index);
-            });
-            gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            ent.swapBuffers();
-            ent.runAction("$subeffects", this.uniforms.time / 1000);
+            this.gl.useProgram(ent.glProgram);
+            ent.render(this);
             this.animationFrameCount++;
         };
         Rendering.prototype.addTexture = function (ent, entityTexture) {
@@ -10232,8 +10200,15 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedModels_1 = __webpack_require__(2);
-var demolishedLoader_1 = __webpack_require__(1);
+var demolishedModels_1 = __webpack_require__(1);
+var demolishedLoader_1 = __webpack_require__(2);
+var DemolishedShaderResource = (function () {
+    function DemolishedShaderResource() {
+        throw "not yet mimplamented";
+    }
+    return DemolishedShaderResource;
+}());
+exports.DemolishedShaderResource = DemolishedShaderResource;
 var EntityTexture = (function () {
     function EntityTexture(image, name, width, height, assetType) {
         this.image = image;
@@ -10266,15 +10241,50 @@ var ShaderEntity = (function (_super) {
         _this.h = h;
         _this.textures = textures;
         _this.uniformsCache = new Map();
-        _this.loadShaders().then(function () {
-            _this.initShader();
-            _this.target = _this.createRenderTarget(_this.w, _this.h);
-            _this.backTarget = _this.createRenderTarget(_this.w, _this.h);
+        _this.loadShaders().then(function (numOfShaders) {
+            if (numOfShaders > -1) {
+                _this.initShader();
+                _this.target = _this.createRenderTarget(_this.w, _this.h);
+                _this.backTarget = _this.createRenderTarget(_this.w, _this.h);
+            }
         });
         return _this;
     }
-    ShaderEntity.prototype.render = function () {
+    ShaderEntity.prototype.addBuffer = function (key) {
         throw "Not yet implemented";
+    };
+    ShaderEntity.prototype.render = function (engine) {
+        var gl = this.gl;
+        var ent = this;
+        gl.uniform1f(ent.uniformsCache.get('time'), engine.uniforms.time / 1000.);
+        gl.uniform1f(ent.uniformsCache.get("timetotal"), engine.uniforms.timeTotal / 1000.);
+        gl.uniform4fv(ent.uniformsCache.get("datetime"), engine.uniforms.datetime);
+        gl.uniform1f(ent.uniformsCache.get("playbacktime"), engine.audio.currentTime);
+        gl.uniform1i(ent.uniformsCache.get("frameId"), engine.animationFrameCount);
+        gl.uniform1i(ent.uniformsCache.get("subEffectId"), ent.subEffectId);
+        gl.uniform2f(ent.uniformsCache.get("mouse"), engine.uniforms.mouseX, engine.uniforms.mouseY);
+        gl.uniform2f(ent.uniformsCache.get("resolution"), engine.uniforms.screenWidth, engine.uniforms.screenHeight);
+        gl.bindBuffer(gl.ARRAY_BUFFER, ent.mainBuffer);
+        gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, engine.webGLbuffer);
+        gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
+        gl.uniform1i(gl.getUniformLocation(ent.glProgram, "backbuffer"), 1);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, engine.fftTexture);
+        gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
+        ent.textures.forEach(function (asset, index) {
+            engine.bindTexture(ent, asset, index);
+        });
+        gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        ent.swapBuffers();
+        ent.runAction("$subeffects", engine.uniforms.time / 1000);
     };
     ShaderEntity.prototype.addAction = function (key, fn) {
         this.actions.set(key, fn);
@@ -10285,6 +10295,34 @@ var ShaderEntity = (function (_super) {
     ShaderEntity.prototype.removeAction = function (key) {
         return this.actions.delete(key);
     };
+    Object.defineProperty(ShaderEntity.prototype, "vertexHeader", {
+        get: function () {
+            var header = "";
+            header += "#version 300 es\n" +
+                "#ifdef GL_ES\n" +
+                "precision highp float;\n" +
+                "precision highp int;\n" +
+                "precision mediump sampler3D;\n" +
+                "#endif\n";
+            return header;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ShaderEntity.prototype, "fragmentHeader", {
+        get: function () {
+            var header = "";
+            header += "#version 300 es\n" +
+                "#ifdef GL_ES\n" +
+                "precision highp float;\n" +
+                "precision highp int;\n" +
+                "precision mediump sampler3D;\n" +
+                "#endif\n";
+            return header;
+        },
+        enumerable: true,
+        configurable: true
+    });
     ShaderEntity.prototype.reset = function () {
         throw "not yet implemented";
     };
@@ -10310,17 +10348,17 @@ var ShaderEntity = (function (_super) {
     ShaderEntity.prototype.loadShaders = function () {
         var _this = this;
         var urls = new Array();
-        urls.push("entities/" + this.name + "/fragment.glsl");
-        urls.push("entities/" + this.name + "/vertex.glsl");
+        urls.push("entities/shaders/" + this.name + "/fragment.glsl");
+        urls.push("entities/shaders/" + this.name + "/vertex.glsl");
         return Promise.all(urls.map(function (url) {
             return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });
         })).then(function (result) {
-            _this.fragmentShader = result[0];
-            _this.vertexShader = result[1];
-            return true;
+            _this.fragmentShader = _this.fragmentHeader + result[0];
+            _this.vertexShader = _this.vertexHeader + result[1];
+            return urls.length;
         }).catch(function (reason) {
             _this.onError(reason);
-            return false;
+            return -1;
         });
     };
     ShaderEntity.prototype.compile = function (fs, vs) {
@@ -10347,32 +10385,29 @@ var ShaderEntity = (function (_super) {
     ShaderEntity.prototype.initShader = function () {
         var _this = this;
         var gl = this.gl;
-        this.buffer = gl.createBuffer();
+        this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
         var vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
         var fs = this.createShader(gl, this.fragmentShader, gl.FRAGMENT_SHADER);
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);
         gl.linkProgram(this.glProgram);
-        if (!gl.getProgramParameter(this.glProgram, gl.LINK_STATUS)) {
-            var info = gl.getProgramInfoLog(this.glProgram);
-            var error = gl.getProgramParameter(this.glProgram, gl.VALIDATE_STATUS);
-            this.onError(info);
-        }
         this.cacheUniformLocation('fft');
+        this.cacheUniformLocation("subEffectId");
+        this.cacheUniformLocation("playbacktime");
         this.cacheUniformLocation('time');
         this.cacheUniformLocation("datetime");
         this.cacheUniformLocation('frameId');
-        this.cacheUniformLocation("timeTotal");
+        this.cacheUniformLocation("timetotal");
         this.cacheUniformLocation('mouse');
         this.cacheUniformLocation('resolution');
-        this.cacheUniformLocation("subEffectId");
         this.cacheUniformLocation("backbuffer");
         this.subEffectId = 0;
         this.frameId = 0;
         this.positionAttribute = 0;
         gl.enableVertexAttribArray(this.positionAttribute);
-        this.vertexPosition = gl.getAttribLocation(this.glProgram, "position");
+        this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
+        console.log(this.vertexPosition);
         gl.enableVertexAttribArray(this.vertexPosition);
         this.textures.forEach(function (asset) {
             asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
@@ -10388,6 +10423,10 @@ var ShaderEntity = (function (_super) {
         var shader = gl.createShader(type);
         gl.shaderSource(shader, src);
         gl.compileShader(shader);
+        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!success) {
+            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+        }
         return shader;
     };
     return ShaderEntity;
@@ -10412,7 +10451,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedLoader_1 = __webpack_require__(1);
+var demolishedLoader_1 = __webpack_require__(2);
 var DemolishedSoundPeaks = (function () {
     function DemolishedSoundPeaks() {
     }
@@ -10461,6 +10500,9 @@ var DemolishedSIDMusic = (function (_super) {
     function DemolishedSIDMusic() {
         return _super.call(this) || this;
     }
+    DemolishedSIDMusic.prototype.getTracks = function () {
+        throw "not yet implemented";
+    };
     Object.defineProperty(DemolishedSIDMusic.prototype, "textureSize", {
         get: function () {
             return 16;
@@ -10519,6 +10561,9 @@ var DemolishedStreamingMusic = (function (_super) {
     function DemolishedStreamingMusic() {
         return _super.call(this) || this;
     }
+    DemolishedStreamingMusic.prototype.getTracks = function () {
+        throw "not yet implemented";
+    };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "textureSize", {
         get: function () {
             return 32;
@@ -12069,6 +12114,90 @@ var BaseEntity2D = (function () {
     return BaseEntity2D;
 }());
 exports.BaseEntity2D = BaseEntity2D;
+var Point3D = (function () {
+    function Point3D(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    Point3D.prototype.rotateX = function (angle) {
+        var rad, cosa, sina, y, z;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        y = this.y * cosa - this.z * sina;
+        z = this.y * sina + this.z * cosa;
+        return new Point3D(this.x, y, z);
+    };
+    Point3D.prototype.rotateY = function (angle) {
+        var rad, cosa, sina, x, z;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        z = this.z * cosa - this.x * sina;
+        x = this.z * sina + this.x * cosa;
+        return new Point3D(x, this.y, z);
+    };
+    Point3D.prototype.rotateZ = function (angle) {
+        var rad, cosa, sina, x, y;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        x = this.x * cosa - this.y * sina;
+        y = this.x * sina + this.y * cosa;
+        return new Point3D(x, y, this.z);
+    };
+    Point3D.prototype.length = function () {
+        var length = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+        return length;
+    };
+    Point3D.prototype.scale = function (scale) {
+        this.x *= scale;
+        this.y *= scale;
+        this.z *= scale;
+    };
+    Point3D.prototype.normalize = function () {
+        var lengthval = this.length();
+        if (lengthval != 0) {
+            this.x /= lengthval;
+            this.y /= lengthval;
+            this.z /= lengthval;
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    Point3D.prototype.angle = function (bvector) {
+        var anorm = new Point3D(this.x, this.y, this.z);
+        anorm.normalize();
+        var bnorm = new Point3D(bvector.x, bvector.y, bvector.z);
+        bnorm.normalize();
+        var dotval = anorm.dot(bnorm);
+        return Math.acos(dotval);
+    };
+    Point3D.prototype.cross = function (vectorB) {
+        var tempvec = new Point3D(this.x, this.y, this.z);
+        tempvec.x = (this.y * vectorB.z) - (this.z * vectorB.y);
+        tempvec.y = (this.z * vectorB.x) - (this.x * vectorB.z);
+        tempvec.z = (this.x * vectorB.y) - (this.y * vectorB.x);
+        this.x = tempvec.x;
+        this.y = tempvec.y;
+        this.z = tempvec.z;
+    };
+    Point3D.prototype.dot = function (vectorB) {
+        return this.x * vectorB.x + this.y * vectorB.y + this.z * vectorB.z;
+    };
+    Point3D.prototype.project = function (width, height, fov, distance) {
+        var factor, x, y;
+        factor = fov / (distance + this.z);
+        x = this.x * factor + width / 2;
+        y = this.y * factor + height / 2;
+        return new Point3D(x, y, this.z);
+    };
+    return Point3D;
+}());
+exports.Point3D = Point3D;
 var Demolished2D = (function () {
     function Demolished2D(canvas, w, h) {
         this.canvas = canvas;
@@ -12123,7 +12252,7 @@ exports.Demolished2D = Demolished2D;
 /* harmony export (immutable) */ __webpack_exports__["b"] = addEvent;
 /* harmony export (immutable) */ __webpack_exports__["c"] = removeEvent;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__tools_common__ = __webpack_require__(19);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__modals_mixin__ = __webpack_require__(40);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__modals_mixin__ = __webpack_require__(42);
 /*
 Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
 Author: Lou Huang (@saikofish)
@@ -13108,7 +13237,7 @@ function removeEvent (element, event, callback) {
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Vector__ = __webpack_require__(44);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Vector__ = __webpack_require__(46);
 
 
 
@@ -17073,6 +17202,40 @@ CodeMirror.defineMode("clike", function(config, parserConfig) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+var DemolishedRecorder = (function () {
+    function DemolishedRecorder(videoTrack, audioTrack) {
+        var _this = this;
+        this.videoTrack = videoTrack;
+        this.audioTrack = audioTrack;
+        this.mediaStream = new MediaStream([videoTrack, audioTrack]);
+        this.recorder = new MediaRecorder(this.mediaStream, {
+            mimeType: 'video/webm;codecs=vp9'
+        });
+        this.recorder.ondataavailable = function (e) {
+            _this.data.push(e.data);
+            console.log(_this.data.length);
+        };
+    }
+    DemolishedRecorder.prototype.stop = function () {
+        this.recorder.stop();
+    };
+    DemolishedRecorder.prototype.start = function (n) {
+        this.data = new Array();
+        this.recorder.start(n);
+    };
+    return DemolishedRecorder;
+}());
+exports.DemolishedRecorder = DemolishedRecorder;
+
+
+/***/ }),
+/* 35 */,
+/* 36 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
 var Utils = (function () {
     function Utils() {
     }
@@ -17216,14 +17379,14 @@ exports.ShaderCompiler = ShaderCompiler;
 
 
 /***/ }),
-/* 35 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var ColorPicker_1 = __webpack_require__(41);
-var FloatPicker_1 = __webpack_require__(42);
+var ColorPicker_1 = __webpack_require__(43);
+var FloatPicker_1 = __webpack_require__(44);
 var Vec2Picker_1 = __webpack_require__(16);
 var Vec2Picker_2 = __webpack_require__(16);
 var Color_1 = __webpack_require__(17);
@@ -17376,8 +17539,8 @@ exports.DemoishedEditorHelper = DemoishedEditorHelper;
 
 
 /***/ }),
-/* 36 */,
-/* 37 */
+/* 38 */,
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17411,10 +17574,11 @@ __webpack_require__(22);
 __webpack_require__(21);
 __webpack_require__(31);
 __webpack_require__(30);
-var demolishedUtils_1 = __webpack_require__(34);
+var demolishedUtils_1 = __webpack_require__(36);
 var demolishedSound_1 = __webpack_require__(5);
-var demoishedEditorHelper_1 = __webpack_require__(35);
+var demoishedEditorHelper_1 = __webpack_require__(37);
 var demolished2D_1 = __webpack_require__(10);
+var demolishedRecoder_1 = __webpack_require__(34);
 var SpectrumAnalyzer = (function (_super) {
     __extends(SpectrumAnalyzer, _super);
     function SpectrumAnalyzer(ctx) {
@@ -17456,15 +17620,42 @@ var DemolishedEd = (function () {
         this.engine = new demolished_1.Demolished.Rendering(demolishedUtils_1.Utils.$("#webgl"), demolishedUtils_1.Utils.$("#shader-view"), "entities/graph.json", this.music);
         var timeEl = demolishedUtils_1.Utils.$(".time");
         var playback = demolishedUtils_1.Utils.$("#toogle-playback");
+        var vertextCode = demolishedUtils_1.Utils.$("#vertex");
         var sound = demolishedUtils_1.Utils.$("#toggle-sound");
         var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
         var immediate = demolishedUtils_1.Utils.$(".immediate");
         var resetTimers = demolishedUtils_1.Utils.$("#reset-clocks");
         var timeLine = demolishedUtils_1.Utils.$("#current-time");
         var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
-        resetTimers.addEventListener("click", function () {
+        var shaderWin = demolishedUtils_1.Utils.$("#shader-win");
+        var record = demolishedUtils_1.Utils.$("#btn-record");
+        record.addEventListener("click", function (evt) {
+            var videoTrack = _this.engine.canvas["captueSteam"](60);
+            _this.recordset = new demolishedRecoder_1.DemolishedRecorder(videoTrack, _this.engine.audio.getTracks());
         });
-        timeEl.addEventListener("click", function () {
+        var tabButtons = demolishedUtils_1.Utils.$$(".tab-caption");
+        var tabs = demolishedUtils_1.Utils.$$(".tab");
+        tabButtons.forEach(function (el, idx) {
+            el.addEventListener("click", function (evt) {
+                tabs.forEach(function (b) {
+                    b.classList.add("hide");
+                    console.log(b);
+                });
+                tabButtons.forEach(function (b) {
+                    b.classList.remove("tab-active");
+                });
+                console.log(el.dataset.target);
+                var src = evt.srcElement;
+                src.classList.add("tab-active");
+                demolishedUtils_1.Utils.$("#" + src.dataset.target).classList.remove("hide");
+            });
+        });
+        shaderWin.addEventListener("dragend", function (evt) {
+            var win = evt.target;
+            win.style.left = (evt.clientX).toString() + "px";
+            win.style.top = evt.clientY.toString() + "px";
+        });
+        resetTimers.addEventListener("click", function () {
             _this.engine.uniforms.time = 0;
             _this.engine.resetClock(0);
         });
@@ -17585,14 +17776,15 @@ var DemolishedEd = (function () {
 }());
 exports.DemolishedEd = DemolishedEd;
 document.addEventListener("DOMContentLoaded", function () {
-    DemolishedEd.getIntance();
+    var p = DemolishedEd.getIntance();
+    console.log(p);
 });
 
 
 /***/ }),
-/* 38 */,
-/* 39 */,
-/* 40 */
+/* 40 */,
+/* 41 */,
+/* 42 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17673,7 +17865,7 @@ function subscribeMixin (target) {
 
 
 /***/ }),
-/* 41 */
+/* 43 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17681,7 +17873,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(11);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Color__ = __webpack_require__(17);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__tools_common__ = __webpack_require__(19);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__ = __webpack_require__(45);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__ = __webpack_require__(47);
 /*
 Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
 Author: Lou Huang (@saikofish)
@@ -18026,13 +18218,13 @@ function drawCircle (ctx, coords, radius, color, width) { // uses drawDisk
 
 
 /***/ }),
-/* 42 */
+/* 44 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Float__ = __webpack_require__(43);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Float__ = __webpack_require__(45);
 
 
 
@@ -18153,7 +18345,7 @@ class FloatPicker extends __WEBPACK_IMPORTED_MODULE_0__Picker__["a" /* default *
 
 
 /***/ }),
-/* 43 */
+/* 45 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18185,7 +18377,7 @@ class Float {
 
 
 /***/ }),
-/* 44 */
+/* 46 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18428,12 +18620,12 @@ class Vector {
 
 
 /***/ }),
-/* 45 */
+/* 47 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = subscribeInteractiveDom;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mixin__ = __webpack_require__(46);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mixin__ = __webpack_require__(48);
 /*
  * Original code from: https://twitter.com/blurspline / https://github.com/zz85
  * See post @ http://www.lab4games.net/zz85/blog/2014/11/15/resizing-moving-snapping-windows-with-js-css/
@@ -18757,7 +18949,7 @@ function subscribeInteractiveDom (dom, options) {
 
 
 /***/ }),
-/* 46 */
+/* 48 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";

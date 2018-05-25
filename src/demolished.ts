@@ -43,6 +43,7 @@ export namespace Demolished {
 
         private getRendringContext(): WebGLRenderingContext {
 
+            
             let renderingContext: any;
             
             let contextAttributes = {
@@ -55,6 +56,7 @@ export namespace Demolished {
                 this.canvas.getContext('experimental-webgl', contextAttributes);
 
             // todo: refactor    
+            /*
             renderingContext.getExtension('OES_standard_derivatives');
             renderingContext.getExtension("OES_texture_float");
             renderingContext.getExtension("OES_texture_half_float");
@@ -63,7 +65,19 @@ export namespace Demolished {
             renderingContext.getExtension("WEBGL_depth_texture");
             renderingContext.getExtension("EXT_shader_texture_lod");
             renderingContext.getExtension("EXT_texture_filter_anisotropic");
+            */
 
+           renderingContext.getExtension('OES_standard_derivatives');
+            renderingContext.getExtension( 'OES_texture_float_linear');
+            renderingContext.getExtension( 'OES_texture_half_float_linear' );
+            renderingContext.getExtension( 'EXT_texture_filter_anisotropic' );
+            renderingContext.getExtension( 'EXT_color_buffer_float');
+            renderingContext.getExtension("WEBGL_depth_texture");
+            renderingContext.getExtension("EXT_shader_texture_lod");
+      
+
+
+     
             this.webGLbuffer = renderingContext.createBuffer();
 
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
@@ -180,13 +194,16 @@ export namespace Demolished {
         }
 
        resetClock(time:number){
-        this.uniforms.timeTotal = time;
-        this.animationFrameCount = 0;
-        this.animationOffsetTime = time;
-        this.animationStartTime= performance.now();
-        this.audio.currentTime = (time / 1000) % 60;
+        // this.uniforms.timeTotal = time;
+        // this.animationFrameCount = 0;
+        // this.animationOffsetTime = time;
+        // this.animationStartTime= performance.now();
+        // this.audio.currentTime = (time / 1000) % 60;
 
         this.currentTimeFragment.reset();
+
+        this.stop();
+        this.start(time);
         
        } 
 
@@ -330,53 +347,10 @@ export namespace Demolished {
                 throw "Not yet implemented";
         }
         renderEntities(ent: IEntity, ts: number) {
-
-            let gl = this.gl;
-
             this.uniforms.time = ts; 
             this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
-
-            gl.useProgram(ent.glProgram);
-  
-            gl.uniform1f(ent.uniformsCache.get("timeTotal"),this.uniforms.timeTotal /1000);
-            gl.uniform1f(ent.uniformsCache.get('time'), this.uniforms.time / 1000);
-            gl.uniform4fv(ent.uniformsCache.get("datetime"),this.uniforms.datetime);
-
-            gl.uniform1i(ent.uniformsCache.get("frame"),this.animationFrameCount);
-
-            gl.uniform1i(ent.uniformsCache.get("subEffectId"),ent.subEffectId);
-
-            gl.uniform2f(ent.uniformsCache.get("mouse"), this.uniforms.mouseX, this.uniforms.mouseY);
-            gl.uniform2f(ent.uniformsCache.get("resolution"), this.uniforms.screenWidth, this.uniforms.screenHeight);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, ent.buffer);
-            gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.webGLbuffer);
-            gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
-
-            gl.uniform1i(gl.getUniformLocation(ent.glProgram,"backbuffer"),1);
-            gl.activeTexture(gl.TEXTURE0);
-
-            gl.bindTexture(gl.TEXTURE_2D, this.fftTexture);
-            gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
-
-            ent.textures.forEach((asset: EntityTexture, index: number) => {      
-                this.bindTexture(ent,asset,index);
-            });
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            ent.swapBuffers();
-
-            ent.runAction("$subeffects",this.uniforms.time / 1000);
+            this.gl.useProgram(ent.glProgram);
+            ent.render(this); 
             this.animationFrameCount ++;
         }
         addTexture(ent:IEntity, entityTexture:EntityTexture){

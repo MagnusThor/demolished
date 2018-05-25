@@ -22,10 +22,11 @@ var TimeFragment = (function () {
         this.start = start;
         this.stop = stop;
         subeffects ? this.subeffects = subeffects : this.subeffects = new Array();
-        this._subeffects = subeffects;
+        this._subeffects = this.subeffects.map(function (a) { return a; });
     }
     TimeFragment.prototype.reset = function () {
-        this.subeffects = this.subeffects;
+        this.subeffects = this._subeffects.map(function (a) { return a; });
+        console.log(this.subeffects);
     };
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;

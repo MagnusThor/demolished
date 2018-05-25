@@ -5,11 +5,10 @@ import { TimeFragment, Uniforms, Graph, AudioSettings, AudioAnalyzerSettings } f
 import loadResource from "./src/demolishedLoader";
 import { DemolishedTextureGen } from './src/demolishedTexture';
 
+let $ =  document.querySelector;
 
-
-export namespace MyDemo {
+export namespace Ninelives {
         class CustomUniforms extends Uniforms {
-                alpha: number;
                 constructor(w: number, h: number) {
                         super(w, h);
                 }
@@ -26,14 +25,14 @@ export namespace MyDemo {
                         let image = new Image();
                         image.src = base64;
                         return image;
-
                 }
 
                 constructor() {
+                        
                         let canvas = document.createElement("canvas") as HTMLCanvasElement;
                         let audio = new DemolishedStreamingMusic();
                         let uniforms = new CustomUniforms(canvas.width, canvas.height);
-                        let demo = new Demolished.Rendering(canvas, document.querySelector(".demo"), "", audio, uniforms);
+                        let demo = new Demolished.Rendering(canvas, $(".demo"), "", audio, uniforms);
 
                         let assets = new Array<EntityTexture>();
 
@@ -70,26 +69,18 @@ export namespace MyDemo {
                                 }
                         ), "iChannel1", 512, 512, 0))
         
-
-                        let as = new AudioSettings();
-                        as.audioFile = "assets/plastic.mp3";
-                        as.bpm = 129; as.duration = 211800;
-                        as.audioAnalyzerSettings = new AudioAnalyzerSettings(8192, .85, -90, -10);
-                        audio.createAudio(as).then(() => {
-                                demo.resizeCanvas(document.querySelector(".demo"), 2);
+                        audio.createAudio(
+                                new AudioSettings("assets/plastic.mp3",new AudioAnalyzerSettings(8192, .85, -90, -10),
+                                211800,129)
+                        ).then(() => {
+                                demo.resizeCanvas($(".demo"), 2);
                                 demo.start(0);
-
                         })
-
-                        let part = new TimeFragment("nine-lives", 0, 384000, );
-
+                        let part = new TimeFragment("nine-lives", 0, 211800, );
                         demo.timeFragments.push(part);
-
                         demo.addEntity("nine-lives", assets);
-
-                        document.querySelector(".demo").appendChild(canvas);
+                        $(".demo").appendChild(canvas);
                         this.demolished = demo;
-
                 }
 
         }
@@ -99,7 +90,7 @@ export namespace MyDemo {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-        let p = MyDemo.Ninelives.instance();
+        let p = Ninelives.Ninelives.instance();
 
         window["_demo"] = p;
 });

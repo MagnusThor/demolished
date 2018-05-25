@@ -7,5 +7,5 @@ app.use("/libs", express.static("libs"));
 
 
 app.listen(3000, function () {
-  console.log('#demolished is serverd on port 3000!')
+  console.log('#now serving v.0.3 ProjectSara a SEED Team mod on port 3000. ')
 })

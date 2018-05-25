@@ -23,7 +23,7 @@ import 'codemirror/mode/clike/clike.js';
 import 'codemirror/keymap/sublime';
 
 
-import { Utils, ShaderCompiler, ShaderError } from './src/demolishedUtils'
+import { Utils, ShaderCompiler, ShaderError } from './src/demolishedUtils';
 import { SmartArray } from './src/demolishedSmartArray';
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './src/demolishedModels';
 
@@ -31,6 +31,7 @@ import { DemolishedStreamingMusic, DemolishedSIDMusic } from "./src/demolishedSo
 import { DemolishedDialogBuilder } from './src/demolishedProperties';
 import { DemoishedEditorHelper } from './src/ui/editor/demoishedEditorHelper';
 import { BaseEntity2D, IEntity2D, Demolished2D } from './src/demolished2D';
+import { DemolishedRecorder } from './src/demolishedRecoder';
 
 
 export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
@@ -82,9 +83,11 @@ export class DemolishedEd {
 
     private spectrum: SpectrumAnalyzer;
 
+    public recordset: DemolishedRecorder;
+
     constructor() {
 
-
+        
 
         let Render2D = new Demolished2D(Utils.$("#canvas-spectrum") as HTMLCanvasElement);
 
@@ -104,25 +107,76 @@ export class DemolishedEd {
 
         let timeEl =Utils.$(".time");
         let playback = Utils.$("#toogle-playback");
+        let vertextCode = Utils.$("#vertex");
+        
         let sound = Utils.$("#toggle-sound");
         let fullscreen = Utils.$("#btn-fullscreen");
         let immediate = Utils.$(".immediate");
         let resetTimers = Utils.$("#reset-clocks");
         let timeLine = Utils.$("#current-time") as HTMLInputElement;
         let shaderResolution = Utils.$("#shader-resolution") as HTMLInputElement;
+        let shaderWin = Utils.$("#shader-win");
 
+        let record = Utils.$("#btn-record") ;
+
+        record.addEventListener("click", (evt:Event) => {
+
+            let videoTrack = this.engine.canvas["captueSteam"](60);
+        
+            this.recordset = new DemolishedRecorder(videoTrack,
+            this.engine.audio.getTracks()
+            );
+
+        });
+
+
+        let tabButtons = Utils.$$(".tab-caption");
+        let tabs = Utils.$$(".tab")
+
+        tabButtons.forEach( (el:HTMLElement,idx:number) => {
+
+                // hide all
+               
+
+                    el.addEventListener("click", (evt:Event) => {
+                        tabs.forEach( (b) => {
+                            b.classList.add("hide");
+                            console.log(b);
+                        });
+
+                         tabButtons.forEach( (b) => {
+                        b.classList.remove("tab-active");
+                });
+             
+
+                        console.log(el.dataset.target);
+
+                        let src = evt.srcElement as HTMLElement;
+                        src.classList.add("tab-active");
+                        Utils.$("#" + src.dataset.target).classList.remove("hide");
+
+                    });
+        });
+
+        shaderWin.addEventListener("dragend", (evt:DragEvent) => {
+            let win = evt.target as HTMLElement;
+            win.style.left = (evt.clientX).toString() + "px";
+            win.style.top = evt.clientY.toString() + "px";
+        });
 
         resetTimers.addEventListener("click", ()=>{
             // get all timers for the current entity
          //       this.engine.currentTimeFragment.entityShader.destroyTimer();
-
-        });
-
-        timeEl.addEventListener("click", () => {
             this.engine.uniforms.time = 0;
             this.engine.resetClock(0);
-            
+
         });
+
+        // timeEl.addEventListener("click", () => {
+        //      this.engine.uniforms.time = 0;
+        //     // this.engine.resetClock(0);
+        // });
+
         Utils.$("#btn-showconsole").addEventListener("click", () => {
             Utils.$(".immediate").classList.toggle("hide");
         });
@@ -131,21 +185,15 @@ export class DemolishedEd {
             view.webkitRequestFullscreen();
            
         });
-
-
         shaderResolution.addEventListener("change", (evt:Event) => {
             this.engine.resizeCanvas(Utils.$("#shader-view"),
             parseInt(shaderResolution.value));
         });
-
-
         document.addEventListener("webkitfullscreenchange",(evt) => {
             let target = document.webkitFullscreenElement;
             if(target){
-             
                 target.classList.add("shader-fullscreen");
                 this.engine.resizeCanvas(document.body);
-            
             }else{
                 target = Utils.$("#shader-view");
                 target.classList.remove("shader-fullscreen");
@@ -166,6 +214,7 @@ export class DemolishedEd {
         });
 
         this.engine.onFrame = (frame) => {
+            // todo:  Implmement a method the gives duratio in milliscconds on IDemolishedAudio.,
             this.spectrum.frequencData = this.music.getFrequenceData();
             timeLine.style.width = ((parseInt(frame.ms) / 386400  ) * 100.  ).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
@@ -253,7 +302,8 @@ export class DemolishedEd {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-     DemolishedEd.getIntance();
+     let p = DemolishedEd.getIntance();
+     console.log(p);
 });
 
 

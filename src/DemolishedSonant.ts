@@ -1,20 +1,14 @@
 import { DemolishedSoundBase, IDemolisedAudioContext } from './demolishedSound';
-
 /*
-    Based on the js-sonant player by Marcus Geelnard  and Sonant by Jake Taylor, aka Ferris / Youth Uprising)
-
+    Based on the js-sonant player by Marcus Geelnard and Sonant by Jake Taylor, aka Ferris / Youth Uprising)
 */
 export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedAudioContext {
-
     createAudio(settings: any): Promise<boolean> {
         return new Promise((resolve, reject) => {
             var b, k, x, wave, l1, l2, s, y;
-
             var mixBuf = this.mixBufWork,
                 waveBytes = this.WAVE_SIZE * this.WAVE_CHAN * 2;
-
             this.chnBufWork = null;
-
             l1 = waveBytes - 8;
             l2 = l1 - 36;
             wave = String.fromCharCode(82, 73, 70, 70,
@@ -31,8 +25,6 @@ export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedA
                 }
                 wave += x;
             }
-
-
             s = "data:audio/wav;base64," + btoa(wave);
             wave = null;
 
@@ -41,7 +33,6 @@ export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedA
             audioEl.preload = "auto";
             audioEl.crossOrigin = "anonymous"
             audioEl.src = s;
-
 
             const onLoad = () => {
                 let source = audioCtx.createMediaElementSource(audioEl);
@@ -75,6 +66,10 @@ export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedA
     }
     set currentTime(time: number) {
         this.audio.currentTime = time;
+    }
+
+    getTracks():MediaStreamTrack{
+        throw "not yet implemented";
     }
 
     getFrequenceData(): Uint8Array {
@@ -292,6 +287,9 @@ export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedA
     SoundBox support is beeing implemented.
 */
 export class DemolishedSoundBox extends DemolishedSoundBase implements IDemolisedAudioContext {
+    getTracks():MediaStreamTrack{
+        throw "not yet implemented";
+    }
     createAudio(settings: any): Promise<boolean> {
         throw new Error("Method not implemented.");
     }

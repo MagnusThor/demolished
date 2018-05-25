@@ -192,6 +192,9 @@ var DemolishedSonant = (function (_super) {
         enumerable: true,
         configurable: true
     });
+    DemolishedSonant.prototype.getTracks = function () {
+        throw "not yet implemented";
+    };
     DemolishedSonant.prototype.getFrequenceData = function () {
         var bufferLength = this.audioAnalyser.frequencyBinCount;
         var freqArray = new Uint8Array(bufferLength);
@@ -234,6 +237,9 @@ var DemolishedSoundBox = (function (_super) {
     function DemolishedSoundBox() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
+    DemolishedSoundBox.prototype.getTracks = function () {
+        throw "not yet implemented";
+    };
     DemolishedSoundBox.prototype.createAudio = function (settings) {
         throw new Error("Method not implemented.");
     };

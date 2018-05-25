@@ -59,6 +59,9 @@ var DemolishedSIDMusic = (function (_super) {
     function DemolishedSIDMusic() {
         return _super.call(this) || this;
     }
+    DemolishedSIDMusic.prototype.getTracks = function () {
+        throw "not yet implemented";
+    };
     Object.defineProperty(DemolishedSIDMusic.prototype, "textureSize", {
         get: function () {
             return 16;
@@ -117,6 +120,9 @@ var DemolishedStreamingMusic = (function (_super) {
     function DemolishedStreamingMusic() {
         return _super.call(this) || this;
     }
+    DemolishedStreamingMusic.prototype.getTracks = function () {
+        throw "not yet implemented";
+    };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "textureSize", {
         get: function () {
             return 32;

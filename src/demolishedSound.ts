@@ -49,6 +49,7 @@ export class DemolishedSoundBase {
     audioAnalyser: AnalyserNode
     audio: any;
     constructor() { }
+   
 }
 
 /**
@@ -66,6 +67,7 @@ export interface IDemolisedAudioContext {
     getFrequenceData(): Uint8Array
     textureSize: number 
     duration: number;
+    getTracks():MediaStreamTrack
 }
 declare var SIDBackendAdapter: any;
 
@@ -79,6 +81,9 @@ declare var SIDBackendAdapter: any;
  */
 export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
   
+    getTracks():MediaStreamTrack{
+        throw "not yet implemented";
+    }
     private sid: any;
     get textureSize(){
         return 16;
@@ -107,7 +112,6 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
     set currentTime(n: number) {
        return;
     }   
-
     createAudio(settings:any): Promise<boolean> {
         const useLess = ()=> {};
         let ScriptNodePlayer = window["ScriptNodePlayer"];
@@ -133,6 +137,10 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
  */
 export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
   
+    getTracks():MediaStreamTrack{
+        
+        throw "not yet implemented";
+    }
     constructor() {
         super();
     }

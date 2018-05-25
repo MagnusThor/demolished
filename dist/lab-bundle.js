@@ -63,10 +63,120 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 38);
+/******/ 	return __webpack_require__(__webpack_require__.s = 40);
 /******/ })
 /************************************************************************/
 /******/ ({
+
+/***/ 1:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+;
+var RenderTarget = (function () {
+    function RenderTarget(frameBuffer, renderBuffer, texture) {
+        this.frameBuffer = frameBuffer;
+        this.renderBuffer = renderBuffer;
+        this.texture = texture;
+    }
+    return RenderTarget;
+}());
+exports.RenderTarget = RenderTarget;
+var Graph = (function () {
+    function Graph() {
+    }
+    return Graph;
+}());
+exports.Graph = Graph;
+var TimeFragment = (function () {
+    function TimeFragment(entity, start, stop, subeffects) {
+        this.entity = entity;
+        this.start = start;
+        this.stop = stop;
+        subeffects ? this.subeffects = subeffects : this.subeffects = new Array();
+        this._subeffects = this.subeffects.map(function (a) { return a; });
+    }
+    TimeFragment.prototype.reset = function () {
+        this.subeffects = this._subeffects.map(function (a) { return a; });
+        console.log(this.subeffects);
+    };
+    TimeFragment.prototype.setEntity = function (ent) {
+        this.entityShader = ent;
+    };
+    TimeFragment.prototype.init = function () {
+        var _this = this;
+        this.subeffects.forEach(function (interval) {
+            var shader = _this.entityShader;
+            shader.addAction("$subeffects", function (ent, tm) {
+                if (_this.subeffects.find(function (a) { return a <= tm; })) {
+                    ent.subEffectId++;
+                    _this.subeffects.shift();
+                    console.log(_this.subeffects, shader.subEffectId, tm);
+                }
+            });
+        });
+    };
+    return TimeFragment;
+}());
+exports.TimeFragment = TimeFragment;
+var Uniforms = (function () {
+    function Uniforms(width, height) {
+        this.screenWidth = width;
+        this.screenHeight = height;
+        this.time = 0;
+        this.timeTotal = 0;
+        this.mouseX = 0.5;
+        this.mouseY = 0.5;
+    }
+    Object.defineProperty(Uniforms.prototype, "datetime", {
+        get: function () {
+            var d = new Date();
+            return [d.getFullYear(), d.getMonth(), d.getDate(),
+                d.getHours() * 60.0 * 60 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000.0];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Uniforms.prototype.setScreen = function (w, h) {
+        this.screenWidth = w;
+        this.screenWidth = h;
+    };
+    return Uniforms;
+}());
+exports.Uniforms = Uniforms;
+var Effect = (function () {
+    function Effect() {
+        this.textures = new Array();
+        this.type = 0;
+    }
+    return Effect;
+}());
+exports.Effect = Effect;
+var AudioAnalyzerSettings = (function () {
+    function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {
+        this.fftSize = fftSize;
+        this.smoothingTimeConstant = smoothingTimeConstant;
+        this.minDecibels = minDecibels;
+        this.maxDecibels = maxDecibels;
+    }
+    return AudioAnalyzerSettings;
+}());
+exports.AudioAnalyzerSettings = AudioAnalyzerSettings;
+var AudioSettings = (function () {
+    function AudioSettings(audioFile, audioAnalyzerSettings, duration, bpm) {
+        this.audioAnalyzerSettings = audioAnalyzerSettings;
+        this.bpm = bpm;
+        this.audioFile;
+        this.duration = duration;
+    }
+    return AudioSettings;
+}());
+exports.AudioSettings = AudioSettings;
+
+
+/***/ }),
 
 /***/ 10:
 /***/ (function(module, exports, __webpack_require__) {
@@ -92,6 +202,90 @@ var BaseEntity2D = (function () {
     return BaseEntity2D;
 }());
 exports.BaseEntity2D = BaseEntity2D;
+var Point3D = (function () {
+    function Point3D(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    Point3D.prototype.rotateX = function (angle) {
+        var rad, cosa, sina, y, z;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        y = this.y * cosa - this.z * sina;
+        z = this.y * sina + this.z * cosa;
+        return new Point3D(this.x, y, z);
+    };
+    Point3D.prototype.rotateY = function (angle) {
+        var rad, cosa, sina, x, z;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        z = this.z * cosa - this.x * sina;
+        x = this.z * sina + this.x * cosa;
+        return new Point3D(x, this.y, z);
+    };
+    Point3D.prototype.rotateZ = function (angle) {
+        var rad, cosa, sina, x, y;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        x = this.x * cosa - this.y * sina;
+        y = this.x * sina + this.y * cosa;
+        return new Point3D(x, y, this.z);
+    };
+    Point3D.prototype.length = function () {
+        var length = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+        return length;
+    };
+    Point3D.prototype.scale = function (scale) {
+        this.x *= scale;
+        this.y *= scale;
+        this.z *= scale;
+    };
+    Point3D.prototype.normalize = function () {
+        var lengthval = this.length();
+        if (lengthval != 0) {
+            this.x /= lengthval;
+            this.y /= lengthval;
+            this.z /= lengthval;
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    Point3D.prototype.angle = function (bvector) {
+        var anorm = new Point3D(this.x, this.y, this.z);
+        anorm.normalize();
+        var bnorm = new Point3D(bvector.x, bvector.y, bvector.z);
+        bnorm.normalize();
+        var dotval = anorm.dot(bnorm);
+        return Math.acos(dotval);
+    };
+    Point3D.prototype.cross = function (vectorB) {
+        var tempvec = new Point3D(this.x, this.y, this.z);
+        tempvec.x = (this.y * vectorB.z) - (this.z * vectorB.y);
+        tempvec.y = (this.z * vectorB.x) - (this.x * vectorB.z);
+        tempvec.z = (this.x * vectorB.y) - (this.y * vectorB.x);
+        this.x = tempvec.x;
+        this.y = tempvec.y;
+        this.z = tempvec.z;
+    };
+    Point3D.prototype.dot = function (vectorB) {
+        return this.x * vectorB.x + this.y * vectorB.y + this.z * vectorB.z;
+    };
+    Point3D.prototype.project = function (width, height, fov, distance) {
+        var factor, x, y;
+        factor = fov / (distance + this.z);
+        x = this.x * factor + width / 2;
+        y = this.y * factor + height / 2;
+        return new Point3D(x, y, this.z);
+    };
+    return Point3D;
+}());
+exports.Point3D = Point3D;
 var Demolished2D = (function () {
     function Demolished2D(canvas, w, h) {
         this.canvas = canvas;
@@ -140,7 +334,47 @@ exports.Demolished2D = Demolished2D;
 
 /***/ }),
 
-/***/ 38:
+/***/ 33:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var DemolishedConfig = (function () {
+    function DemolishedConfig() {
+        this.configuration = new Map();
+    }
+    DemolishedConfig.getInstance = function () {
+        return new DemolishedConfig();
+    };
+    DemolishedConfig.prototype.load = function (key) {
+        return this.cast(key);
+    };
+    DemolishedConfig.prototype.cast = function (key) {
+        return this.configuration.get(key);
+    };
+    DemolishedConfig.prototype.save = function (key, value) {
+        this.configuration.set(key, value);
+    };
+    DemolishedConfig.prototype.loadStore = function () {
+        var _this = this;
+        this.configuration.forEach(function (a, b) {
+            _this.configuration.set(b, JSON.parse(a));
+        });
+    };
+    DemolishedConfig.prototype.updateStore = function () {
+        this.configuration.forEach(function (a, b) {
+            localStorage.setItem(b, JSON.stringify(a));
+        });
+    };
+    return DemolishedConfig;
+}());
+exports.DemolishedConfig = DemolishedConfig;
+
+
+/***/ }),
+
+/***/ 40:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -157,6 +391,8 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolished2D_1 = __webpack_require__(10);
+var demolishedConfig_1 = __webpack_require__(33);
+var demolishedModels_1 = __webpack_require__(1);
 var TextEffect = (function (_super) {
     __extends(TextEffect, _super);
     function TextEffect(name, ctx, text, x, y, font) {
@@ -192,9 +428,16 @@ exports.TextEffect = TextEffect;
 var Lab2d = (function () {
     function Lab2d(el) {
         var Render2D = new demolished2D_1.Demolished2D(el, 512, 512);
-        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "GIN & TONIC", 60, 240, "128px 'Arial'"));
-        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "JENNY", 80, 380, "bold 128px 'Arial'"));
+        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "CODE", 60, 240, "128px 'Arial'"));
+        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "FOO BAR", 80, 380, "bold 128px 'Arial'"));
         Render2D.start(0);
+        var store = new demolishedConfig_1.DemolishedConfig();
+        store.loadStore();
+        store.save("foo", 1);
+        store.save("bar", "Hello World");
+        store.save("timeFragment", new demolishedModels_1.TimeFragment("shader", 0, 2000, [100, 200]));
+        var tf = store.load("timeFragment");
+        store.updateStore();
     }
     Lab2d.getInstance = function (el) {
         return new this(el);

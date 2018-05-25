@@ -1,41 +1,70 @@
 {
     "name": "nine-lives",
     "audioSettings": {
-        "audioFile": "assets/plastic.mp3",
+        "audioFile": "assets/felt.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
             "minDecibels": -90,
             "maxDecibels": -10
         },
-        "duration": 211800,
+        "duration": 250200,
         "bmp": 129
     },
     "timeline": [
         {
             "start": 0,
-            "stop": 211800,
-            "entity": "miami",
-            "subeffects":[10,20,30,200]
+            "stop": 150200,
+            "entity": "iq-template",
+            "subeffects":[100,200,300,400]
+        },
+        {
+            "start": 150200,
+            "stop": 250200,
+            "entity": "iq-template",
+            "subeffects":[]
         }
     ],
     "effects": [
         {
-            "name": "miami",
+            "include":[
+                "common.glsl"
+            ],
+            "name": "iq-template",
             "description": "",
             "textures":[
                 {
-                    "src" :"assets/kali.png",
+                    "src" :"assets/channel0.jpg",
                     "uniform": "iChannel0",
+                    "width" : 256,
+                    "height": 256
+                },
+                {
+                    "src" :"assets/channel1.jpg",
+                    "uniform": "iChannel1",
+                    "width" : 1024,
+                    "height": 1024
+                },
+                {
+                    "src" :"assets/channel2.jpg",
+                    "uniform": "iChannel2",
                     "width" : 512,
                     "height": 512
                 },
                 {
-                    "src" :"assets/height512x512_2.png",
-                    "uniform": "iChannel1",
-                    "width" : 512,
-                    "height": 512
+                    "src" :"assets/channel3.jpg",
+                    "uniform": "iChannel3",
+                    "width" : 1024,
+                    "height": 1024
                 }
+            ]
+        },
+        {
+            "include":[
+                "common.glsl"
+            ],
+            "name": "nebula",
+            "textures":[
             ]
         }
     ]

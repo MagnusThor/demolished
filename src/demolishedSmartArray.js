@@ -40,7 +40,7 @@ var SmartArray = (function (_super) {
         _this.currentIndex = 0;
         return _this;
     }
-    Object.defineProperty(SmartArray.prototype, "mode", {
+    Object.defineProperty(SmartArray.prototype, "interpolate", {
         get: function () {
             if (!this.dataArray.length)
                 return 0;

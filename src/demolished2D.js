@@ -18,6 +18,90 @@ var BaseEntity2D = (function () {
     return BaseEntity2D;
 }());
 exports.BaseEntity2D = BaseEntity2D;
+var Point3D = (function () {
+    function Point3D(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    Point3D.prototype.rotateX = function (angle) {
+        var rad, cosa, sina, y, z;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        y = this.y * cosa - this.z * sina;
+        z = this.y * sina + this.z * cosa;
+        return new Point3D(this.x, y, z);
+    };
+    Point3D.prototype.rotateY = function (angle) {
+        var rad, cosa, sina, x, z;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        z = this.z * cosa - this.x * sina;
+        x = this.z * sina + this.x * cosa;
+        return new Point3D(x, this.y, z);
+    };
+    Point3D.prototype.rotateZ = function (angle) {
+        var rad, cosa, sina, x, y;
+        rad = angle * Math.PI / 180;
+        cosa = Math.cos(rad);
+        sina = Math.sin(rad);
+        x = this.x * cosa - this.y * sina;
+        y = this.x * sina + this.y * cosa;
+        return new Point3D(x, y, this.z);
+    };
+    Point3D.prototype.length = function () {
+        var length = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+        return length;
+    };
+    Point3D.prototype.scale = function (scale) {
+        this.x *= scale;
+        this.y *= scale;
+        this.z *= scale;
+    };
+    Point3D.prototype.normalize = function () {
+        var lengthval = this.length();
+        if (lengthval != 0) {
+            this.x /= lengthval;
+            this.y /= lengthval;
+            this.z /= lengthval;
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+    Point3D.prototype.angle = function (bvector) {
+        var anorm = new Point3D(this.x, this.y, this.z);
+        anorm.normalize();
+        var bnorm = new Point3D(bvector.x, bvector.y, bvector.z);
+        bnorm.normalize();
+        var dotval = anorm.dot(bnorm);
+        return Math.acos(dotval);
+    };
+    Point3D.prototype.cross = function (vectorB) {
+        var tempvec = new Point3D(this.x, this.y, this.z);
+        tempvec.x = (this.y * vectorB.z) - (this.z * vectorB.y);
+        tempvec.y = (this.z * vectorB.x) - (this.x * vectorB.z);
+        tempvec.z = (this.x * vectorB.y) - (this.y * vectorB.x);
+        this.x = tempvec.x;
+        this.y = tempvec.y;
+        this.z = tempvec.z;
+    };
+    Point3D.prototype.dot = function (vectorB) {
+        return this.x * vectorB.x + this.y * vectorB.y + this.z * vectorB.z;
+    };
+    Point3D.prototype.project = function (width, height, fov, distance) {
+        var factor, x, y;
+        factor = fov / (distance + this.z);
+        x = this.x * factor + width / 2;
+        y = this.y * factor + height / 2;
+        return new Point3D(x, y, this.z);
+    };
+    return Point3D;
+}());
+exports.Point3D = Point3D;
 var Demolished2D = (function () {
     function Demolished2D(canvas, w, h) {
         this.canvas = canvas;

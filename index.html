@@ -1,7 +1,7 @@
 <html>
 
 <head>
-	<title>demlolished - Editor 0.1</title>
+	<title>demlolished - Editor 0.4</title>
 	<link href="css/fontawesome-all.min.css" rel="stylesheet" type="text/css">
 	<link href="css/codemirror.css" rel="stylesheet" type="text/css">
 	<link href="css/monokai.css" rel="stylesheet" type="text/css">
@@ -28,8 +28,8 @@
 <body>
 	<nav class="menu">
 		<div id="logo">
-			demolishEditor 0.3
-		</span>
+			demolishEditor 0.4
+			</span>
 	</nav>
 
 
@@ -54,25 +54,52 @@
 	</button>
 
 	<div class="wrapper">
-		<form id="editor">
+		<div class="tabs">
+			<div class="tab-caption tab-active" data-target="tab-fragment">Fragment</div>
+			<div class="tab-caption" data-target="tab-vertex">Vertex</div>
+			<div class="tab-caption" id="tab-custom" data-target="tab-custom">TypeScript</div>
+			<div class="tab"  id="tab-fragment">
 
-			<textarea id="fragment" col="10" rows="10">
+				<form id="editor">
+					<textarea id="fragment" col="10" rows="10">
+					</textarea>
+				</form>
+			</div>
+			<div class="tab hide" id="tab-vertex" >
+					<pre id="vertex" >
+						<code>
+attribute vec3 position;
+attribute vec2 surfacePosAttrib;
+varying vec2 surfacePosition;
+void main() {
 
-	</textarea>
-		</form>
+	surfacePosition = surfacePosAttrib;
+	gl_Position = vec4( position,1.0 );
+				
+}
+</code>
+					</pre>
+				
+			</div>
+			<div class="tab hide" id="tab-custom">
+
+				Logic and more
+
+			</div>
+		</div>
 	</div>
-	<div id="shader-win">
+	<div id="shader-win" draggable="true">
 		<div id="shader-win-tb">
 			<select id="shader-resolution">
 				<option value="1">1x</option>
 				<option value="2">2x</option>
 				<option class="4">4x</option>
 			</select>
-			
+
 			<i class="fa fa-desktop" id="btn-fullscreen"></i>
 			<i class="fa fa-volume-off" id="toggle-sound"></i>
 			<i class="fa fa-play" id="toogle-playback"></i>
-			<i class="fa fa-circle red"></i>
+			<i class="fa fa-circle red" id="btn-record"></i>
 			<i class="fas fa-stopwatch" id="reset-clocks"></i>
 			<i class="time">00.00</i>
 		</div>
