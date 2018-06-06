@@ -1,9 +1,4 @@
-#version 300 es
-#ifdef GL_ES
-precision highp float;
-precision highp int;
-precision mediump sampler3D;
-#endif
+
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;

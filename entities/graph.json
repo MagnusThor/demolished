@@ -1,7 +1,7 @@
 {
     "name": "default-demo",
     "audioSettings": {
-        "audioFile": "assets/felt.mp3",
+        "audioFile": "assets/plastic.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
