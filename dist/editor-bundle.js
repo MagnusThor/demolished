@@ -9752,7 +9752,7 @@ var TimeFragment = (function () {
                 if (_this.subeffects.find(function (a) { return a <= tm; })) {
                     ent.subEffectId++;
                     _this.subeffects.shift();
-                    console.log(_this.subeffects, shader.subEffectId, tm);
+                    console.log("initializing", _this.subeffects, shader.subEffectId, tm);
                 }
             });
         });
@@ -10036,7 +10036,6 @@ var Demolished;
             tf.forEach(function (f) {
                 f.setEntity(entity);
             });
-            return entity;
         };
         Rendering.prototype.tryFindTimeFragment = function (time) {
             var fragment = this.timeFragments.find(function (tf) {
@@ -10290,7 +10289,12 @@ var ShaderEntity = (function (_super) {
         this.actions.set(key, fn);
     };
     ShaderEntity.prototype.runAction = function (key, tm) {
-        this.actions.get(key)(this, tm);
+        try {
+            this.actions.get(key)(this, tm);
+        }
+        catch (_a) {
+            console.warn(this);
+        }
     };
     ShaderEntity.prototype.removeAction = function (key) {
         return this.actions.delete(key);
@@ -10368,10 +10372,11 @@ var ShaderEntity = (function (_super) {
         this.fragmentShader = fs;
         this.initShader();
     };
-    ShaderEntity.prototype.onError = function (err) {
-        console.error(err);
+    ShaderEntity.prototype.onSuccess = function (shader) {
     };
-    ShaderEntity.prototype.createTextureFromData = function (width, height, image) {
+    ShaderEntity.prototype.onError = function (err) {
+    };
+    ShaderEntity.prototype.createTextureFromImage = function (width, height, image) {
         var gl = this.gl;
         var texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -10407,10 +10412,9 @@ var ShaderEntity = (function (_super) {
         this.positionAttribute = 0;
         gl.enableVertexAttribArray(this.positionAttribute);
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
-        console.log(this.vertexPosition);
         gl.enableVertexAttribArray(this.vertexPosition);
         this.textures.forEach(function (asset) {
-            asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
+            asset.texture = _this.createTextureFromImage(asset.width, asset.height, asset.image);
         });
         gl.useProgram(this.glProgram);
     };
@@ -10425,7 +10429,10 @@ var ShaderEntity = (function (_super) {
         gl.compileShader(shader);
         var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
-            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+            this.onError(gl.getShaderInfoLog(shader));
+        }
+        else {
+            this.onSuccess(shader);
         }
         return shader;
     };
@@ -10562,7 +10569,8 @@ var DemolishedStreamingMusic = (function (_super) {
         return _super.call(this) || this;
     }
     DemolishedStreamingMusic.prototype.getTracks = function () {
-        throw "not yet implemented";
+        var ms = this.audio.captureStream();
+        return ms.getAudioTracks();
     };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "textureSize", {
         get: function () {
@@ -12252,7 +12260,7 @@ exports.Demolished2D = Demolished2D;
 /* harmony export (immutable) */ __webpack_exports__["b"] = addEvent;
 /* harmony export (immutable) */ __webpack_exports__["c"] = removeEvent;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__tools_common__ = __webpack_require__(19);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__modals_mixin__ = __webpack_require__(42);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__modals_mixin__ = __webpack_require__(43);
 /*
 Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
 Author: Lou Huang (@saikofish)
@@ -13237,7 +13245,7 @@ function removeEvent (element, event, callback) {
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Vector__ = __webpack_require__(46);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Vector__ = __webpack_require__(47);
 
 
 
@@ -17196,7 +17204,8 @@ CodeMirror.defineMode("clike", function(config, parserConfig) {
 /***/ }),
 /* 32 */,
 /* 33 */,
-/* 34 */
+/* 34 */,
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17212,10 +17221,16 @@ var DemolishedRecorder = (function () {
             mimeType: 'video/webm;codecs=vp9'
         });
         this.recorder.ondataavailable = function (e) {
-            _this.data.push(e.data);
-            console.log(_this.data.length);
+            if (e.data.size > 0)
+                _this.data.push(e.data);
         };
     }
+    DemolishedRecorder.prototype.toBlob = function () {
+        var blob = new Blob(this.data, {
+            type: 'video/webm'
+        });
+        return URL.createObjectURL(blob);
+    };
     DemolishedRecorder.prototype.stop = function () {
         this.recorder.stop();
     };
@@ -17229,7 +17244,6 @@ exports.DemolishedRecorder = DemolishedRecorder;
 
 
 /***/ }),
-/* 35 */,
 /* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -17367,7 +17381,8 @@ var ShaderCompiler = (function () {
         var shader = gl.createShader(type);
         gl.shaderSource(shader, src);
         gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!success) {
             return this.toErrorLines(gl.getShaderInfoLog(shader));
         }
         else
@@ -17385,8 +17400,8 @@ exports.ShaderCompiler = ShaderCompiler;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var ColorPicker_1 = __webpack_require__(43);
-var FloatPicker_1 = __webpack_require__(44);
+var ColorPicker_1 = __webpack_require__(44);
+var FloatPicker_1 = __webpack_require__(45);
 var Vec2Picker_1 = __webpack_require__(16);
 var Vec2Picker_2 = __webpack_require__(16);
 var Color_1 = __webpack_require__(17);
@@ -17578,7 +17593,7 @@ var demolishedUtils_1 = __webpack_require__(36);
 var demolishedSound_1 = __webpack_require__(5);
 var demoishedEditorHelper_1 = __webpack_require__(37);
 var demolished2D_1 = __webpack_require__(10);
-var demolishedRecoder_1 = __webpack_require__(34);
+var demolishedRecoder_1 = __webpack_require__(35);
 var SpectrumAnalyzer = (function (_super) {
     __extends(SpectrumAnalyzer, _super);
     function SpectrumAnalyzer(ctx) {
@@ -17630,8 +17645,29 @@ var DemolishedEd = (function () {
         var shaderWin = demolishedUtils_1.Utils.$("#shader-win");
         var record = demolishedUtils_1.Utils.$("#btn-record");
         record.addEventListener("click", function (evt) {
-            var videoTrack = _this.engine.canvas["captueSteam"](60);
-            _this.recordset = new demolishedRecoder_1.DemolishedRecorder(videoTrack, _this.engine.audio.getTracks());
+            if (!_this.recorder) {
+                _this.engine.uniforms.time = 0;
+                _this.engine.resetClock(0);
+                immediate.classList.remove("hide");
+                var videoTrack = _this.engine.canvas["captureStream"](60);
+                var audioTracks = _this.engine.audio.getTracks();
+                _this.recorder = new demolishedRecoder_1.DemolishedRecorder(videoTrack.getTracks()[0], audioTracks[0]);
+                _this.recorder.start(60);
+                var p_1 = document.createElement("p");
+                p_1.textContent = "Recording";
+                immediate.appendChild(p_1);
+            }
+            else {
+                _this.recorder.stop();
+                var filename = Math.random().toString(36).substring(7);
+                var p_2 = document.createElement("p");
+                var a = document.createElement("a");
+                a.setAttribute("download", "file.mp4");
+                a.setAttribute("href", _this.recorder.toBlob());
+                a.textContent = "Download recording";
+                p_2.appendChild(a);
+                immediate.appendChild(p_2);
+            }
         });
         var tabButtons = demolishedUtils_1.Utils.$$(".tab-caption");
         var tabs = demolishedUtils_1.Utils.$$(".tab");
@@ -17644,7 +17680,6 @@ var DemolishedEd = (function () {
                 tabButtons.forEach(function (b) {
                     b.classList.remove("tab-active");
                 });
-                console.log(el.dataset.target);
                 var src = evt.srcElement;
                 src.classList.add("tab-active");
                 demolishedUtils_1.Utils.$("#" + src.dataset.target).classList.remove("hide");
@@ -17775,16 +17810,17 @@ var DemolishedEd = (function () {
     return DemolishedEd;
 }());
 exports.DemolishedEd = DemolishedEd;
+var p;
 document.addEventListener("DOMContentLoaded", function () {
-    var p = DemolishedEd.getIntance();
-    console.log(p);
+    p = DemolishedEd.getIntance();
 });
 
 
 /***/ }),
 /* 40 */,
 /* 41 */,
-/* 42 */
+/* 42 */,
+/* 43 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17865,7 +17901,7 @@ function subscribeMixin (target) {
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -17873,7 +17909,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(11);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Color__ = __webpack_require__(17);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__tools_common__ = __webpack_require__(19);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__ = __webpack_require__(47);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__tools_interactiveDom__ = __webpack_require__(48);
 /*
 Original: https://github.com/tangrams/tangram-play/blob/gh-pages/src/js/addons/ui/widgets/ColorPickerModal.js
 Author: Lou Huang (@saikofish)
@@ -18218,13 +18254,13 @@ function drawCircle (ctx, coords, radius, color, width) { // uses drawDisk
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Picker__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Float__ = __webpack_require__(45);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__types_Float__ = __webpack_require__(46);
 
 
 
@@ -18345,7 +18381,7 @@ class FloatPicker extends __WEBPACK_IMPORTED_MODULE_0__Picker__["a" /* default *
 
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18377,7 +18413,7 @@ class Float {
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -18620,12 +18656,12 @@ class Vector {
 
 
 /***/ }),
-/* 47 */
+/* 48 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = subscribeInteractiveDom;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mixin__ = __webpack_require__(48);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mixin__ = __webpack_require__(49);
 /*
  * Original code from: https://twitter.com/blurspline / https://github.com/zz85
  * See post @ http://www.lab4games.net/zz85/blog/2014/11/15/resizing-moving-snapping-windows-with-js-css/
@@ -18949,7 +18985,7 @@ function subscribeInteractiveDom (dom, options) {
 
 
 /***/ }),
-/* 48 */
+/* 49 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";

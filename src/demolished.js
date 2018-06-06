@@ -128,7 +128,6 @@ var Demolished;
             tf.forEach(function (f) {
                 f.setEntity(entity);
             });
-            return entity;
         };
         Rendering.prototype.tryFindTimeFragment = function (time) {
             var fragment = this.timeFragments.find(function (tf) {

@@ -57,8 +57,8 @@ export class TimeFragment {
             shader.addAction("$subeffects", (ent:ShaderEntity,tm:number) =>{
                 if(this.subeffects.find( (a:number) => { return a <= tm })){
                     ent.subEffectId++;
-                    this.subeffects.shift();
-                    console.log(this.subeffects,shader.subEffectId,tm);
+                    this.subeffects.shift();            
+                    console.log("initializing",this.subeffects,shader.subEffectId,tm);
                 }
             });
         });
@@ -109,7 +109,6 @@ export interface IUniforms{
     mouseY:number;
     setScreen(w:number,height:number)
 }
-
 /**
  * 
  * 

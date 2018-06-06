@@ -174,16 +174,19 @@ export namespace Demolished {
             });
         }
         addEntity(name: string, textures: Array<EntityTexture>
-        ): ShaderEntity {
+        ): void {
             const entity = new ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
-            this.entitiesCache.push(entity);
-            let tf = this.timeFragments.filter((pre: TimeFragment) => {
-                return pre.entity === name;
-            });
-            tf.forEach((f: TimeFragment) => {
-                f.setEntity(entity)
-            });
-            return entity;
+
+
+                this.entitiesCache.push(entity);
+                let tf = this.timeFragments.filter((pre: TimeFragment) => {
+                    return pre.entity === name;
+                });
+                tf.forEach((f: TimeFragment) => {
+                    f.setEntity(entity)
+                });
+              
+
         }
         private tryFindTimeFragment(time: number): TimeFragment {
            let fragment = this.timeFragments.find((tf: TimeFragment) => {
@@ -194,17 +197,9 @@ export namespace Demolished {
         }
 
        resetClock(time:number){
-        // this.uniforms.timeTotal = time;
-        // this.animationFrameCount = 0;
-        // this.animationOffsetTime = time;
-        // this.animationStartTime= performance.now();
-        // this.audio.currentTime = (time / 1000) % 60;
-
         this.currentTimeFragment.reset();
-
         this.stop();
         this.start(time);
-        
        } 
 
         start(time: number) {
@@ -259,7 +254,6 @@ export namespace Demolished {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
-
         /**
          *  animation loop
          *  todo: needs to be refactored

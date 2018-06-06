@@ -10,10 +10,16 @@ var DemolishedRecorder = (function () {
             mimeType: 'video/webm;codecs=vp9'
         });
         this.recorder.ondataavailable = function (e) {
-            _this.data.push(e.data);
-            console.log(_this.data.length);
+            if (e.data.size > 0)
+                _this.data.push(e.data);
         };
     }
+    DemolishedRecorder.prototype.toBlob = function () {
+        var blob = new Blob(this.data, {
+            type: 'video/webm'
+        });
+        return URL.createObjectURL(blob);
+    };
     DemolishedRecorder.prototype.stop = function () {
         this.recorder.stop();
     };

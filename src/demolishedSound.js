@@ -121,7 +121,8 @@ var DemolishedStreamingMusic = (function (_super) {
         return _super.call(this) || this;
     }
     DemolishedStreamingMusic.prototype.getTracks = function () {
-        throw "not yet implemented";
+        var ms = this.audio.captureStream();
+        return ms.getAudioTracks();
     };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "textureSize", {
         get: function () {

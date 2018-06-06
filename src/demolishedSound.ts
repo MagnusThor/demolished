@@ -137,9 +137,11 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
  */
 export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
   
+    
+    
     getTracks():MediaStreamTrack{
-        
-        throw "not yet implemented";
+        let ms = this.audio.captureStream();
+        return ms.getAudioTracks();
     }
     constructor() {
         super();

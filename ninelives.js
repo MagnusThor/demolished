@@ -84,5 +84,4 @@ var Ninelives;
 })(Ninelives = exports.Ninelives || (exports.Ninelives = {}));
 document.addEventListener("DOMContentLoaded", function () {
     var p = Ninelives.Ninelives.instance();
-    window["_demo"] = p;
 });

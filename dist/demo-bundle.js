@@ -113,7 +113,7 @@ var TimeFragment = (function () {
                 if (_this.subeffects.find(function (a) { return a <= tm; })) {
                     ent.subEffectId++;
                     _this.subeffects.shift();
-                    console.log(_this.subeffects, shader.subEffectId, tm);
+                    console.log("initializing", _this.subeffects, shader.subEffectId, tm);
                 }
             });
         });
@@ -399,7 +399,6 @@ var Demolished;
             tf.forEach(function (f) {
                 f.setEntity(entity);
             });
-            return entity;
         };
         Rendering.prototype.tryFindTimeFragment = function (time) {
             var fragment = this.timeFragments.find(function (tf) {
@@ -548,7 +547,7 @@ var Demolished;
 
 /***/ }),
 
-/***/ 32:
+/***/ 33:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -823,7 +822,7 @@ exports.DemolishedSoundBox = DemolishedSoundBox;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolished_1 = __webpack_require__(3);
-var DemolishedSonant_1 = __webpack_require__(32);
+var DemolishedSonant_1 = __webpack_require__(33);
 var Demo = (function () {
     function Demo() {
         var _this = this;
@@ -973,7 +972,12 @@ var ShaderEntity = (function (_super) {
         this.actions.set(key, fn);
     };
     ShaderEntity.prototype.runAction = function (key, tm) {
-        this.actions.get(key)(this, tm);
+        try {
+            this.actions.get(key)(this, tm);
+        }
+        catch (_a) {
+            console.warn(this);
+        }
     };
     ShaderEntity.prototype.removeAction = function (key) {
         return this.actions.delete(key);
@@ -1051,10 +1055,11 @@ var ShaderEntity = (function (_super) {
         this.fragmentShader = fs;
         this.initShader();
     };
-    ShaderEntity.prototype.onError = function (err) {
-        console.error(err);
+    ShaderEntity.prototype.onSuccess = function (shader) {
     };
-    ShaderEntity.prototype.createTextureFromData = function (width, height, image) {
+    ShaderEntity.prototype.onError = function (err) {
+    };
+    ShaderEntity.prototype.createTextureFromImage = function (width, height, image) {
         var gl = this.gl;
         var texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -1090,10 +1095,9 @@ var ShaderEntity = (function (_super) {
         this.positionAttribute = 0;
         gl.enableVertexAttribArray(this.positionAttribute);
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
-        console.log(this.vertexPosition);
         gl.enableVertexAttribArray(this.vertexPosition);
         this.textures.forEach(function (asset) {
-            asset.texture = _this.createTextureFromData(asset.width, asset.height, asset.image);
+            asset.texture = _this.createTextureFromImage(asset.width, asset.height, asset.image);
         });
         gl.useProgram(this.glProgram);
     };
@@ -1108,7 +1112,10 @@ var ShaderEntity = (function (_super) {
         gl.compileShader(shader);
         var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
-            throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+            this.onError(gl.getShaderInfoLog(shader));
+        }
+        else {
+            this.onSuccess(shader);
         }
         return shader;
     };
@@ -1246,7 +1253,8 @@ var DemolishedStreamingMusic = (function (_super) {
         return _super.call(this) || this;
     }
     DemolishedStreamingMusic.prototype.getTracks = function () {
-        throw "not yet implemented";
+        var ms = this.audio.captureStream();
+        return ms.getAudioTracks();
     };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "textureSize", {
         get: function () {

@@ -1,18 +1,16 @@
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './demolishedModels'
 import loadResource from './demolishedLoader'
 import { Demolished } from './demolished';
+
 export class DemolishedShaderResource{
         constructor(){
                 throw "not yet mimplamented";
         }
 }
-
-
 export class EntityTexture {
     texture: WebGLTexture;
     constructor(public image: any, public name: string, public width: number, public height: number, public assetType: number) { }
 }
-
 export interface IEntity {
     render(engine: Demolished.Rendering);
     onError(err: any): void;
@@ -120,13 +118,19 @@ export class ShaderEntity extends EntityBase implements IEntity {
         ent.swapBuffers();
 
         ent.runAction("$subeffects", engine.uniforms.time / 1000);
-
     }
+
     addAction(key: string, fn: (ent: ShaderEntity, tm: number) => void) {
         this.actions.set(key, fn);
     }
-    runAction(key: string, tm: number) {
-        this.actions.get(key)(this, tm);
+    runAction(key: string, tm: number):void {
+        try{
+            this.actions.get(key)(this, tm);
+        }catch{
+            console.warn(this);
+        }
+       
+         
     }
     removeAction(key: string): boolean {
         return this.actions.delete(key);
@@ -158,7 +162,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
     ) {
         super(gl);
         this.uniformsCache = new Map<string, WebGLUniformLocation>();
-     
+        
 
         this.loadShaders().then((numOfShaders: number) => {
             if (numOfShaders > -1) {
@@ -221,8 +225,6 @@ export class ShaderEntity extends EntityBase implements IEntity {
         });
     }
 
-    
-
     public compile(fs: string, vs?: string) {
         if (vs) {
             this.vertexShader = vs;
@@ -230,12 +232,11 @@ export class ShaderEntity extends EntityBase implements IEntity {
         this.fragmentShader = fs;
         this.initShader();
     }
-
-    onError(err: any) {
-        console.error(err)
+    onSuccess(shader:WebGLShader){ 
     }
-
-    private createTextureFromData(width: number, height: number, image: HTMLImageElement) {
+    onError(err: any) {
+    }
+    private createTextureFromImage(width: number, height: number, image: HTMLImageElement) {
         let gl = this.gl;
         let texture = gl.createTexture()
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -260,8 +261,6 @@ export class ShaderEntity extends EntityBase implements IEntity {
 
         gl.linkProgram(this.glProgram);
 
-        
-
         this.cacheUniformLocation('fft');
         this.cacheUniformLocation("subEffectId");
         this.cacheUniformLocation("playbacktime");
@@ -279,11 +278,10 @@ export class ShaderEntity extends EntityBase implements IEntity {
         gl.enableVertexAttribArray(this.positionAttribute);
 
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
-        console.log(this.vertexPosition);
         gl.enableVertexAttribArray(this.vertexPosition);
 
         this.textures.forEach((asset: EntityTexture) => {
-            asset.texture = this.createTextureFromData(asset.width, asset.height, asset.image);
+            asset.texture = this.createTextureFromImage(asset.width, asset.height, asset.image);
         });
         gl.useProgram(this.glProgram);
     }
@@ -296,13 +294,12 @@ export class ShaderEntity extends EntityBase implements IEntity {
         let shader: WebGLShader = gl.createShader(type);
         gl.shaderSource(shader, src);
         gl.compileShader(shader);
-
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
-          throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+            this.onError(gl.getShaderInfoLog(shader));
+        }else{
+            this.onSuccess(shader);
         }
-       
-      
         return shader;
     }
 }

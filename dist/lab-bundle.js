@@ -113,7 +113,7 @@ var TimeFragment = (function () {
                 if (_this.subeffects.find(function (a) { return a <= tm; })) {
                     ent.subEffectId++;
                     _this.subeffects.shift();
-                    console.log(_this.subeffects, shader.subEffectId, tm);
+                    console.log("initializing", _this.subeffects, shader.subEffectId, tm);
                 }
             });
         });
@@ -334,7 +334,7 @@ exports.Demolished2D = Demolished2D;
 
 /***/ }),
 
-/***/ 33:
+/***/ 34:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -391,7 +391,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolished2D_1 = __webpack_require__(10);
-var demolishedConfig_1 = __webpack_require__(33);
+var demolishedConfig_1 = __webpack_require__(34);
 var demolishedModels_1 = __webpack_require__(1);
 var TextEffect = (function (_super) {
     __extends(TextEffect, _super);

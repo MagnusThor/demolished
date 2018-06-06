@@ -39,7 +39,7 @@ var TimeFragment = (function () {
                 if (_this.subeffects.find(function (a) { return a <= tm; })) {
                     ent.subEffectId++;
                     _this.subeffects.shift();
-                    console.log(_this.subeffects, shader.subEffectId, tm);
+                    console.log("initializing", _this.subeffects, shader.subEffectId, tm);
                 }
             });
         });

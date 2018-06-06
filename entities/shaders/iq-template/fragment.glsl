@@ -3,9 +3,7 @@ uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
 uniform sampler2D iChannel0;
-
 out vec4 fragColor;
-
 // https://www.shadertoy.com/view/ldfSWs by IQ
 //------------------------------------------------------------------------
 // Camera
@@ -29,7 +27,7 @@ vec3 doBackground( void )
 {
     return vec3( 0.0, 0.0, 0.0);
 }
-    //------------------------------------------------------------------------
+//------------------------------------------------------------------------
 // Modelling 
 //
 // Defines the shapes (a sphere in this case) through a distance field, in
@@ -53,7 +51,6 @@ vec3 doMaterial( in vec3 pos, in vec3 nor )
 //------------------------------------------------------------------------
 // Lighting
 //------------------------------------------------------------------------
-
 float calcSoftshadow( in vec3 ro, in vec3 rd );
 
 vec3 doLighting( in vec3 pos, in vec3 nor, in vec3 rd, in float dis, in vec3 mal )
@@ -176,6 +173,7 @@ void main()
 	col = pow( clamp(col,0.0,1.0), vec3(0.4545) );
 	   
     fragColor = vec4( col, 1.0 );
+
 }
 
 

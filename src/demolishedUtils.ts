@@ -89,7 +89,6 @@ export class ShaderCompiler
         } 
 
         onSuccess(fs:string){
-
             throw "Not implemented";   
         }
 
@@ -134,7 +133,6 @@ export class ShaderCompiler
                     this.lastCompile = performance.now();
                     this.onSuccess(fs);
                 }
-               // return compileResults;
         }
         
         private createShader(src:string,type:number):Array<ShaderError>{
@@ -142,7 +140,8 @@ export class ShaderCompiler
             let shader = gl.createShader( type);    
             gl.shaderSource( shader, src );
             gl.compileShader( shader );
-            if (!gl.getShaderParameter( shader, gl.COMPILE_STATUS ) ) {
+            let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            if(!success) {
                 return this.toErrorLines(gl.getShaderInfoLog( shader ));
             }else   
                    return new Array<ShaderError>();

@@ -84,8 +84,29 @@ var DemolishedEd = (function () {
         var shaderWin = demolishedUtils_1.Utils.$("#shader-win");
         var record = demolishedUtils_1.Utils.$("#btn-record");
         record.addEventListener("click", function (evt) {
-            var videoTrack = _this.engine.canvas["captueSteam"](60);
-            _this.recordset = new demolishedRecoder_1.DemolishedRecorder(videoTrack, _this.engine.audio.getTracks());
+            if (!_this.recorder) {
+                _this.engine.uniforms.time = 0;
+                _this.engine.resetClock(0);
+                immediate.classList.remove("hide");
+                var videoTrack = _this.engine.canvas["captureStream"](60);
+                var audioTracks = _this.engine.audio.getTracks();
+                _this.recorder = new demolishedRecoder_1.DemolishedRecorder(videoTrack.getTracks()[0], audioTracks[0]);
+                _this.recorder.start(60);
+                var p_1 = document.createElement("p");
+                p_1.textContent = "Recording";
+                immediate.appendChild(p_1);
+            }
+            else {
+                _this.recorder.stop();
+                var filename = Math.random().toString(36).substring(7);
+                var p_2 = document.createElement("p");
+                var a = document.createElement("a");
+                a.setAttribute("download", "file.mp4");
+                a.setAttribute("href", _this.recorder.toBlob());
+                a.textContent = "Download recording";
+                p_2.appendChild(a);
+                immediate.appendChild(p_2);
+            }
         });
         var tabButtons = demolishedUtils_1.Utils.$$(".tab-caption");
         var tabs = demolishedUtils_1.Utils.$$(".tab");
@@ -98,7 +119,6 @@ var DemolishedEd = (function () {
                 tabButtons.forEach(function (b) {
                     b.classList.remove("tab-active");
                 });
-                console.log(el.dataset.target);
                 var src = evt.srcElement;
                 src.classList.add("tab-active");
                 demolishedUtils_1.Utils.$("#" + src.dataset.target).classList.remove("hide");
@@ -229,7 +249,7 @@ var DemolishedEd = (function () {
     return DemolishedEd;
 }());
 exports.DemolishedEd = DemolishedEd;
+var p;
 document.addEventListener("DOMContentLoaded", function () {
-    var p = DemolishedEd.getIntance();
-    console.log(p);
+    p = DemolishedEd.getIntance();
 });

@@ -131,7 +131,8 @@ var ShaderCompiler = (function () {
         var shader = gl.createShader(type);
         gl.shaderSource(shader, src);
         gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!success) {
             return this.toErrorLines(gl.getShaderInfoLog(shader));
         }
         else
