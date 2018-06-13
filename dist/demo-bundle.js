@@ -1280,7 +1280,7 @@ var DemolishedStreamingMusic = (function (_super) {
     };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
         get: function () {
-            return this.audio.duration;
+            return Math.floor(this.audio.duration * 1000.);
         },
         enumerable: true,
         configurable: true

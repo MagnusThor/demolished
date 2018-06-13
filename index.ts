@@ -86,7 +86,6 @@ export class DemolishedEd {
 
     public recorder: DemolishedRecorder;
 
-
     constructor() {
 
         let Render2D = new Demolished2D(Utils.$("#canvas-spectrum") as HTMLCanvasElement);
@@ -136,40 +135,29 @@ export class DemolishedEd {
 
                 this.recorder.start(60);
 
-
-                let p = document.createElement("p");
-                p.textContent = "Recording";
+                let p =Utils.el("p","Recording");
                 immediate.appendChild(p);
                 
             } else {
-                
-                
                 this.recorder.stop();
-                
-                let filename = Math.random().toString(36).substring(7);
-                let p = document.createElement("p");
-                let a = document.createElement("a");
-                a.setAttribute("download","file.mp4")
-                a.setAttribute("href",this.recorder.toBlob())
-                a.textContent = "Download recording";
+                let filename = Math.random().toString(36).substring(2) + ".webm";
+                let p = Utils.el("p");
+                let a = Utils.el("a","Download recording",{ download:filename,href: this.recorder.toBlob()});        
                 p.appendChild(a);
                 immediate.appendChild(p);                
-            
             }
-
         });
-
 
         let tabButtons = Utils.$$(".tab-caption");
         let tabs = Utils.$$(".tab")
 
         tabButtons.forEach((el: HTMLElement, idx: number) => {
             el.addEventListener("click", (evt: Event) => {
-                tabs.forEach((b) => {
+                tabs.forEach((b:HTMLElement) => {
                     b.classList.add("hide");
                 });
 
-                tabButtons.forEach((b) => {
+                tabButtons.forEach((b:HTMLElement) => {
                     b.classList.remove("tab-active");
                 });
                 let src = evt.srcElement as HTMLElement;
@@ -228,7 +216,8 @@ export class DemolishedEd {
         this.engine.onFrame = (frame) => {
             // todo:  Implmement a method the gives duration in milliscconds on IDemolishedAudio.,
             this.spectrum.frequencData = this.music.getFrequenceData();
-            timeLine.style.width = ((parseInt(frame.ms) / 386400) * 100.).toString() + "%";
+            
+            timeLine.style.width = ((parseInt(frame.ms) / this.engine.audio.duration) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
         this.engine.onReady = () => {
@@ -242,6 +231,7 @@ export class DemolishedEd {
         this.engine.onStop = () => {
         }
         this.engine.onStart = () => {
+            
             let shader = this.engine.currentTimeFragment.entityShader.fragmentShader;
 
             this.engine.currentTimeFragment.init();
@@ -275,19 +265,20 @@ export class DemolishedEd {
            */
             this.shaderCompiler.onError = (shaderErrors: Array<ShaderError>) => {
                 shaderErrors.forEach((err: ShaderError) => {
-                    let errNode = document.createElement("abbr");
+
+                    let errNode = Utils.el("abbr");
+                    
                     errNode.classList.add("error-info");
                     errNode.title = err.error;
                     editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
-                    // todo: refactor
-                    let p = document.createElement("p");
-                    let m = document.createElement("mark");
-                    let s = document.createElement("span");
-                    s.textContent = err.error;
-                    m.textContent = err.line.toString();
+
+                    let p =Utils.el("p");
+                    let m = Utils.el("mark",err.line.toString());
+                    let s =Utils.el("span",err.error);
                     p.appendChild(m);
                     p.appendChild(s);
                     immediate.appendChild(p);
+                    
                 });
             };
             this.shaderCompiler.onSuccess = (fs: string) => {

@@ -33,6 +33,28 @@ export class Utils {
         for(let i = 0; i < queryResult.length;i++) results.push(queryResult.item(i));
         return results;
     }
+     /**
+     * Create a new HTMLElement with textContent and attributes.
+     *
+     * @static
+     * @param {(stringe | HTMLElement)} p
+     * @param {string} [textContent]
+     * @param {Object} [attr]
+     * @returns {HTMLElement}
+     * @memberof Utils
+     */
+    static el(p:string | HTMLElement,textContent?:string,attr?:Object):HTMLElement{
+        let node:HTMLElement;
+        typeof(p) === "string" ? node = document.createElement(p) : node = p;
+        if(textContent)
+            node.textContent = textContent;
+        if(attr){
+                Object.keys(attr).forEach ( (k:string) => {
+                    node.setAttribute(k,attr[k]);
+                });
+        }
+        return node;
+    }
 
     static Array = {
         add: (x, y) => x + y,
@@ -41,6 +63,7 @@ export class Utils {
         delta: ([x, ...xs]) =>
             xs.reduce(([acc, last], x) => [[...acc, x - last], x], [[], x])[0]
     }
+    
     static getExponentOfTwo(value: number, max: number): number {
         var count = 1;
         do {

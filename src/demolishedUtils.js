@@ -13,6 +13,18 @@ var Utils = (function () {
             results.push(queryResult.item(i));
         return results;
     };
+    Utils.el = function (p, textContent, attr) {
+        var node;
+        typeof (p) === "string" ? node = document.createElement(p) : node = p;
+        if (textContent)
+            node.textContent = textContent;
+        if (attr) {
+            Object.keys(attr).forEach(function (k) {
+                node.setAttribute(k, attr[k]);
+            });
+        }
+        return node;
+    };
     Utils.getExponentOfTwo = function (value, max) {
         var count = 1;
         do {

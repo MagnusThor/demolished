@@ -20,6 +20,13 @@ var DemolishedRecorder = (function () {
         });
         return URL.createObjectURL(blob);
     };
+    DemolishedRecorder.prototype.flush = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            resolve(_this.toBlob());
+            _this.data = new Array();
+        });
+    };
     DemolishedRecorder.prototype.stop = function () {
         this.recorder.stop();
     };

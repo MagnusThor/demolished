@@ -1,7 +1,7 @@
 {
     "name": "default-demo",
     "audioSettings": {
-        "audioFile": "assets/plastic.mp3",
+        "audioFile": "assets/felt.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
@@ -15,7 +15,7 @@
         {
             "start": 0,
             "stop": 250200,
-            "entity": "hope",
+            "entity": "window",
             "subeffects":[100,200,300,400]
         }  
     ],
@@ -24,7 +24,7 @@
             "include":[
                 "common.glsl"
             ],
-            "name": "hope",
+            "name": "window",
             "description": "",
             "textures":[
                 {
@@ -57,7 +57,7 @@
             "include":[
                 "common.glsl"
             ],
-            "name": "nebula",
+            "name": "window",
             "textures":[
             ]
         }

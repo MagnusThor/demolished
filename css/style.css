@@ -495,7 +495,7 @@ body {
 	#shader-view {
 		height: 225px;
 		width: 450px;
-
+		background: #000;
 	}
 
 	#current-time{

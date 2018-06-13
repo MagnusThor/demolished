@@ -10596,7 +10596,7 @@ var DemolishedStreamingMusic = (function (_super) {
     };
     Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
         get: function () {
-            return this.audio.duration;
+            return Math.floor(this.audio.duration * 1000.);
         },
         enumerable: true,
         configurable: true
@@ -17231,6 +17231,13 @@ var DemolishedRecorder = (function () {
         });
         return URL.createObjectURL(blob);
     };
+    DemolishedRecorder.prototype.flush = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            resolve(_this.toBlob());
+            _this.data = new Array();
+        });
+    };
     DemolishedRecorder.prototype.stop = function () {
         this.recorder.stop();
     };
@@ -17262,6 +17269,18 @@ var Utils = (function () {
         for (var i = 0; i < queryResult.length; i++)
             results.push(queryResult.item(i));
         return results;
+    };
+    Utils.el = function (p, textContent, attr) {
+        var node;
+        typeof (p) === "string" ? node = document.createElement(p) : node = p;
+        if (textContent)
+            node.textContent = textContent;
+        if (attr) {
+            Object.keys(attr).forEach(function (k) {
+                node.setAttribute(k, attr[k]);
+            });
+        }
+        return node;
     };
     Utils.getExponentOfTwo = function (value, max) {
         var count = 1;
@@ -17653,20 +17672,16 @@ var DemolishedEd = (function () {
                 var audioTracks = _this.engine.audio.getTracks();
                 _this.recorder = new demolishedRecoder_1.DemolishedRecorder(videoTrack.getTracks()[0], audioTracks[0]);
                 _this.recorder.start(60);
-                var p_1 = document.createElement("p");
-                p_1.textContent = "Recording";
-                immediate.appendChild(p_1);
+                var p = demolishedUtils_1.Utils.el("p", "Recording");
+                immediate.appendChild(p);
             }
             else {
                 _this.recorder.stop();
-                var filename = Math.random().toString(36).substring(7);
-                var p_2 = document.createElement("p");
-                var a = document.createElement("a");
-                a.setAttribute("download", "file.mp4");
-                a.setAttribute("href", _this.recorder.toBlob());
-                a.textContent = "Download recording";
-                p_2.appendChild(a);
-                immediate.appendChild(p_2);
+                var filename = Math.random().toString(36).substring(2) + ".webm";
+                var p = demolishedUtils_1.Utils.el("p");
+                var a = demolishedUtils_1.Utils.el("a", "Download recording", { download: filename, href: _this.recorder.toBlob() });
+                p.appendChild(a);
+                immediate.appendChild(p);
             }
         });
         var tabButtons = demolishedUtils_1.Utils.$$(".tab-caption");
@@ -17675,7 +17690,6 @@ var DemolishedEd = (function () {
             el.addEventListener("click", function (evt) {
                 tabs.forEach(function (b) {
                     b.classList.add("hide");
-                    console.log(b);
                 });
                 tabButtons.forEach(function (b) {
                     b.classList.remove("tab-active");
@@ -17728,7 +17742,7 @@ var DemolishedEd = (function () {
         });
         this.engine.onFrame = function (frame) {
             _this.spectrum.frequencData = _this.music.getFrequenceData();
-            timeLine.style.width = ((parseInt(frame.ms) / 386400) * 100.).toString() + "%";
+            timeLine.style.width = ((parseInt(frame.ms) / _this.engine.audio.duration) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
         this.engine.onReady = function () {
@@ -17764,15 +17778,13 @@ var DemolishedEd = (function () {
             _this.helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(editor);
             _this.shaderCompiler.onError = function (shaderErrors) {
                 shaderErrors.forEach(function (err) {
-                    var errNode = document.createElement("abbr");
+                    var errNode = demolishedUtils_1.Utils.el("abbr");
                     errNode.classList.add("error-info");
                     errNode.title = err.error;
                     editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
-                    var p = document.createElement("p");
-                    var m = document.createElement("mark");
-                    var s = document.createElement("span");
-                    s.textContent = err.error;
-                    m.textContent = err.line.toString();
+                    var p = demolishedUtils_1.Utils.el("p");
+                    var m = demolishedUtils_1.Utils.el("mark", err.line.toString());
+                    var s = demolishedUtils_1.Utils.el("span", err.error);
                     p.appendChild(m);
                     p.appendChild(s);
                     immediate.appendChild(p);
@@ -17810,9 +17822,8 @@ var DemolishedEd = (function () {
     return DemolishedEd;
 }());
 exports.DemolishedEd = DemolishedEd;
-var p;
 document.addEventListener("DOMContentLoaded", function () {
-    p = DemolishedEd.getIntance();
+    DemolishedEd.getIntance();
 });
 
 

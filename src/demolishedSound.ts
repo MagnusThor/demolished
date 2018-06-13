@@ -170,7 +170,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
     }
 
     get duration(): number{
-        return this.audio.duration;
+        return Math.floor(this.audio.duration * 1000.);
     }
 
     get currentTime(): number {
