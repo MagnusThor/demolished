@@ -1,3 +1,9 @@
+#version 300 es
+#ifdef GL_ES
+precision highp float;
+precision highp int;
+precision mediump sampler3D;
+#endif
 
 uniform float time;
 uniform vec2 mouse;
@@ -9,8 +15,11 @@ uniform sampler2D iChannel2;
 uniform sampler2D iChannel3;
 uniform sampler2D fft;
 
-out vec4 fragColor;
+const float width=.22;
+const float scale=5.;
+const float detail=.002;
 
+out vec4 fragColor;
 
 const mat2 m2 = mat2( 0.80, -0.60, 0.60, 0.80 );
 float hash( float n ) {
@@ -36,6 +45,87 @@ float fbm( vec2 p ) {
     f += 0.0625*noise( p );
         return f/0.9375;
 }
+
+float DERRect(in vec3 z, vec4 radii){return length(max(abs(z)-radii.xyz,0.0))-radii.w;}
+
+float DERect(in vec2 z, vec2 r){return max(abs(z.x)-r.x,abs(z.y)-r.y);}
+
+float DEEiffie(in vec3 z){
+	float d1=DERect(z.yz,vec2(0.25,0.9));//I
+	float d2=min(DERect(z.xz,vec2(0.25,0.9)),min(DERect(z.xz+vec2(0.25,0.7),vec2(0.5,0.2)),DERect(z.xz+vec2(0.25,0.0),vec2(0.5,0.2))));//F
+	float d3=min(DERect(z.xy,vec2(0.25,0.9)),min(DERect(z.xy+vec2(0.25,0.7),vec2(0.5,0.2)),min(DERect(z.xy+vec2(0.25,0.0),vec2(0.5,0.2)),DERect(z.xy+vec2(0.25,-0.7),vec2(0.5,0.2)))));//E
+	return min(d1,min(d2,d3));
+}
+
+float DE(in vec3 z){
+	return max(DERRect(z,vec4(0.95,0.95,0.95,0.05)),-DEEiffie(z));
+}
+
+float DE2(vec3 p){
+	float t=0.4;
+	float dotp=dot(p,p);
+	p=p/dotp*scale;
+	p=sin(p+vec3(sin(1.+t)*2.,-t,-t*2.));
+	float d=length(p.yz)-width;
+	d=min(d,length(p.xz)-width);
+	d=min(d,length(p.xy)-width);
+	d=min(d,length(p*p*p)-width*.3);
+	return d*dotp/scale;
+}
+
+
+float sinNoise3d(in vec3 p){
+	float s=0.5,r=0.0;
+	for(int i=0;i<3;i++){
+		p+=p+sin(p.yzx*0.8+sin(p.zxy*0.9));
+		s*=0.5;
+		r+=sin(p.z+1.5*sin(p.y+1.3*sin(p.x)))*s;
+	}
+	return r;
+}
+float volLiteMask(vec3 rd){
+	vec3 ar=abs(rd);
+	vec2 pt;
+	float d=200.0;
+	if(ar.x>ar.y && ar.x>ar.z)pt=rd.yz/ar.x;
+	else{
+		if(ar.y>ar.z)pt=rd.xz/ar.y;
+		else {
+			pt=rd.xy/ar.z;
+			d=DE2(rd);//,vec2(0.5,0.2));
+		}
+		d=min(d,min(DERect(pt+vec2(0.25,0.7),vec2(0.5,0.2)),DERect(pt+vec2(0.25,0.0),vec2(0.5,0.2))));
+	}
+	d=min(d,DERect(pt,vec2(0.25,0.9)));
+	return (d<0.0)?1.0:0.0;
+}
+float rand(vec2 c){return fract(sin(c.x+2.4*sin(c.y))*34.1234);}
+mat3 lookat(vec3 fw){
+	fw=normalize(fw);vec3 rt=normalize(cross(-fw,vec3(0.0,1.0,0.0)));return mat3(rt,cross(rt,fw),fw);
+}
+vec4 scene(vec3 ro, vec3 rd) {
+	float t=0.0,d=0.0;
+	for(int i=0;i<48;i++){
+		t+=d=DE2(ro+rd*t);
+		if(t>10.0 || d<0.01)break;
+	}
+	float lt=pow(dot(rd,normalize(-ro)),10.0);
+	float t2=0.2*rand(gl_FragCoord.xy);
+	vec3 sum=vec3(0.0);
+	for(int i=0;i<48;i++){
+		t2+=0.2+t2*t2*0.01;
+		//if((t2>t && d<0.2) || t2>100.0)break;
+        if(t2>t && d<0.2)break;
+        t2=min(t2,10.0);
+        //t2 = sin(time*0.02);
+        if(t2>9.0)t2-=0.75+0.25*sin(float(i*2));
+		vec3 vr=normalize(ro+rd*t2);
+		if(vr==vr)sum+=(vr*0.5+0.5)*volLiteMask(vr)*(0.1+0.2*sinNoise3d((ro+rd*t2)));
+	}
+	vec3 col=clamp(lt*sum,0.0,4.0);
+	return vec4(col,t);
+}
+
 
 
 vec3 snoise3( in float x )
@@ -70,6 +160,8 @@ vec3 distanceLines( vec3 a, vec3 b, vec3 o, vec3 d )
 	
 	return vec3( length( p-q ), th );
 }
+
+
 
 
 vec3 castRay( vec3 ro, vec3 rd, float linesSpeed )
@@ -143,7 +235,7 @@ vec3 clouds(vec2 st){
 
 
 vec3 postprocess(vec2 uv,vec3 col){
- //	return col;   
+return col;   
 	col.gb *=  uv.y * .6; 
 	col.g = 0.0+0.6*smoothstep(-0.1,0.9,col.g*2.0);
 	col = 0.001+pow(col, vec3(1.2))*1.5;
@@ -154,8 +246,14 @@ vec3 postprocess(vec2 uv,vec3 col){
 }
 
 
+
+
+
 void main()
 {
+    vec2 uv = (2.0*gl_FragCoord.xy-resolution.xy)/min(resolution.y,resolution.x);
+
+
 	vec2 q = gl_FragCoord.xy/resolution.xy;
     	vec2 p = -1.0+2.0*q;
 	p.x *= resolution.x/resolution.y;
@@ -167,26 +265,13 @@ void main()
 	}
 		
 	float time = time;
-    
     float datetime = time;
-	
 
 	for( int i=0; i<16; i++ ){
         vec4 aa = texture( fft, vec2( 0.05 + 0.5*float(i)/16.0, 0.25));
         freqs[i] = clamp( 1.9*pow( aa.x, 3.0 ), 0.0, 1.0 );
         
-    }
-	// Kuk Söderholm, this wont no matter what u say cause any problems
-	// who is the developer, u or me?
-	// clamp with 1.9 as cosstant axiom never fails.
-	// we have the Fibro' sequence, PI, Tao and golden ratios, in  
-	// 
-
-    // vec4 aa = texture( fft, vec2( 0.05 + 0.5*float(i)/16.0, 0.25 ))      
-	   // freqs[i] = clamp( 1.9*pow( a, 3.0 ), 0.0, 1.0 );
-   // }
-	// camera	
-	vec3 ta = vec3( 0.0, 0.0, 0.0 );
+    }	vec3 ta = vec3( 0.0, 0.0, 0.0 );
 
 	float isFast = smoothstep( 35.8, 35.81, time);
 	isFast  -= smoothstep( 61.8, 61.81, time );
@@ -236,9 +321,9 @@ float linesSpeed =  smoothstep( 22.7, 22.71, datetime);
     if(datetime < 10.5) 
         col += clouds(p);
     
+ 
    
     
-    vec2 uv = (2.0*gl_FragCoord.xy-resolution.xy)/min(resolution.y,resolution.x);
     
     
     float tt = mod(time-0.04*uv.x+0.01*uv.y,1.5)/1.5;
@@ -259,14 +344,21 @@ float linesSpeed =  smoothstep( 22.7, 22.71, datetime);
 	s = 0.3 + 0.7*s;
 	s *= 0.5+0.5*pow( 1.0-clamp(r/d, 0.0, 1.0 ), 0.1 );
 	vec3 heart = vec3(1.0,0.5*r,0.3)*s;
-    
-   col =  mix( col, heart, smoothstep( -0.01, 0.01, d-r) );
-
+    col =  mix( col, heart, smoothstep( -0.01, 0.01, d-r) );
     col *= 0.15+0.85*pow( 16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.15 );
     
-    vec3 final = postprocess(q,col);
-
-    fragColor=vec4( final, 1.0 );
+    
+    
+    if(datetime > 20.05){
+        vec4 scn=scene(ro,rd);
+        fragColor = scn;
+        
+    }else{
+         vec3 final = postprocess(q,col);
+   
+         fragColor=vec4( final, 1.0 );
+    }
+       
 }
     
     

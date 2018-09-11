@@ -26,23 +26,27 @@ var TimeFragment = (function () {
     }
     TimeFragment.prototype.reset = function () {
         this.subeffects = this._subeffects.map(function (a) { return a; });
-        console.log(this.subeffects);
     };
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;
     };
     TimeFragment.prototype.init = function () {
         var _this = this;
-        this.subeffects.forEach(function (interval) {
-            var shader = _this.entityShader;
-            shader.addAction("$subeffects", function (ent, tm) {
-                if (_this.subeffects.find(function (a) { return a <= tm; })) {
-                    ent.subEffectId++;
-                    _this.subeffects.shift();
-                    console.log("initializing", _this.subeffects, shader.subEffectId, tm);
-                }
+        try {
+            this.subeffects.forEach(function (interval) {
+                var shader = _this.entityShader;
+                shader.addAction("$subeffects", function (ent, tm) {
+                    if (_this.subeffects.find(function (a) { return a <= tm; })) {
+                        ent.subEffectId++;
+                        _this.subeffects.shift();
+                        console.log("initializing", _this.subeffects, shader.subEffectId, tm);
+                    }
+                });
             });
-        });
+        }
+        catch (err) {
+            console.warn(err);
+        }
     };
     return TimeFragment;
 }());

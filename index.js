@@ -33,6 +33,7 @@ var demolishedSound_1 = require("./src/demolishedSound");
 var demoishedEditorHelper_1 = require("./src/ui/editor/demoishedEditorHelper");
 var demolished2D_1 = require("./src/demolished2D");
 var demolishedRecoder_1 = require("./src/demolishedRecoder");
+var demolishedTimeline_1 = require("./src/demolishedTimeline");
 var SpectrumAnalyzer = (function (_super) {
     __extends(SpectrumAnalyzer, _super);
     function SpectrumAnalyzer(ctx) {
@@ -65,6 +66,7 @@ exports.SpectrumAnalyzer = SpectrumAnalyzer;
 var DemolishedEd = (function () {
     function DemolishedEd() {
         var _this = this;
+        this.demoTimeline = new demolishedTimeline_1.Timeline("#current-time");
         var Render2D = new demolished2D_1.Demolished2D(demolishedUtils_1.Utils.$("#canvas-spectrum"));
         this.spectrum = new SpectrumAnalyzer(Render2D.ctx);
         Render2D.addEntity(this.spectrum);
@@ -165,7 +167,13 @@ var DemolishedEd = (function () {
             timeLine.style.width = ((parseInt(frame.ms) / _this.engine.audio.duration) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
-        this.engine.onReady = function () {
+        this.engine.onReady = function (graph) {
+            console.log("loaded timeline");
+            console.log(_this.engine.timeFragments);
+            _this.engine.timeFragments.forEach(function (t) {
+                var s = _this.demoTimeline.createSegment(t.entity, t.start, t.stop, _this.segmentChange);
+                console.log("segment ->", s);
+            });
             _this.onReady();
             window.setTimeout(function () {
                 _this.engine.start(0);
@@ -239,9 +247,11 @@ var DemolishedEd = (function () {
     DemolishedEd.prototype.onReady = function () {
         demolishedUtils_1.Utils.$(".loader").classList.add("hide");
     };
+    DemolishedEd.prototype.segmentChange = function (s, e) {
+    };
     return DemolishedEd;
 }());
 exports.DemolishedEd = DemolishedEd;
 document.addEventListener("DOMContentLoaded", function () {
-    DemolishedEd.getIntance();
+    window["_demo"] = DemolishedEd.getIntance();
 });

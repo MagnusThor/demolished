@@ -492,6 +492,10 @@ body {
 	}
 
 
+	#webgl{
+		background: #000;
+	}
+
 	#shader-view {
 		height: 225px;
 		width: 450px;
@@ -543,3 +547,21 @@ body {
 		text-align: right;
 		padding: 10px;
 	}
+
+/* Timeline */
+#timeline-container { width:100%; overflow-x:scroll; overflow-y:hidden; }
+#timeline-inner-container { width:5000px; position:relative; height:200px; }
+.segment { position:absolute; background-color:#000; height:50px; opacity:0.8; cursor:pointer; overflow:hidden; cursor: grab; }
+.segment .segment-details { font-size:11px; color:#fff; }
+.segment .segment-title {font-size:11px; color:#fff; padding:5px; font-weight:Bold; }
+/* position:absolute; display:block; top:0px; right:0px; */
+.segment .segment-left-handle { float:left; width:10px; background-color:#333; height:50px; width:10px; cursor: ew-resize; z-index:99999999; }
+.segment .segment-center-handle { position:absolute; left:10px; padding:5px; }
+/* .segment .segment-center-handle { float:left; background-color:blue; height:50px; width:96%; } */
+.segment .segment-right-handle { float:right; width:10px; background-color:#333; height:50px; float:right; width:10px; cursor: ew-resize; z-index:99999999; }
+
+.topmost {
+	z-index:10000;
+}
+
+

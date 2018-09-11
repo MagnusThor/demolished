@@ -94,7 +94,6 @@ var ShaderEntity = (function (_super) {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         ent.swapBuffers();
-        ent.runAction("$subeffects", engine.uniforms.time / 1000);
     };
     ShaderEntity.prototype.addAction = function (key, fn) {
         this.actions.set(key, fn);

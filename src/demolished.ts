@@ -9,36 +9,29 @@ import { DemoishedProperty, Observe } from './demolishedProperties';
 export namespace Demolished {
 
     export class Rendering {
-
         onFrame(frame: any): void { }
         onNext(frame: any):void {}
         onStart(): void { }
         onStop(): void { }
         onReady(graph:IGraph): void { }
-
         gl: WebGLRenderingContext | any;
         webGLbuffer: WebGLBuffer
-       
         animationFrameCount: number;
         animationStartTime: number;
         animationFrameId: number;
         animationOffsetTime: number;
-
         entitiesCache: Array<ShaderEntity>;
         timeFragments: Array<TimeFragment>;
         currentTimeFragment: TimeFragment;
-
         isPaused:boolean;
         isSoundMuted: boolean;
         fftTexture: WebGLTexture;
-        
         width: number = 1;
         height: number = 1;
         centerX: number = 0;
         centerY: number = 0;
         resolution : number = 1;
-
-        @Observe(true)
+        //@Observe(true)
         uniforms: IUniforms;
 
         private getRendringContext(): WebGLRenderingContext {

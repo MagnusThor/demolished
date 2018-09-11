@@ -20,7 +20,6 @@ uniform vec2 resolution;
 #define Jitter 0.05
 #define FudgeFactor 0.6
 
-
 #define Ambient 0.32184
 #define Diffuse 0.5
 #define LightDir vec3(1.0)
@@ -28,7 +27,6 @@ uniform vec2 resolution;
 #define LightDir2 vec3(1.0,-1.0,1.0)
 #define LightColor2 vec3(0.0,0.333333,1.0)
 #define Offset vec3(0.92858,0.92858,0.32858)
-
 
 vec4 orb;
 

@@ -20,10 +20,10 @@ var DemolishedRecorder = (function () {
         });
         return URL.createObjectURL(blob);
     };
-    DemolishedRecorder.prototype.flush = function () {
+    DemolishedRecorder.prototype.flush = function (r) {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            resolve(_this.toBlob());
+            r == resolve(_this.toBlob());
             _this.data = new Array();
         });
     };

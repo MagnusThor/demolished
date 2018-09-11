@@ -22,7 +22,7 @@ export class Utils {
             return peaksArray;
         }
     }
-
+   
     static $(query:string,parent?:Element):Element{
             return  parent ? parent.querySelector(query) : document.querySelector(query)
     }
@@ -55,6 +55,7 @@ export class Utils {
         }
         return node;
     }
+
 
     static Array = {
         add: (x, y) => x + y,

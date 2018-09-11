@@ -116,8 +116,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         ent.swapBuffers();
-
-        ent.runAction("$subeffects", engine.uniforms.time / 1000);
+        // ent.runAction("$subeffects", engine.uniforms.time / 1000);
     }
 
     addAction(key: string, fn: (ent: ShaderEntity, tm: number) => void) {

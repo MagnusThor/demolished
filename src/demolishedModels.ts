@@ -41,17 +41,17 @@ export class TimeFragment {
     constructor(public entity: string, public start: number, public stop: number,
         subeffects?: Array<number>) {
             subeffects ? this.subeffects = subeffects : this.subeffects = new Array<number>();
-
-          this._subeffects = this.subeffects.map( (a) => {return a});   
+            this._subeffects = this.subeffects.map( (a) => {return a});   
     }
     reset(){
         this.subeffects = this._subeffects.map( (a) => {return a});
-        console.log(this.subeffects);
     }
     setEntity(ent: ShaderEntity) {
         this.entityShader = ent;
     }
     init(){
+
+        try{
         this.subeffects.forEach ( (interval:number) => {
             let shader = this.entityShader;
             shader.addAction("$subeffects", (ent:ShaderEntity,tm:number) =>{
@@ -62,6 +62,9 @@ export class TimeFragment {
                 }
             });
         });
+    }catch(err){
+        console.warn(err);
+    }
     }
 }
 /**

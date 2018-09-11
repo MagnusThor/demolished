@@ -1,9 +1,11 @@
 
+
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
 uniform sampler2D iChannel0;
 out vec4 fragColor;
+
 // https://www.shadertoy.com/view/ldfSWs by IQ
 //------------------------------------------------------------------------
 // Camera
@@ -53,6 +55,19 @@ vec3 doMaterial( in vec3 pos, in vec3 nor )
 //------------------------------------------------------------------------
 float calcSoftshadow( in vec3 ro, in vec3 rd );
 
+
+float ao(vec3 p, vec3 n) {
+	float o = 0.0, s = 0.005, w = 1.0;
+	for(int i = 0; i < 15; i++) {
+	float d = doModel(p + n*s);
+		o += (s - d)*w;
+		w *= 0.9;
+		s += s/float(i + 1);
+	}
+	return 1.0 - clamp(o, 0.0, 1.0);	
+}
+
+
 vec3 doLighting( in vec3 pos, in vec3 nor, in vec3 rd, in float dis, in vec3 mal )
 {
     vec3 lin = vec3(0.0);
@@ -60,9 +75,17 @@ vec3 doLighting( in vec3 pos, in vec3 nor, in vec3 rd, in float dis, in vec3 mal
     //-----------------------------
     vec3  lig = normalize(vec3(1.0,0.7,0.9));
     float dif = max(dot(nor,lig),0.0);
-    float sha = 0.0; if( dif>0.01 );
+    float sha=calcSoftshadow( pos+0.01*nor, lig );
+ 
+    float ao = ao(pos,nor);
+    vec3 ref = reflect(lig,nor);
     
-    sha=calcSoftshadow( pos+0.01*nor, lig );
+	float amb= max(1.2,dot(rd,-nor));
+
+    
+    float diff=max(0.,dot(lig,-nor))*sha*1.3;
+	float spec=pow(max(0.,dot(rd,-ref))*sha,10.)*(.5+ao*.5);
+    
     lin += dif*vec3(4.00,4.00,4.00)*sha;
     // ambient light
     //-----------------------------
@@ -70,6 +93,8 @@ vec3 doLighting( in vec3 pos, in vec3 nor, in vec3 rd, in float dis, in vec3 mal
     // surface-light interacion
     //-----------------------------
     vec3 col = mal*lin;
+    
+    col *= col*ao*(amb*vec3(.9,.85,1.));
     // fog    
     //-----------------------------
 	col *= exp(-0.01*dis*dis);

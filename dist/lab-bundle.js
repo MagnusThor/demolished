@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 40);
+/******/ 	return __webpack_require__(__webpack_require__.s = 37);
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -100,23 +100,27 @@ var TimeFragment = (function () {
     }
     TimeFragment.prototype.reset = function () {
         this.subeffects = this._subeffects.map(function (a) { return a; });
-        console.log(this.subeffects);
     };
     TimeFragment.prototype.setEntity = function (ent) {
         this.entityShader = ent;
     };
     TimeFragment.prototype.init = function () {
         var _this = this;
-        this.subeffects.forEach(function (interval) {
-            var shader = _this.entityShader;
-            shader.addAction("$subeffects", function (ent, tm) {
-                if (_this.subeffects.find(function (a) { return a <= tm; })) {
-                    ent.subEffectId++;
-                    _this.subeffects.shift();
-                    console.log("initializing", _this.subeffects, shader.subEffectId, tm);
-                }
+        try {
+            this.subeffects.forEach(function (interval) {
+                var shader = _this.entityShader;
+                shader.addAction("$subeffects", function (ent, tm) {
+                    if (_this.subeffects.find(function (a) { return a <= tm; })) {
+                        ent.subEffectId++;
+                        _this.subeffects.shift();
+                        console.log("initializing", _this.subeffects, shader.subEffectId, tm);
+                    }
+                });
             });
-        });
+        }
+        catch (err) {
+            console.warn(err);
+        }
     };
     return TimeFragment;
 }());
@@ -178,7 +182,125 @@ exports.AudioSettings = AudioSettings;
 
 /***/ }),
 
-/***/ 10:
+/***/ 31:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var DemolishedConfig = (function () {
+    function DemolishedConfig() {
+        this.configuration = new Map();
+    }
+    DemolishedConfig.getInstance = function () {
+        return new DemolishedConfig();
+    };
+    DemolishedConfig.prototype.load = function (key) {
+        return this.cast(key);
+    };
+    DemolishedConfig.prototype.cast = function (key) {
+        return this.configuration.get(key);
+    };
+    DemolishedConfig.prototype.save = function (key, value) {
+        this.configuration.set(key, value);
+    };
+    DemolishedConfig.prototype.loadStore = function () {
+        var _this = this;
+        this.configuration.forEach(function (a, b) {
+            _this.configuration.set(b, JSON.parse(a));
+        });
+    };
+    DemolishedConfig.prototype.updateStore = function () {
+        this.configuration.forEach(function (a, b) {
+            localStorage.setItem(b, JSON.stringify(a));
+        });
+    };
+    return DemolishedConfig;
+}());
+exports.DemolishedConfig = DemolishedConfig;
+
+
+/***/ }),
+
+/***/ 37:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var demolished2D_1 = __webpack_require__(6);
+var demolishedConfig_1 = __webpack_require__(31);
+var demolishedModels_1 = __webpack_require__(1);
+var TextEffect = (function (_super) {
+    __extends(TextEffect, _super);
+    function TextEffect(name, ctx, text, x, y, font) {
+        var _this = _super.call(this, name, ctx) || this;
+        _this.text = text;
+        _this.x = x;
+        _this.y = y;
+        _this.font = font;
+        _this.active = true;
+        return _this;
+    }
+    TextEffect.prototype.update = function (time) {
+        var ctx = this.ctx;
+        ctx.save();
+        ctx.fillStyle = "#fff";
+        ctx.font = this.font;
+        var dx = this.width / 2;
+        var dy = this.height / 2;
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 10;
+        var sx = Math.random() * 2;
+        var sy = Math.random() * 2;
+        ctx.translate(sx, sy);
+        ctx.strokeRect(20, 20, 512 - 40, 512 - 40);
+        ctx.stroke();
+        ctx.fillText(this.text, this.x, this.y, this.width - 120);
+        ctx.restore();
+    };
+    ;
+    return TextEffect;
+}(demolished2D_1.BaseEntity2D));
+exports.TextEffect = TextEffect;
+var Lab2d = (function () {
+    function Lab2d(el) {
+        var Render2D = new demolished2D_1.Demolished2D(el, 512, 512);
+        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "CODE", 60, 240, "128px 'Arial'"));
+        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "FOO BAR", 80, 380, "bold 128px 'Arial'"));
+        Render2D.start(0);
+        var store = new demolishedConfig_1.DemolishedConfig();
+        store.loadStore();
+        store.save("foo", 1);
+        store.save("bar", "Hello World");
+        store.save("timeFragment", new demolishedModels_1.TimeFragment("shader", 0, 2000, [100, 200]));
+        var tf = store.load("timeFragment");
+        store.updateStore();
+    }
+    Lab2d.getInstance = function (el) {
+        return new this(el);
+    };
+    return Lab2d;
+}());
+exports.Lab2d = Lab2d;
+document.addEventListener("DOMContentLoaded", function () {
+    Lab2d.getInstance(document.querySelector("#foo"));
+});
+
+
+/***/ }),
+
+/***/ 6:
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -330,124 +452,6 @@ var Demolished2D = (function () {
     return Demolished2D;
 }());
 exports.Demolished2D = Demolished2D;
-
-
-/***/ }),
-
-/***/ 34:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var DemolishedConfig = (function () {
-    function DemolishedConfig() {
-        this.configuration = new Map();
-    }
-    DemolishedConfig.getInstance = function () {
-        return new DemolishedConfig();
-    };
-    DemolishedConfig.prototype.load = function (key) {
-        return this.cast(key);
-    };
-    DemolishedConfig.prototype.cast = function (key) {
-        return this.configuration.get(key);
-    };
-    DemolishedConfig.prototype.save = function (key, value) {
-        this.configuration.set(key, value);
-    };
-    DemolishedConfig.prototype.loadStore = function () {
-        var _this = this;
-        this.configuration.forEach(function (a, b) {
-            _this.configuration.set(b, JSON.parse(a));
-        });
-    };
-    DemolishedConfig.prototype.updateStore = function () {
-        this.configuration.forEach(function (a, b) {
-            localStorage.setItem(b, JSON.stringify(a));
-        });
-    };
-    return DemolishedConfig;
-}());
-exports.DemolishedConfig = DemolishedConfig;
-
-
-/***/ }),
-
-/***/ 40:
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolished2D_1 = __webpack_require__(10);
-var demolishedConfig_1 = __webpack_require__(34);
-var demolishedModels_1 = __webpack_require__(1);
-var TextEffect = (function (_super) {
-    __extends(TextEffect, _super);
-    function TextEffect(name, ctx, text, x, y, font) {
-        var _this = _super.call(this, name, ctx) || this;
-        _this.text = text;
-        _this.x = x;
-        _this.y = y;
-        _this.font = font;
-        _this.active = true;
-        return _this;
-    }
-    TextEffect.prototype.update = function (time) {
-        var ctx = this.ctx;
-        ctx.save();
-        ctx.fillStyle = "#fff";
-        ctx.font = this.font;
-        var dx = this.width / 2;
-        var dy = this.height / 2;
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 10;
-        var sx = Math.random() * 2;
-        var sy = Math.random() * 2;
-        ctx.translate(sx, sy);
-        ctx.strokeRect(20, 20, 512 - 40, 512 - 40);
-        ctx.stroke();
-        ctx.fillText(this.text, this.x, this.y, this.width - 120);
-        ctx.restore();
-    };
-    ;
-    return TextEffect;
-}(demolished2D_1.BaseEntity2D));
-exports.TextEffect = TextEffect;
-var Lab2d = (function () {
-    function Lab2d(el) {
-        var Render2D = new demolished2D_1.Demolished2D(el, 512, 512);
-        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "CODE", 60, 240, "128px 'Arial'"));
-        Render2D.addEntity(new TextEffect("textBlock", Render2D.ctx, "FOO BAR", 80, 380, "bold 128px 'Arial'"));
-        Render2D.start(0);
-        var store = new demolishedConfig_1.DemolishedConfig();
-        store.loadStore();
-        store.save("foo", 1);
-        store.save("bar", "Hello World");
-        store.save("timeFragment", new demolishedModels_1.TimeFragment("shader", 0, 2000, [100, 200]));
-        var tf = store.load("timeFragment");
-        store.updateStore();
-    }
-    Lab2d.getInstance = function (el) {
-        return new this(el);
-    };
-    return Lab2d;
-}());
-exports.Lab2d = Lab2d;
-document.addEventListener("DOMContentLoaded", function () {
-    Lab2d.getInstance(document.querySelector("#foo"));
-});
 
 
 /***/ })

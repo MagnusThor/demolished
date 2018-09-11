@@ -3,7 +3,6 @@ uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
 
-
 uniform sampler2D iChannel0;
 uniform sampler2D iChannel1;
 uniform sampler2D iChannel2;
@@ -12,9 +11,7 @@ uniform sampler2D fft;
 
 out vec4 fragColor;
 
-
-void main()
-{
+void main(){
 	vec2 tuv = gl_FragCoord.xy / resolution.xy;
 	vec2 uv = gl_FragCoord.xy / resolution.yy-vec2(.9,.5);
 	

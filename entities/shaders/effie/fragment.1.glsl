@@ -1,5 +1,3 @@
-
-
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
@@ -12,6 +10,8 @@ uniform sampler2D iChannel3;
 uniform sampler2D fft;
 
 out vec4 fragColor;
+
+
 
 #define PI 3.141592653589793
 #define PIdiv2 1.57079632679489
@@ -160,10 +160,7 @@ vec4 traceWindow(in vec3 pos, in vec3 ray, in float t, in vec3 norm){
             }
             else break;
             if(bool(info.z)){
-                hitObj = WIN;), boxDim);
-            }
-            else break;
-            if(bool(info.z)){
+                hitObj = WIN;
             	break;
             }
             hitObj = SIDE;

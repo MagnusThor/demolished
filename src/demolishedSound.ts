@@ -136,9 +136,6 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
  * @implements {IDemolisedAudioContext}
  */
 export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
-  
-    
-    
     getTracks():MediaStreamTrack{
         let ms = this.audio.captureStream();
         return ms.getAudioTracks();
@@ -156,11 +153,9 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
         this.audioAnalyser.getByteFrequencyData(freqArray)
         return freqArray;
     }
-
     play() {
         this.audio.play();
     }
-
     stop() {
         this.audio.pause();
     }

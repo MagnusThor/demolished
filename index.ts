@@ -32,7 +32,8 @@ import { DemolishedDialogBuilder } from './src/demolishedProperties';
 import { DemoishedEditorHelper } from './src/ui/editor/demoishedEditorHelper';
 import { BaseEntity2D, IEntity2D, Demolished2D } from './src/demolished2D';
 import { DemolishedRecorder } from './src/demolishedRecoder';
-import { SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG } from 'constants';
+import { Timeline } from './src/demolishedTimeline';
+//import { SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG } from 'constants';
 
 
 export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
@@ -74,6 +75,7 @@ export class DemolishedEd {
     static getIntance() {
         return new DemolishedEd();
     }
+    demoTimeline: Timeline; // todo: would be DemolishedTimeLine?
     engine: Demolished.Rendering;
     music: DemolishedStreamingMusic;
     helpers: DemoishedEditorHelper;
@@ -86,11 +88,18 @@ export class DemolishedEd {
 
     public recorder: DemolishedRecorder;
 
+
+    segmentChange(s:number,e:number){
+
+    }
+
     constructor() {
+
+    
+        this.demoTimeline = new Timeline("#current-time");
 
         let Render2D = new Demolished2D(Utils.$("#canvas-spectrum") as HTMLCanvasElement);
         this.spectrum = new SpectrumAnalyzer(Render2D.ctx);
-
         Render2D.addEntity(this.spectrum);
         Render2D.start(0);
 
@@ -119,8 +128,7 @@ export class DemolishedEd {
 
         record.addEventListener("click", (evt: Event) => {
 
-            if (!this.recorder) {
-                
+            if (!this.recorder) {                
                 this.engine.uniforms.time = 0;
                 this.engine.resetClock(0);
 
@@ -130,12 +138,12 @@ export class DemolishedEd {
                 let audioTracks = this.engine.audio.getTracks();
 
                 this.recorder = new DemolishedRecorder(videoTrack.getTracks()[0],
-                    audioTracks[0]
-                );
-
+                    audioTracks[0]);
+               
                 this.recorder.start(60);
 
                 let p =Utils.el("p","Recording");
+                
                 immediate.appendChild(p);
                 
             } else {
@@ -220,17 +228,32 @@ export class DemolishedEd {
             timeLine.style.width = ((parseInt(frame.ms) / this.engine.audio.duration) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
-        this.engine.onReady = () => {
-            this.onReady();
-            window.setTimeout(() => {
+        
+       
+        this.engine.onReady = (graph:Graph) => {
+
+            console.log("loaded timeline");
+            console.log(this.engine.timeFragments);
+
+             this.engine.timeFragments.forEach ( (t:TimeFragment) => {
+                    let s = this.demoTimeline.createSegment(t.entity,t.start,t.stop, this.segmentChange);
+                    console.log("segment ->",s); // 
+             });
+
+
+             this.onReady();
+             window.setTimeout(() => {
                 this.engine.start(0);
-            }, 2000);
+             }, 2000);
+
         }
         this.engine.onNext = (frameInfo: any) => {
         };
         this.engine.onStop = () => {
         }
         this.engine.onStart = () => {
+
+         
             
             let shader = this.engine.currentTimeFragment.entityShader.fragmentShader;
 
@@ -308,9 +331,8 @@ export class DemolishedEd {
 
     }
 }
-
 document.addEventListener("DOMContentLoaded", () => {
-    DemolishedEd.getIntance();
+    window["_demo"] = DemolishedEd.getIntance();
 });
 
 

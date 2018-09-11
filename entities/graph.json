@@ -8,23 +8,29 @@
             "minDecibels": -90,
             "maxDecibels": -10
         },
-        "duration": 250200,
+        "duration": 6250200,
         "bmp": 129
     },
     "timeline": [
         {
             "start": 0,
-            "stop": 250200,
-            "entity": "window",
-            "subeffects":[100,200,300,400]
-        }  
+            "stop": 6050200,
+            "entity": "nebula",
+            "subeffects":[]
+        },
+        {
+            "start": 1250200,
+            "stop": 6250200,
+            "entity": "iq-template",
+            "subeffects":[]
+        }
     ],
     "effects": [
         {
             "include":[
                 "common.glsl"
             ],
-            "name": "window",
+            "name": "nebula",
             "description": "",
             "textures":[
                 {
@@ -55,11 +61,12 @@
         },
         {
             "include":[
-                "common.glsl"
+                "common.glsl","primitives.glsl","gemoetry.glsl"
             ],
-            "name": "window",
+            "name": "iq-template",
             "textures":[
-            ]
+            ],
+            "subeffets": []
         }
     ]
 }

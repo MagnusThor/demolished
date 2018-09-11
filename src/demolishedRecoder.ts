@@ -3,7 +3,6 @@ export class DemolishedRecorder{
     data: Array<Blob>;
     recorder: any;
     mediaStream: MediaStream;
-
     toBlob():string{
         let blob = new Blob(this.data, {
             type: 'video/webm'
@@ -19,9 +18,9 @@ export class DemolishedRecorder{
                 this.data.push(e.data);
         }        
     }
-    flush():Promise<string>{
+    flush(r:any):Promise<string>{
             return  new Promise((resolve, reject) => {
-                    resolve(this.toBlob());
+                    r ==resolve(this.toBlob());
                     this.data = new Array<Blob>();
             });
         }
