@@ -248,6 +248,7 @@ var DemolishedEd = (function () {
         demolishedUtils_1.Utils.$(".loader").classList.add("hide");
     };
     DemolishedEd.prototype.segmentChange = function (s, e) {
+        console.log("...", s, e);
     };
     return DemolishedEd;
 }());

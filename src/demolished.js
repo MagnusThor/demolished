@@ -39,27 +39,30 @@ var Demolished;
                     _this.timeFragments.sort(function (a, b) {
                         return a.start - b.start;
                     });
-                    _this.audio.createAudio(audioSettings).then(function (state) {
-                        graph.effects.forEach(function (effect) {
-                            var textures = Promise.all(effect.textures.map(function (texture) {
-                                return new Promise(function (resolve, reject) {
-                                    var image = new Image();
-                                    image.src = texture.src;
-                                    image.onload = function () {
-                                        resolve(image);
-                                    };
-                                    image.onerror = function (err) { return resolve(err); };
-                                }).then(function (image) {
-                                    return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
+                    _this.loadShared(graph.shared.glsl).then(function () {
+                        console.log("completed");
+                        _this.audio.createAudio(audioSettings).then(function (state) {
+                            graph.effects.forEach(function (effect) {
+                                var textures = Promise.all(effect.textures.map(function (texture) {
+                                    return new Promise(function (resolve, reject) {
+                                        var image = new Image();
+                                        image.src = texture.src;
+                                        image.onload = function () {
+                                            resolve(image);
+                                        };
+                                        image.onerror = function (err) { return resolve(err); };
+                                    }).then(function (image) {
+                                        return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
+                                    });
+                                })).then(function (textures) {
+                                    _this.addEntity(effect.name, textures);
+                                    if (_this.entitiesCache.length === graph.effects.length) {
+                                        _this.onReady(graph);
+                                    }
                                 });
-                            })).then(function (textures) {
-                                _this.addEntity(effect.name, textures);
-                                if (_this.entitiesCache.length === graph.effects.length) {
-                                    _this.onReady(graph);
-                                }
                             });
+                            _this.resizeCanvas(_this.parent);
                         });
-                        _this.resizeCanvas(_this.parent);
                     });
                 });
             }
@@ -95,6 +98,17 @@ var Demolished;
                 return response.json();
             }).then(function (graph) {
                 return graph;
+            });
+        };
+        Rendering.prototype.loadShared = function (files) {
+            return new Promise(function (resolve, reject) {
+                Promise.all(files.map(function (f) {
+                    demolishedLoader_1.default(f).then(function (resp) { return resp.text(); }).then(function (result) {
+                    });
+                })).then(function () {
+                    console.log("complated");
+                    resolve(true);
+                });
             });
         };
         Rendering.prototype.addEventListeners = function () {

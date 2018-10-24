@@ -1,7 +1,7 @@
 {
     "name": "default-demo",
     "audioSettings": {
-        "audioFile": "assets/felt.mp3",
+        "audioFile": "assets/vol.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
@@ -11,61 +11,60 @@
         "duration": 6250200,
         "bmp": 129
     },
+    "shared": {
+        "glsl": [
+            "entities/shared/common.glsl","entities/shared/geometry.glsl"
+          
+        ]
+    },
     "timeline": [
         {
             "start": 0,
-            "stop": 6050200,
-            "entity": "nebula",
-            "subeffects":[]
+            "stop": 1250200,
+            "entity": "iq-template",
+            "subeffects": []
         },
         {
             "start": 1250200,
             "stop": 6250200,
-            "entity": "iq-template",
-            "subeffects":[]
+            "entity": "hope",
+            "subeffects": []
         }
     ],
     "effects": [
         {
-            "include":[
-                "common.glsl"
-            ],
-            "name": "nebula",
+            "name": "hope",
             "description": "",
-            "textures":[
+            "textures": [
                 {
-                    "src" :"assets/channel0.jpg",
+                    "src": "assets/channel0.jpg",
                     "uniform": "iChannel0",
-                    "width" : 256,
+                    "width": 256,
                     "height": 256
                 },
                 {
-                    "src" :"assets/channel1.jpg",
+                    "src": "assets/channel1.jpg",
                     "uniform": "iChannel1",
-                    "width" : 1024,
+                    "width": 1024,
                     "height": 1024
                 },
                 {
-                    "src" :"assets/channel2.jpg",
+                    "src": "assets/channel2.jpg",
                     "uniform": "iChannel2",
-                    "width" : 512,
+                    "width": 512,
                     "height": 512
                 },
                 {
-                    "src" :"assets/channel3.jpg",
+                    "src": "assets/channel3.jpg",
                     "uniform": "iChannel3",
-                    "width" : 1024,
+                    "width": 1024,
                     "height": 1024
                 }
             ]
         },
         {
-            "include":[
-                "common.glsl","primitives.glsl","gemoetry.glsl"
-            ],
             "name": "iq-template",
-            "textures":[
-            ],
+            "textures": [],
             "subeffets": []
         }
     ]

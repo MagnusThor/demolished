@@ -90,7 +90,7 @@ export class DemolishedEd {
 
 
     segmentChange(s:number,e:number){
-
+            console.log("...",s,e);
     }
 
     constructor() {

@@ -16,7 +16,7 @@ export interface IEntity {
     onError(err: any): void;
     swapBuffers(): void;
     glProgram: WebGLProgram;
-    textures: Array<EntityTexture>;
+    textures?: Array<EntityTexture>;
     mainBuffer: WebGLBuffer;
     vertexPosition: number;
     positionAttribute: number;
@@ -45,7 +45,6 @@ export class EntityBase {
     }
     cacheUniformLocation(label: string) {
         this.uniformsCache.set(label, this.gl.getUniformLocation(this.glProgram, label));
-
     }
 }
 /**
@@ -157,7 +156,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
     }
 
     constructor(public gl: WebGLRenderingContext, public name: string, public w: number, public h: number,
-        public textures: Array<EntityTexture>
+        public textures?: Array<EntityTexture>, public shared?: Array<string>
     ) {
         super(gl);
         this.uniformsCache = new Map<string, WebGLUniformLocation>();
@@ -211,6 +210,8 @@ export class ShaderEntity extends EntityBase implements IEntity {
         let urls = new Array<string>();
         urls.push("entities/shaders/" + this.name + "/fragment.glsl");
         urls.push("entities/shaders/" + this.name + "/vertex.glsl");
+
+    
 
         return Promise.all(urls.map((url: string) =>
             loadResource(url).then(resp => resp.text())

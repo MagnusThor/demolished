@@ -43,13 +43,14 @@ var EntityBase = (function () {
 exports.EntityBase = EntityBase;
 var ShaderEntity = (function (_super) {
     __extends(ShaderEntity, _super);
-    function ShaderEntity(gl, name, w, h, textures) {
+    function ShaderEntity(gl, name, w, h, textures, shared) {
         var _this = _super.call(this, gl) || this;
         _this.gl = gl;
         _this.name = name;
         _this.w = w;
         _this.h = h;
         _this.textures = textures;
+        _this.shared = shared;
         _this.uniformsCache = new Map();
         _this.loadShaders().then(function (numOfShaders) {
             if (numOfShaders > -1) {

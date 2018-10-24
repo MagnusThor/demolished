@@ -1,5 +1,3 @@
-
-
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
@@ -35,12 +33,9 @@ float hitScale = 1.;
 float Hsh(in float v) { 						
     return fract(sin(v) * 437585.);
 }
-
-
 float Hsh2(in vec2 st) { 						
     return fract(sin(dot(st,vec2(0.680,0.630))) * 43758.5453123);
 }
-
 // thanks IQ
 float smin( float a, float b, float k )
 {

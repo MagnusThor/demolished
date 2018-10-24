@@ -33,18 +33,35 @@
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
 /******/
-/******/ 	// identity function for calling harmony imports with the correct context
-/******/ 	__webpack_require__.i = function(value) { return value; };
-/******/
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, {
-/******/ 				configurable: false,
-/******/ 				enumerable: true,
-/******/ 				get: getter
-/******/ 			});
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
 /******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
 /******/ 	};
 /******/
 /******/ 	// getDefaultExport function for compatibility with non-harmony modules
@@ -62,1221 +79,106 @@
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
 /******/
+/******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 38);
+/******/ 	return __webpack_require__(__webpack_require__.s = "./ninelives.js");
 /******/ })
 /************************************************************************/
 /******/ ({
 
-/***/ 1:
+/***/ "./ninelives.js":
+/*!**********************!*\
+  !*** ./ninelives.js ***!
+  \**********************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-;
-var RenderTarget = (function () {
-    function RenderTarget(frameBuffer, renderBuffer, texture) {
-        this.frameBuffer = frameBuffer;
-        this.renderBuffer = renderBuffer;
-        this.texture = texture;
-    }
-    return RenderTarget;
-}());
-exports.RenderTarget = RenderTarget;
-var Graph = (function () {
-    function Graph() {
-    }
-    return Graph;
-}());
-exports.Graph = Graph;
-var TimeFragment = (function () {
-    function TimeFragment(entity, start, stop, subeffects) {
-        this.entity = entity;
-        this.start = start;
-        this.stop = stop;
-        subeffects ? this.subeffects = subeffects : this.subeffects = new Array();
-        this._subeffects = this.subeffects.map(function (a) { return a; });
-    }
-    TimeFragment.prototype.reset = function () {
-        this.subeffects = this._subeffects.map(function (a) { return a; });
-    };
-    TimeFragment.prototype.setEntity = function (ent) {
-        this.entityShader = ent;
-    };
-    TimeFragment.prototype.init = function () {
-        var _this = this;
-        try {
-            this.subeffects.forEach(function (interval) {
-                var shader = _this.entityShader;
-                shader.addAction("$subeffects", function (ent, tm) {
-                    if (_this.subeffects.find(function (a) { return a <= tm; })) {
-                        ent.subEffectId++;
-                        _this.subeffects.shift();
-                        console.log("initializing", _this.subeffects, shader.subEffectId, tm);
-                    }
-                });
-            });
-        }
-        catch (err) {
-            console.warn(err);
-        }
-    };
-    return TimeFragment;
-}());
-exports.TimeFragment = TimeFragment;
-var Uniforms = (function () {
-    function Uniforms(width, height) {
-        this.screenWidth = width;
-        this.screenHeight = height;
-        this.time = 0;
-        this.timeTotal = 0;
-        this.mouseX = 0.5;
-        this.mouseY = 0.5;
-    }
-    Object.defineProperty(Uniforms.prototype, "datetime", {
-        get: function () {
-            var d = new Date();
-            return [d.getFullYear(), d.getMonth(), d.getDate(),
-                d.getHours() * 60.0 * 60 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000.0];
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Uniforms.prototype.setScreen = function (w, h) {
-        this.screenWidth = w;
-        this.screenWidth = h;
-    };
-    return Uniforms;
-}());
-exports.Uniforms = Uniforms;
-var Effect = (function () {
-    function Effect() {
-        this.textures = new Array();
-        this.type = 0;
-    }
-    return Effect;
-}());
-exports.Effect = Effect;
-var AudioAnalyzerSettings = (function () {
-    function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {
-        this.fftSize = fftSize;
-        this.smoothingTimeConstant = smoothingTimeConstant;
-        this.minDecibels = minDecibels;
-        this.maxDecibels = maxDecibels;
-    }
-    return AudioAnalyzerSettings;
-}());
-exports.AudioAnalyzerSettings = AudioAnalyzerSettings;
-var AudioSettings = (function () {
-    function AudioSettings(audioFile, audioAnalyzerSettings, duration, bpm) {
-        this.audioAnalyzerSettings = audioAnalyzerSettings;
-        this.bpm = bpm;
-        this.audioFile;
-        this.duration = duration;
-    }
-    return AudioSettings;
-}());
-exports.AudioSettings = AudioSettings;
-
+eval("\nvar __extends = (this && this.__extends) || (function () {\n    var extendStatics = Object.setPrototypeOf ||\n        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||\n        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };\n    return function (d, b) {\n        extendStatics(d, b);\n        function __() { this.constructor = d; }\n        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());\n    };\n})();\nObject.defineProperty(exports, \"__esModule\", { value: true });\nvar demolished_1 = __webpack_require__(/*! ./src/demolished */ \"./src/demolished.js\");\nvar demolishedSound_1 = __webpack_require__(/*! ./src/demolishedSound */ \"./src/demolishedSound.js\");\nvar demolishedEntity_1 = __webpack_require__(/*! ./src/demolishedEntity */ \"./src/demolishedEntity.js\");\nvar demolishedModels_1 = __webpack_require__(/*! ./src/demolishedModels */ \"./src/demolishedModels.js\");\nvar demolishedtexture_1 = __webpack_require__(/*! demolishedtexture */ \"./node_modules/demolishedtexture/index.js\");\nvar $ = document.querySelector;\nvar Ninelives;\n(function (Ninelives_1) {\n    var CustomUniforms = (function (_super) {\n        __extends(CustomUniforms, _super);\n        function CustomUniforms(w, h) {\n            return _super.call(this, w, h) || this;\n        }\n        return CustomUniforms;\n    }(demolishedModels_1.Uniforms));\n    var Ninelives = (function () {\n        function Ninelives() {\n            var canvas = document.createElement(\"canvas\");\n            var audio = new demolishedSound_1.DemolishedStreamingMusic();\n            var uniforms = new CustomUniforms(canvas.width, canvas.height);\n            var demo = new demolished_1.Demolished.Rendering(canvas, $(\".demo\"), \"\", audio, uniforms);\n            var assets = new Array();\n            assets.push(new demolishedEntity_1.EntityTexture(this.renderTexture(function (pixel, x, y, w, h) {\n                var t = this, m = Math;\n                var kali = function (p) {\n                    var e = 0, l = e;\n                    for (var i = 0; i < 13; i++) {\n                        var pl = l;\n                        l = t.length(p);\n                        var dot = t.dot(p, p);\n                        p = t.func(p, function (v, i) {\n                            return m.abs(v) / dot - 0.5;\n                        });\n                        e += m.exp(-1 / m.abs(l - pl));\n                    }\n                    return e;\n                };\n                var k = kali([t.toScale(x, w), t.toScale(y, w), 0]) * .18;\n                return [Math.abs((k * 1.1) * 255), Math.abs((k * k * 1.3) * 255), Math.abs((k * k * k) * 255)];\n            }), \"iChannel0\", 512, 512, 0));\n            assets.push(new demolishedEntity_1.EntityTexture(this.renderTexture(function (pixel, x, y, w, h) {\n                var r, b, g;\n                x /= w;\n                y /= h;\n                var s = 10;\n                var n = this.noise(s * x, s * y, .8);\n                r = g = b = Math.round(255 * n);\n                return [r, g, b];\n            }), \"iChannel1\", 512, 512, 0));\n            audio.createAudio(new demolishedModels_1.AudioSettings(\"assets/plastic.mp3\", new demolishedModels_1.AudioAnalyzerSettings(8192, .85, -90, -10), 211800, 129)).then(function () {\n                demo.resizeCanvas($(\".demo\"), 2);\n                demo.start(0);\n            });\n            var part = new demolishedModels_1.TimeFragment(\"nine-lives\", 0, 211800);\n            demo.timeFragments.push(part);\n            demo.addEntity(\"nine-lives\", assets);\n            $(\".demo\").appendChild(canvas);\n            this.demolished = demo;\n        }\n        Ninelives.instance = function () {\n            return new Ninelives();\n        };\n        Ninelives.prototype.renderTexture = function (fn) {\n            var base64 = demolishedtexture_1.DemolishedTextureGen.createTexture(512, 512, fn);\n            var image = new Image();\n            image.src = base64;\n            return image;\n        };\n        return Ninelives;\n    }());\n    Ninelives_1.Ninelives = Ninelives;\n})(Ninelives = exports.Ninelives || (exports.Ninelives = {}));\ndocument.addEventListener(\"DOMContentLoaded\", function () {\n    var p = Ninelives.Ninelives.instance();\n});\n\n\n//# sourceURL=webpack:///./ninelives.js?");
 
 /***/ }),
 
-/***/ 2:
+/***/ "./node_modules/demolishedtexture/index.js":
+/*!*************************************************!*\
+  !*** ./node_modules/demolishedtexture/index.js ***!
+  \*************************************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-function loadResource(file) {
-    var promise = new Promise(function (resolve, reject) {
-        var wrapper = new XMLHttpRequestWrapper(file, resolve, reject);
-        return wrapper;
-    });
-    return promise;
-}
-exports.default = loadResource;
-var XMLHttpRequestWrapper = (function () {
-    function XMLHttpRequestWrapper(file, resolve, reject) {
-        this.file = file;
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", file);
-        xhr.responseType = "blob";
-        xhr.onloadend = function (evt) {
-            try {
-                if (xhr.status == 404)
-                    throw "failed to loadResource " + file;
-                resolve(new ResponseWrapper(xhr.response));
-            }
-            catch (err) {
-                reject(xhr.statusText);
-            }
-        };
-        xhr.onerror = function (err) {
-            reject(err);
-        };
-        xhr.send();
-        this.xhr = xhr;
-    }
-    return XMLHttpRequestWrapper;
-}());
-var ResponseWrapper = (function () {
-    function ResponseWrapper(blobData) {
-        this.blobData = blobData;
-    }
-    ResponseWrapper.prototype.arrayBuffer = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function () {
-                resolve(reader.result);
-            };
-            reader.readAsArrayBuffer(_this.blobData);
-        });
-    };
-    ResponseWrapper.prototype.blob = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            resolve(_this.blobData);
-        });
-    };
-    ResponseWrapper.prototype.text = function () {
-        var _this = this;
-        var promise = new Promise(function (resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function () {
-                resolve(reader.result);
-            };
-            reader.readAsText(_this.blobData);
-        });
-        return promise;
-    };
-    ResponseWrapper.prototype.json = function () {
-        var _this = this;
-        var promise = new Promise(function (resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function () {
-                resolve(JSON.parse(reader.result));
-            };
-            reader.readAsText(_this.blobData);
-        });
-        return promise;
-    };
-    return ResponseWrapper;
-}());
-exports.ResponseWrapper = ResponseWrapper;
-
+eval("\nfunction __export(m) {\n    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];\n}\nObject.defineProperty(exports, \"__esModule\", { value: true });\n__export(__webpack_require__(/*! ./src/demolishedTexture */ \"./node_modules/demolishedtexture/src/demolishedTexture.js\"));\n\n\n//# sourceURL=webpack:///./node_modules/demolishedtexture/index.js?");
 
 /***/ }),
 
-/***/ 29:
+/***/ "./node_modules/demolishedtexture/src/demolishedTexture.js":
+/*!*****************************************************************!*\
+  !*** ./node_modules/demolishedtexture/src/demolishedTexture.js ***!
+  \*****************************************************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
-Object.defineProperty(exports, "__esModule", { value: true });
-__export(__webpack_require__(39));
-
+eval("\nvar __extends = (this && this.__extends) || (function () {\n    var extendStatics = Object.setPrototypeOf ||\n        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||\n        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };\n    return function (d, b) {\n        extendStatics(d, b);\n        function __() { this.constructor = d; }\n        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());\n    };\n})();\nObject.defineProperty(exports, \"__esModule\", { value: true });\nvar TextureBase = (function () {\n    function TextureBase() {\n        this.perm = this.seed(255);\n    }\n    TextureBase.prototype.normalize = function (a) {\n        var l = this.length(a);\n        l != 0 ? a = this.func(a, function (v, i) {\n            return v / l;\n        }) : a = a;\n        return a;\n    };\n    TextureBase.prototype.abs = function (a) {\n        return a.map(function (v, i) { return Math.abs(v); });\n    };\n    TextureBase.prototype.func = function (a, exp) {\n        return a.map(function (v, i) { return exp(v, i); });\n    };\n    TextureBase.prototype.toScale = function (v, w) {\n        var a = 0, b = w, c = -1, d = 1.;\n        return (v - a) / (b - a) * (d - c) + c;\n    };\n    ;\n    TextureBase.prototype.dot = function (a, b) {\n        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];\n    };\n    TextureBase.prototype.length = function (a) {\n        return Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);\n    };\n    TextureBase.prototype.fade = function (t) {\n        return t * t * t * (t * (t * 6 - 15) + 10);\n    };\n    TextureBase.prototype.lerp = function (t, a, b) { return a + t * (b - a); };\n    TextureBase.prototype.grad = function (hash, x, y, z) {\n        var h = hash & 15;\n        var u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;\n        return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);\n    };\n    TextureBase.prototype.scale = function (n) { return (1 + n) / 2; };\n    TextureBase.prototype.seed = function (n) {\n        var p = [];\n        for (var a = [], b = 0; n >= b; b++)\n            a.push(b);\n        for (b = 0; n >= b; b++) {\n            var c = n * Math.random(), d = a[~~c];\n            a.splice(c, 1, a[b]);\n            a.splice(b, 1, d);\n        }\n        ;\n        for (var i = 0; i < n; i++)\n            p[n + i] = p[i] = a[i];\n        return p;\n    };\n    TextureBase.prototype.noise = function (x, y, z) {\n        var t = this;\n        var p = this.perm;\n        var X = ~~(x) & 255, Y = ~~(y) & 255, Z = ~~(z) & 255;\n        x -= ~~(x);\n        y -= ~~(y);\n        z -= ~~(z);\n        var u = t.fade(x), v = t.fade(y), w = t.fade(z);\n        var A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z, B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;\n        return t.scale(t.lerp(w, t.lerp(v, t.lerp(u, t.grad(p[AA], x, y, z), t.grad(p[BA], x - 1, y, z)), t.lerp(u, t.grad(p[AB], x, y - 1, z), t.grad(p[BB], x - 1, y - 1, z))), t.lerp(v, t.lerp(u, t.grad(p[AA + 1], x, y, z - 1), t.grad(p[BA + 1], x - 1, y, z - 1)), t.lerp(u, t.grad(p[AB + 1], x, y - 1, z - 1), t.grad(p[BB + 1], x - 1, y - 1, z - 1)))));\n    };\n    return TextureBase;\n}());\nexports.TextureBase = TextureBase;\nvar DemolishedTextureGen = (function () {\n    function DemolishedTextureGen(width, height) {\n        var _this = this;\n        this.width = width;\n        this.height = height;\n        this.coord = function (pixel, x, y, w, h, fn) {\n            var r = pixel[0];\n            var g = pixel[1];\n            var b = pixel[2];\n            var res = fn.apply(_this.helpers, [[r, b, g], x, y, w, h]);\n            return res;\n        };\n        var c = document.createElement(\"canvas\");\n        c.width = width;\n        c.height = height;\n        this.ctx = c.getContext(\"2d\");\n        this.ctx.fillStyle = \"#000000\";\n        this.ctx.fillRect(0, 0, this.width, this.height);\n        this.buffer = this.ctx.getImageData(0, 0, this.width, this.height);\n        this.helpers = new TextureBase();\n    }\n    DemolishedTextureGen.createTexture = function (width, height, fn) {\n        var instance = new DemolishedTextureGen(width, height);\n        instance.render(fn);\n        return instance.toBase64();\n    };\n    DemolishedTextureGen.prototype.render = function (fn) {\n        var buffer = this.buffer;\n        var w = this.width, h = this.height;\n        for (var idx, x = 0; x < w; x++) {\n            for (var y = 0; y < h; y++) {\n                idx = (x + y * w) * 4;\n                var r = buffer.data[idx + 0];\n                var g = buffer.data[idx + 1];\n                var b = buffer.data[idx + 2];\n                var pixel = this.coord([r, g, b], x, y, w, h, fn);\n                buffer.data[idx + 0] = pixel[0];\n                buffer.data[idx + 1] = pixel[1];\n                buffer.data[idx + 2] = pixel[2];\n            }\n        }\n        this.ctx.putImageData(buffer, 0, 0);\n    };\n    DemolishedTextureGen.prototype.toBase64 = function () {\n        return this.ctx.canvas.toDataURL(\"image/png\");\n    };\n    return DemolishedTextureGen;\n}());\nexports.DemolishedTextureGen = DemolishedTextureGen;\nvar DemolishedCanvasTextureGen = (function (_super) {\n    __extends(DemolishedCanvasTextureGen, _super);\n    function DemolishedCanvasTextureGen(w, h) {\n        return _super.call(this, w, h) || this;\n    }\n    DemolishedCanvasTextureGen.prototype.draw = function (fn) {\n        var res = fn.apply(this.helpers, [this.ctx, this.width, this, this.height]);\n        return res;\n    };\n    DemolishedCanvasTextureGen.createTexture = function (width, height, fn) {\n        var instance = new DemolishedCanvasTextureGen(width, height);\n        instance.draw(fn);\n        return instance.toBase64();\n    };\n    return DemolishedCanvasTextureGen;\n}(DemolishedTextureGen));\nexports.DemolishedCanvasTextureGen = DemolishedCanvasTextureGen;\n\n\n//# sourceURL=webpack:///./node_modules/demolishedtexture/src/demolishedTexture.js?");
 
 /***/ }),
 
-/***/ 3:
+/***/ "./src/demolished.js":
+/*!***************************!*\
+  !*** ./src/demolished.js ***!
+  \***************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedEntity_1 = __webpack_require__(4);
-var demolishedModels_1 = __webpack_require__(1);
-var demolishedLoader_1 = __webpack_require__(2);
-var Demolished;
-(function (Demolished) {
-    var Rendering = (function () {
-        function Rendering(canvas, parent, timelineFile, audio, uniforms) {
-            var _this = this;
-            this.canvas = canvas;
-            this.parent = parent;
-            this.timelineFile = timelineFile;
-            this.audio = audio;
-            this.width = 1;
-            this.height = 1;
-            this.centerX = 0;
-            this.centerY = 0;
-            this.resolution = 1;
-            this.gl = this.getRendringContext();
-            if (!uniforms) {
-                this.uniforms = new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height);
-            }
-            else {
-                this.uniforms = uniforms;
-            }
-            this.entitiesCache = new Array();
-            this.timeFragments = new Array();
-            this.fftTexture = this.gl.createTexture();
-            this.webGLbuffer = this.gl.createBuffer();
-            this.addEventListeners();
-            if (this.timelineFile != "") {
-                this.loadGraph(this.timelineFile).then(function (graph) {
-                    var audioSettings = graph.audioSettings;
-                    graph.timeline.forEach(function (tf) {
-                        var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.subeffects);
-                        _this.timeFragments.push(_tf);
-                    });
-                    _this.timeFragments.sort(function (a, b) {
-                        return a.start - b.start;
-                    });
-                    _this.audio.createAudio(audioSettings).then(function (state) {
-                        graph.effects.forEach(function (effect) {
-                            var textures = Promise.all(effect.textures.map(function (texture) {
-                                return new Promise(function (resolve, reject) {
-                                    var image = new Image();
-                                    image.src = texture.src;
-                                    image.onload = function () {
-                                        resolve(image);
-                                    };
-                                    image.onerror = function (err) { return resolve(err); };
-                                }).then(function (image) {
-                                    return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
-                                });
-                            })).then(function (textures) {
-                                _this.addEntity(effect.name, textures);
-                                if (_this.entitiesCache.length === graph.effects.length) {
-                                    _this.onReady(graph);
-                                }
-                            });
-                        });
-                        _this.resizeCanvas(_this.parent);
-                    });
-                });
-            }
-        }
-        Rendering.prototype.onFrame = function (frame) { };
-        Rendering.prototype.onNext = function (frame) { };
-        Rendering.prototype.onStart = function () { };
-        Rendering.prototype.onStop = function () { };
-        Rendering.prototype.onReady = function (graph) { };
-        Rendering.prototype.getRendringContext = function () {
-            var renderingContext;
-            var contextAttributes = {
-                preserveDrawingBuffer: true
-            };
-            renderingContext =
-                this.canvas.getContext('webgl2', contextAttributes) ||
-                    this.canvas.getContext('webgl', contextAttributes) ||
-                    this.canvas.getContext('experimental-webgl', contextAttributes);
-            renderingContext.getExtension('OES_standard_derivatives');
-            renderingContext.getExtension('OES_texture_float_linear');
-            renderingContext.getExtension('OES_texture_half_float_linear');
-            renderingContext.getExtension('EXT_texture_filter_anisotropic');
-            renderingContext.getExtension('EXT_color_buffer_float');
-            renderingContext.getExtension("WEBGL_depth_texture");
-            renderingContext.getExtension("EXT_shader_texture_lod");
-            this.webGLbuffer = renderingContext.createBuffer();
-            renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
-            renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);
-            return renderingContext;
-        };
-        Rendering.prototype.loadGraph = function (graphFile) {
-            return demolishedLoader_1.default(graphFile).then(function (response) {
-                return response.json();
-            }).then(function (graph) {
-                return graph;
-            });
-        };
-        Rendering.prototype.addEventListeners = function () {
-            var _this = this;
-            document.addEventListener("mousemove", function (evt) {
-                _this.uniforms.mouseX = evt.clientX / window.innerWidth;
-                _this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
-            });
-        };
-        Rendering.prototype.getEntity = function (name) {
-            return this.entitiesCache.find(function (p) {
-                return p.name === name;
-            });
-        };
-        Rendering.prototype.addEntity = function (name, textures) {
-            var entity = new demolishedEntity_1.ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
-            this.entitiesCache.push(entity);
-            var tf = this.timeFragments.filter(function (pre) {
-                return pre.entity === name;
-            });
-            tf.forEach(function (f) {
-                f.setEntity(entity);
-            });
-        };
-        Rendering.prototype.tryFindTimeFragment = function (time) {
-            var fragment = this.timeFragments.find(function (tf) {
-                return time < tf.stop && time >= tf.start;
-            });
-            if (fragment)
-                fragment.init();
-            return fragment;
-        };
-        Rendering.prototype.resetClock = function (time) {
-            this.currentTimeFragment.reset();
-            this.stop();
-            this.start(time);
-        };
-        Rendering.prototype.start = function (time) {
-            this.uniforms.timeTotal = time;
-            this.animationFrameCount = 0;
-            this.animationOffsetTime = time;
-            this.currentTimeFragment = this.tryFindTimeFragment(time);
-            this.animationStartTime = performance.now();
-            this.animate(time);
-            this.audio.currentTime = (time / 1000) % 60;
-            this.audio.play();
-            if (!this.isPaused)
-                this.onStart();
-        };
-        Rendering.prototype.stop = function () {
-            this.audio.stop();
-            cancelAnimationFrame(this.animationFrameId);
-            ;
-            this.onStop();
-            return this.animationFrameId;
-        };
-        Rendering.prototype.mute = function () {
-            this.isSoundMuted = !this.isSoundMuted;
-            this.audio.mute(this.isSoundMuted);
-        };
-        Rendering.prototype.pause = function () {
-            if (!this.isPaused) {
-                this.isPaused = true;
-                this.stop();
-            }
-            else {
-                this.isPaused = false;
-                this.resume(this.uniforms.time);
-            }
-            return this.uniforms.time;
-        };
-        Rendering.prototype.resume = function (time) {
-            this.start(time);
-        };
-        Rendering.prototype.updateTextureData = function (texture, size, bytes) {
-            var gl = this.gl;
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        };
-        Rendering.prototype.animate = function (time) {
-            var _this = this;
-            var animationTime = time - this.animationStartTime;
-            this.animationFrameId = requestAnimationFrame(function (_time) { return _this.animate(_time); });
-            if (this.audio) {
-                this.updateTextureData(this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());
-            }
-            else {
-                this.updateTextureData(this.fftTexture, this.audio.textureSize, new Uint8Array(1024));
-            }
-            if (this.currentTimeFragment) {
-                if (animationTime >= this.currentTimeFragment.stop)
-                    this.currentTimeFragment = this.tryFindTimeFragment(time);
-                this.currentTimeFragment ?
-                    this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0);
-            }
-            this.onFrame({
-                frame: this.animationFrameCount,
-                ms: animationTime,
-                min: Math.floor(animationTime / 60000) % 60,
-                sec: Math.floor((animationTime / 1000) % 60),
-            });
-        };
-        Rendering.prototype.surfaceCorners = function () {
-            if (this.gl) {
-                this.width = this.height * this.uniforms.screenWidth / this.uniforms.screenHeight;
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.webGLbuffer);
-                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
-                    this.centerX - this.width, this.centerY - this.height,
-                    this.centerX + this.width, this.centerY - this.height,
-                    this.centerX - this.width, this.centerY + this.height,
-                    this.centerX + this.width, this.centerY - this.height,
-                    this.centerX + this.width, this.centerY + this.height,
-                    this.centerX - this.width, this.centerY + this.height
-                ]), this.gl.STATIC_DRAW);
-            }
-        };
-        Rendering.prototype.setViewPort = function (width, height) {
-            this.gl.viewport(0, 0, width, height);
-        };
-        Rendering.prototype.resizeCanvas = function (parent, resolution) {
-            if (resolution)
-                this.resolution = resolution;
-            var width = parent.clientWidth / this.resolution;
-            var height = parent.clientHeight / this.resolution;
-            this.canvas.width = width;
-            this.canvas.height = height;
-            this.canvas.style.width = parent.clientWidth + 'px';
-            this.canvas.style.height = parent.clientHeight + 'px';
-            this.uniforms.screenWidth = width;
-            this.uniforms.screenHeight = height;
-            this.surfaceCorners();
-            this.setViewPort(this.canvas.width, this.canvas.height);
-        };
-        Rendering.prototype.getCurrentUniforms = function () {
-            return this.currentTimeFragment.entityShader.uniformsCache;
-        };
-        Rendering.prototype.updateUniforms = function () {
-            throw "Not yet implemented";
-        };
-        Rendering.prototype.renderEntities = function (ent, ts) {
-            this.uniforms.time = ts;
-            this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
-            this.gl.useProgram(ent.glProgram);
-            ent.render(this);
-            this.animationFrameCount++;
-        };
-        Rendering.prototype.addTexture = function (ent, entityTexture) {
-            ent.textures.push(entityTexture);
-        };
-        Rendering.prototype.bindTexture = function (ent, entityTexture, c) {
-            var gl = this.gl;
-            gl.activeTexture(gl.TEXTURE0 + (2 + c));
-            gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 2 + c);
-        };
-        return Rendering;
-    }());
-    Demolished.Rendering = Rendering;
-})(Demolished = exports.Demolished || (exports.Demolished = {}));
-
+eval("\nObject.defineProperty(exports, \"__esModule\", { value: true });\nvar demolishedEntity_1 = __webpack_require__(/*! ./demolishedEntity */ \"./src/demolishedEntity.js\");\nvar demolishedModels_1 = __webpack_require__(/*! ./demolishedModels */ \"./src/demolishedModels.js\");\nvar demolishedLoader_1 = __webpack_require__(/*! ./demolishedLoader */ \"./src/demolishedLoader.js\");\nvar Demolished;\n(function (Demolished) {\n    var Rendering = (function () {\n        function Rendering(canvas, parent, timelineFile, audio, uniforms) {\n            var _this = this;\n            this.canvas = canvas;\n            this.parent = parent;\n            this.timelineFile = timelineFile;\n            this.audio = audio;\n            this.width = 1;\n            this.height = 1;\n            this.centerX = 0;\n            this.centerY = 0;\n            this.resolution = 1;\n            this.gl = this.getRendringContext();\n            if (!uniforms) {\n                this.uniforms = new demolishedModels_1.Uniforms(this.canvas.width, this.canvas.height);\n            }\n            else {\n                this.uniforms = uniforms;\n            }\n            this.entitiesCache = new Array();\n            this.timeFragments = new Array();\n            this.fftTexture = this.gl.createTexture();\n            this.webGLbuffer = this.gl.createBuffer();\n            this.addEventListeners();\n            if (this.timelineFile != \"\") {\n                this.loadGraph(this.timelineFile).then(function (graph) {\n                    var audioSettings = graph.audioSettings;\n                    graph.timeline.forEach(function (tf) {\n                        var _tf = new demolishedModels_1.TimeFragment(tf.entity, tf.start, tf.stop, tf.subeffects);\n                        _this.timeFragments.push(_tf);\n                    });\n                    _this.timeFragments.sort(function (a, b) {\n                        return a.start - b.start;\n                    });\n                    _this.loadShared(graph.shared.glsl).then(function () {\n                        console.log(\"completed\");\n                        _this.audio.createAudio(audioSettings).then(function (state) {\n                            graph.effects.forEach(function (effect) {\n                                var textures = Promise.all(effect.textures.map(function (texture) {\n                                    return new Promise(function (resolve, reject) {\n                                        var image = new Image();\n                                        image.src = texture.src;\n                                        image.onload = function () {\n                                            resolve(image);\n                                        };\n                                        image.onerror = function (err) { return resolve(err); };\n                                    }).then(function (image) {\n                                        return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height, 0);\n                                    });\n                                })).then(function (textures) {\n                                    _this.addEntity(effect.name, textures);\n                                    if (_this.entitiesCache.length === graph.effects.length) {\n                                        _this.onReady(graph);\n                                    }\n                                });\n                            });\n                            _this.resizeCanvas(_this.parent);\n                        });\n                    });\n                });\n            }\n        }\n        Rendering.prototype.onFrame = function (frame) { };\n        Rendering.prototype.onNext = function (frame) { };\n        Rendering.prototype.onStart = function () { };\n        Rendering.prototype.onStop = function () { };\n        Rendering.prototype.onReady = function (graph) { };\n        Rendering.prototype.getRendringContext = function () {\n            var renderingContext;\n            var contextAttributes = {\n                preserveDrawingBuffer: true\n            };\n            renderingContext =\n                this.canvas.getContext('webgl2', contextAttributes) ||\n                    this.canvas.getContext('webgl', contextAttributes) ||\n                    this.canvas.getContext('experimental-webgl', contextAttributes);\n            renderingContext.getExtension('OES_standard_derivatives');\n            renderingContext.getExtension('OES_texture_float_linear');\n            renderingContext.getExtension('OES_texture_half_float_linear');\n            renderingContext.getExtension('EXT_texture_filter_anisotropic');\n            renderingContext.getExtension('EXT_color_buffer_float');\n            renderingContext.getExtension(\"WEBGL_depth_texture\");\n            renderingContext.getExtension(\"EXT_shader_texture_lod\");\n            this.webGLbuffer = renderingContext.createBuffer();\n            renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);\n            renderingContext.bufferData(renderingContext.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]), renderingContext.STATIC_DRAW);\n            return renderingContext;\n        };\n        Rendering.prototype.loadGraph = function (graphFile) {\n            return demolishedLoader_1.default(graphFile).then(function (response) {\n                return response.json();\n            }).then(function (graph) {\n                return graph;\n            });\n        };\n        Rendering.prototype.loadShared = function (files) {\n            return new Promise(function (resolve, reject) {\n                Promise.all(files.map(function (f) {\n                    demolishedLoader_1.default(f).then(function (resp) { return resp.text(); }).then(function (result) {\n                    });\n                })).then(function () {\n                    console.log(\"complated\");\n                    resolve(true);\n                });\n            });\n        };\n        Rendering.prototype.addEventListeners = function () {\n            var _this = this;\n            document.addEventListener(\"mousemove\", function (evt) {\n                _this.uniforms.mouseX = evt.clientX / window.innerWidth;\n                _this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;\n            });\n        };\n        Rendering.prototype.getEntity = function (name) {\n            return this.entitiesCache.find(function (p) {\n                return p.name === name;\n            });\n        };\n        Rendering.prototype.addEntity = function (name, textures) {\n            var entity = new demolishedEntity_1.ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);\n            this.entitiesCache.push(entity);\n            var tf = this.timeFragments.filter(function (pre) {\n                return pre.entity === name;\n            });\n            tf.forEach(function (f) {\n                f.setEntity(entity);\n            });\n        };\n        Rendering.prototype.tryFindTimeFragment = function (time) {\n            var fragment = this.timeFragments.find(function (tf) {\n                return time < tf.stop && time >= tf.start;\n            });\n            if (fragment)\n                fragment.init();\n            return fragment;\n        };\n        Rendering.prototype.resetClock = function (time) {\n            this.currentTimeFragment.reset();\n            this.stop();\n            this.start(time);\n        };\n        Rendering.prototype.start = function (time) {\n            this.uniforms.timeTotal = time;\n            this.animationFrameCount = 0;\n            this.animationOffsetTime = time;\n            this.currentTimeFragment = this.tryFindTimeFragment(time);\n            this.animationStartTime = performance.now();\n            this.animate(time);\n            this.audio.currentTime = (time / 1000) % 60;\n            this.audio.play();\n            if (!this.isPaused)\n                this.onStart();\n        };\n        Rendering.prototype.stop = function () {\n            this.audio.stop();\n            cancelAnimationFrame(this.animationFrameId);\n            ;\n            this.onStop();\n            return this.animationFrameId;\n        };\n        Rendering.prototype.mute = function () {\n            this.isSoundMuted = !this.isSoundMuted;\n            this.audio.mute(this.isSoundMuted);\n        };\n        Rendering.prototype.pause = function () {\n            if (!this.isPaused) {\n                this.isPaused = true;\n                this.stop();\n            }\n            else {\n                this.isPaused = false;\n                this.resume(this.uniforms.time);\n            }\n            return this.uniforms.time;\n        };\n        Rendering.prototype.resume = function (time) {\n            this.start(time);\n        };\n        Rendering.prototype.updateTextureData = function (texture, size, bytes) {\n            var gl = this.gl;\n            gl.bindTexture(gl.TEXTURE_2D, texture);\n            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);\n            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);\n            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);\n            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);\n            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);\n        };\n        Rendering.prototype.animate = function (time) {\n            var _this = this;\n            var animationTime = time - this.animationStartTime;\n            this.animationFrameId = requestAnimationFrame(function (_time) { return _this.animate(_time); });\n            if (this.audio) {\n                this.updateTextureData(this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());\n            }\n            else {\n                this.updateTextureData(this.fftTexture, this.audio.textureSize, new Uint8Array(1024));\n            }\n            if (this.currentTimeFragment) {\n                if (animationTime >= this.currentTimeFragment.stop)\n                    this.currentTimeFragment = this.tryFindTimeFragment(time);\n                this.currentTimeFragment ?\n                    this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0);\n            }\n            this.onFrame({\n                frame: this.animationFrameCount,\n                ms: animationTime,\n                min: Math.floor(animationTime / 60000) % 60,\n                sec: Math.floor((animationTime / 1000) % 60),\n            });\n        };\n        Rendering.prototype.surfaceCorners = function () {\n            if (this.gl) {\n                this.width = this.height * this.uniforms.screenWidth / this.uniforms.screenHeight;\n                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.webGLbuffer);\n                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([\n                    this.centerX - this.width, this.centerY - this.height,\n                    this.centerX + this.width, this.centerY - this.height,\n                    this.centerX - this.width, this.centerY + this.height,\n                    this.centerX + this.width, this.centerY - this.height,\n                    this.centerX + this.width, this.centerY + this.height,\n                    this.centerX - this.width, this.centerY + this.height\n                ]), this.gl.STATIC_DRAW);\n            }\n        };\n        Rendering.prototype.setViewPort = function (width, height) {\n            this.gl.viewport(0, 0, width, height);\n        };\n        Rendering.prototype.resizeCanvas = function (parent, resolution) {\n            if (resolution)\n                this.resolution = resolution;\n            var width = parent.clientWidth / this.resolution;\n            var height = parent.clientHeight / this.resolution;\n            this.canvas.width = width;\n            this.canvas.height = height;\n            this.canvas.style.width = parent.clientWidth + 'px';\n            this.canvas.style.height = parent.clientHeight + 'px';\n            this.uniforms.screenWidth = width;\n            this.uniforms.screenHeight = height;\n            this.surfaceCorners();\n            this.setViewPort(this.canvas.width, this.canvas.height);\n        };\n        Rendering.prototype.getCurrentUniforms = function () {\n            return this.currentTimeFragment.entityShader.uniformsCache;\n        };\n        Rendering.prototype.updateUniforms = function () {\n            throw \"Not yet implemented\";\n        };\n        Rendering.prototype.renderEntities = function (ent, ts) {\n            this.uniforms.time = ts;\n            this.uniforms.timeTotal = (performance.now() - this.animationStartTime);\n            this.gl.useProgram(ent.glProgram);\n            ent.render(this);\n            this.animationFrameCount++;\n        };\n        Rendering.prototype.addTexture = function (ent, entityTexture) {\n            ent.textures.push(entityTexture);\n        };\n        Rendering.prototype.bindTexture = function (ent, entityTexture, c) {\n            var gl = this.gl;\n            gl.activeTexture(gl.TEXTURE0 + (2 + c));\n            gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);\n            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 2 + c);\n        };\n        return Rendering;\n    }());\n    Demolished.Rendering = Rendering;\n})(Demolished = exports.Demolished || (exports.Demolished = {}));\n\n\n//# sourceURL=webpack:///./src/demolished.js?");
 
 /***/ }),
 
-/***/ 38:
+/***/ "./src/demolishedEntity.js":
+/*!*********************************!*\
+  !*** ./src/demolishedEntity.js ***!
+  \*********************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolished_1 = __webpack_require__(3);
-var demolishedSound_1 = __webpack_require__(5);
-var demolishedEntity_1 = __webpack_require__(4);
-var demolishedModels_1 = __webpack_require__(1);
-var demolishedtexture_1 = __webpack_require__(29);
-var $ = document.querySelector;
-var Ninelives;
-(function (Ninelives_1) {
-    var CustomUniforms = (function (_super) {
-        __extends(CustomUniforms, _super);
-        function CustomUniforms(w, h) {
-            return _super.call(this, w, h) || this;
-        }
-        return CustomUniforms;
-    }(demolishedModels_1.Uniforms));
-    var Ninelives = (function () {
-        function Ninelives() {
-            var canvas = document.createElement("canvas");
-            var audio = new demolishedSound_1.DemolishedStreamingMusic();
-            var uniforms = new CustomUniforms(canvas.width, canvas.height);
-            var demo = new demolished_1.Demolished.Rendering(canvas, $(".demo"), "", audio, uniforms);
-            var assets = new Array();
-            assets.push(new demolishedEntity_1.EntityTexture(this.renderTexture(function (pixel, x, y, w, h) {
-                var t = this, m = Math;
-                var kali = function (p) {
-                    var e = 0, l = e;
-                    for (var i = 0; i < 13; i++) {
-                        var pl = l;
-                        l = t.length(p);
-                        var dot = t.dot(p, p);
-                        p = t.func(p, function (v, i) {
-                            return m.abs(v) / dot - 0.5;
-                        });
-                        e += m.exp(-1 / m.abs(l - pl));
-                    }
-                    return e;
-                };
-                var k = kali([t.toScale(x, w), t.toScale(y, w), 0]) * .18;
-                return [Math.abs((k * 1.1) * 255), Math.abs((k * k * 1.3) * 255), Math.abs((k * k * k) * 255)];
-            }), "iChannel0", 512, 512, 0));
-            assets.push(new demolishedEntity_1.EntityTexture(this.renderTexture(function (pixel, x, y, w, h) {
-                var r, b, g;
-                x /= w;
-                y /= h;
-                var s = 10;
-                var n = this.noise(s * x, s * y, .8);
-                r = g = b = Math.round(255 * n);
-                return [r, g, b];
-            }), "iChannel1", 512, 512, 0));
-            audio.createAudio(new demolishedModels_1.AudioSettings("assets/plastic.mp3", new demolishedModels_1.AudioAnalyzerSettings(8192, .85, -90, -10), 211800, 129)).then(function () {
-                demo.resizeCanvas($(".demo"), 2);
-                demo.start(0);
-            });
-            var part = new demolishedModels_1.TimeFragment("nine-lives", 0, 211800);
-            demo.timeFragments.push(part);
-            demo.addEntity("nine-lives", assets);
-            $(".demo").appendChild(canvas);
-            this.demolished = demo;
-        }
-        Ninelives.instance = function () {
-            return new Ninelives();
-        };
-        Ninelives.prototype.renderTexture = function (fn) {
-            var base64 = demolishedtexture_1.DemolishedTextureGen.createTexture(512, 512, fn);
-            var image = new Image();
-            image.src = base64;
-            return image;
-        };
-        return Ninelives;
-    }());
-    Ninelives_1.Ninelives = Ninelives;
-})(Ninelives = exports.Ninelives || (exports.Ninelives = {}));
-document.addEventListener("DOMContentLoaded", function () {
-    var p = Ninelives.Ninelives.instance();
-});
-
+eval("\nvar __extends = (this && this.__extends) || (function () {\n    var extendStatics = Object.setPrototypeOf ||\n        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||\n        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };\n    return function (d, b) {\n        extendStatics(d, b);\n        function __() { this.constructor = d; }\n        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());\n    };\n})();\nObject.defineProperty(exports, \"__esModule\", { value: true });\nvar demolishedModels_1 = __webpack_require__(/*! ./demolishedModels */ \"./src/demolishedModels.js\");\nvar demolishedLoader_1 = __webpack_require__(/*! ./demolishedLoader */ \"./src/demolishedLoader.js\");\nvar DemolishedShaderResource = (function () {\n    function DemolishedShaderResource() {\n        throw \"not yet mimplamented\";\n    }\n    return DemolishedShaderResource;\n}());\nexports.DemolishedShaderResource = DemolishedShaderResource;\nvar EntityTexture = (function () {\n    function EntityTexture(image, name, width, height, assetType) {\n        this.image = image;\n        this.name = name;\n        this.width = width;\n        this.height = height;\n        this.assetType = assetType;\n    }\n    return EntityTexture;\n}());\nexports.EntityTexture = EntityTexture;\nvar EntityBase = (function () {\n    function EntityBase(gl) {\n        this.gl = gl;\n        this.actions = new Map();\n    }\n    EntityBase.prototype.cacheUniformLocation = function (label) {\n        this.uniformsCache.set(label, this.gl.getUniformLocation(this.glProgram, label));\n    };\n    return EntityBase;\n}());\nexports.EntityBase = EntityBase;\nvar ShaderEntity = (function (_super) {\n    __extends(ShaderEntity, _super);\n    function ShaderEntity(gl, name, w, h, textures, shared) {\n        var _this = _super.call(this, gl) || this;\n        _this.gl = gl;\n        _this.name = name;\n        _this.w = w;\n        _this.h = h;\n        _this.textures = textures;\n        _this.shared = shared;\n        _this.uniformsCache = new Map();\n        _this.loadShaders().then(function (numOfShaders) {\n            if (numOfShaders > -1) {\n                _this.initShader();\n                _this.target = _this.createRenderTarget(_this.w, _this.h);\n                _this.backTarget = _this.createRenderTarget(_this.w, _this.h);\n            }\n        });\n        return _this;\n    }\n    ShaderEntity.prototype.addBuffer = function (key) {\n        throw \"Not yet implemented\";\n    };\n    ShaderEntity.prototype.render = function (engine) {\n        var gl = this.gl;\n        var ent = this;\n        gl.uniform1f(ent.uniformsCache.get('time'), engine.uniforms.time / 1000.);\n        gl.uniform1f(ent.uniformsCache.get(\"timetotal\"), engine.uniforms.timeTotal / 1000.);\n        gl.uniform4fv(ent.uniformsCache.get(\"datetime\"), engine.uniforms.datetime);\n        gl.uniform1f(ent.uniformsCache.get(\"playbacktime\"), engine.audio.currentTime);\n        gl.uniform1i(ent.uniformsCache.get(\"frameId\"), engine.animationFrameCount);\n        gl.uniform1i(ent.uniformsCache.get(\"subEffectId\"), ent.subEffectId);\n        gl.uniform2f(ent.uniformsCache.get(\"mouse\"), engine.uniforms.mouseX, engine.uniforms.mouseY);\n        gl.uniform2f(ent.uniformsCache.get(\"resolution\"), engine.uniforms.screenWidth, engine.uniforms.screenHeight);\n        gl.bindBuffer(gl.ARRAY_BUFFER, ent.mainBuffer);\n        gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);\n        gl.bindBuffer(gl.ARRAY_BUFFER, engine.webGLbuffer);\n        gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);\n        gl.activeTexture(gl.TEXTURE1);\n        gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);\n        gl.uniform1i(gl.getUniformLocation(ent.glProgram, \"backbuffer\"), 1);\n        gl.activeTexture(gl.TEXTURE0);\n        gl.bindTexture(gl.TEXTURE_2D, engine.fftTexture);\n        gl.uniform1i(gl.getUniformLocation(ent.glProgram, \"fft\"), 0);\n        ent.textures.forEach(function (asset, index) {\n            engine.bindTexture(ent, asset, index);\n        });\n        gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);\n        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);\n        gl.drawArrays(gl.TRIANGLES, 0, 6);\n        gl.bindFramebuffer(gl.FRAMEBUFFER, null);\n        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);\n        gl.drawArrays(gl.TRIANGLES, 0, 6);\n        ent.swapBuffers();\n    };\n    ShaderEntity.prototype.addAction = function (key, fn) {\n        this.actions.set(key, fn);\n    };\n    ShaderEntity.prototype.runAction = function (key, tm) {\n        try {\n            this.actions.get(key)(this, tm);\n        }\n        catch (_a) {\n            console.warn(this);\n        }\n    };\n    ShaderEntity.prototype.removeAction = function (key) {\n        return this.actions.delete(key);\n    };\n    Object.defineProperty(ShaderEntity.prototype, \"vertexHeader\", {\n        get: function () {\n            var header = \"\";\n            header += \"#version 300 es\\n\" +\n                \"#ifdef GL_ES\\n\" +\n                \"precision highp float;\\n\" +\n                \"precision highp int;\\n\" +\n                \"precision mediump sampler3D;\\n\" +\n                \"#endif\\n\";\n            return header;\n        },\n        enumerable: true,\n        configurable: true\n    });\n    Object.defineProperty(ShaderEntity.prototype, \"fragmentHeader\", {\n        get: function () {\n            var header = \"\";\n            header += \"#version 300 es\\n\" +\n                \"#ifdef GL_ES\\n\" +\n                \"precision highp float;\\n\" +\n                \"precision highp int;\\n\" +\n                \"precision mediump sampler3D;\\n\" +\n                \"#endif\\n\";\n            return header;\n        },\n        enumerable: true,\n        configurable: true\n    });\n    ShaderEntity.prototype.reset = function () {\n        throw \"not yet implemented\";\n    };\n    ShaderEntity.prototype.createRenderTarget = function (width, height) {\n        var gl = this.gl;\n        var target = new demolishedModels_1.RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());\n        gl.bindTexture(gl.TEXTURE_2D, target.texture);\n        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);\n        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);\n        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);\n        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);\n        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);\n        gl.bindFramebuffer(gl.FRAMEBUFFER, target.frameBuffer);\n        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.texture, 0);\n        gl.bindRenderbuffer(gl.RENDERBUFFER, target.renderBuffer);\n        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);\n        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, target.renderBuffer);\n        gl.bindTexture(gl.TEXTURE_2D, null);\n        gl.bindRenderbuffer(gl.RENDERBUFFER, null);\n        gl.bindFramebuffer(gl.FRAMEBUFFER, null);\n        return target;\n    };\n    ShaderEntity.prototype.loadShaders = function () {\n        var _this = this;\n        var urls = new Array();\n        urls.push(\"entities/shaders/\" + this.name + \"/fragment.glsl\");\n        urls.push(\"entities/shaders/\" + this.name + \"/vertex.glsl\");\n        return Promise.all(urls.map(function (url) {\n            return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });\n        })).then(function (result) {\n            _this.fragmentShader = _this.fragmentHeader + result[0];\n            _this.vertexShader = _this.vertexHeader + result[1];\n            return urls.length;\n        }).catch(function (reason) {\n            _this.onError(reason);\n            return -1;\n        });\n    };\n    ShaderEntity.prototype.compile = function (fs, vs) {\n        if (vs) {\n            this.vertexShader = vs;\n        }\n        this.fragmentShader = fs;\n        this.initShader();\n    };\n    ShaderEntity.prototype.onSuccess = function (shader) {\n    };\n    ShaderEntity.prototype.onError = function (err) {\n    };\n    ShaderEntity.prototype.createTextureFromImage = function (width, height, image) {\n        var gl = this.gl;\n        var texture = gl.createTexture();\n        gl.bindTexture(gl.TEXTURE_2D, texture);\n        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);\n        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);\n        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);\n        gl.generateMipmap(gl.TEXTURE_2D);\n        gl.bindTexture(gl.TEXTURE_2D, null);\n        return texture;\n    };\n    ShaderEntity.prototype.initShader = function () {\n        var _this = this;\n        var gl = this.gl;\n        this.mainBuffer = gl.createBuffer();\n        this.glProgram = gl.createProgram();\n        var vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);\n        var fs = this.createShader(gl, this.fragmentShader, gl.FRAGMENT_SHADER);\n        gl.attachShader(this.glProgram, vs);\n        gl.attachShader(this.glProgram, fs);\n        gl.linkProgram(this.glProgram);\n        this.cacheUniformLocation('fft');\n        this.cacheUniformLocation(\"subEffectId\");\n        this.cacheUniformLocation(\"playbacktime\");\n        this.cacheUniformLocation('time');\n        this.cacheUniformLocation(\"datetime\");\n        this.cacheUniformLocation('frameId');\n        this.cacheUniformLocation(\"timetotal\");\n        this.cacheUniformLocation('mouse');\n        this.cacheUniformLocation('resolution');\n        this.cacheUniformLocation(\"backbuffer\");\n        this.subEffectId = 0;\n        this.frameId = 0;\n        this.positionAttribute = 0;\n        gl.enableVertexAttribArray(this.positionAttribute);\n        this.vertexPosition = gl.getAttribLocation(this.glProgram, \"pos\");\n        gl.enableVertexAttribArray(this.vertexPosition);\n        this.textures.forEach(function (asset) {\n            asset.texture = _this.createTextureFromImage(asset.width, asset.height, asset.image);\n        });\n        gl.useProgram(this.glProgram);\n    };\n    ShaderEntity.prototype.swapBuffers = function () {\n        var tmp = this.target;\n        this.target = this.backTarget;\n        this.backTarget = tmp;\n    };\n    ShaderEntity.prototype.createShader = function (gl, src, type) {\n        var shader = gl.createShader(type);\n        gl.shaderSource(shader, src);\n        gl.compileShader(shader);\n        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);\n        if (!success) {\n            this.onError(gl.getShaderInfoLog(shader));\n        }\n        else {\n            this.onSuccess(shader);\n        }\n        return shader;\n    };\n    return ShaderEntity;\n}(EntityBase));\nexports.ShaderEntity = ShaderEntity;\n\n\n//# sourceURL=webpack:///./src/demolishedEntity.js?");
 
 /***/ }),
 
-/***/ 39:
+/***/ "./src/demolishedLoader.js":
+/*!*********************************!*\
+  !*** ./src/demolishedLoader.js ***!
+  \*********************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var TextureBase = (function () {
-    function TextureBase() {
-        this.perm = this.seed(255);
-    }
-    TextureBase.prototype.normalize = function (a) {
-        var l = this.length(a);
-        l != 0 ? a = this.func(a, function (v, i) {
-            return v / l;
-        }) : a = a;
-        return a;
-    };
-    TextureBase.prototype.abs = function (a) {
-        return a.map(function (v, i) { return Math.abs(v); });
-    };
-    TextureBase.prototype.func = function (a, exp) {
-        return a.map(function (v, i) { return exp(v, i); });
-    };
-    TextureBase.prototype.toScale = function (v, w) {
-        var a = 0, b = w, c = -1, d = 1.;
-        return (v - a) / (b - a) * (d - c) + c;
-    };
-    ;
-    TextureBase.prototype.dot = function (a, b) {
-        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    };
-    TextureBase.prototype.length = function (a) {
-        return Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    };
-    TextureBase.prototype.fade = function (t) {
-        return t * t * t * (t * (t * 6 - 15) + 10);
-    };
-    TextureBase.prototype.lerp = function (t, a, b) { return a + t * (b - a); };
-    TextureBase.prototype.grad = function (hash, x, y, z) {
-        var h = hash & 15;
-        var u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-        return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-    };
-    TextureBase.prototype.scale = function (n) { return (1 + n) / 2; };
-    TextureBase.prototype.seed = function (n) {
-        var p = [];
-        for (var a = [], b = 0; n >= b; b++)
-            a.push(b);
-        for (b = 0; n >= b; b++) {
-            var c = n * Math.random(), d = a[~~c];
-            a.splice(c, 1, a[b]);
-            a.splice(b, 1, d);
-        }
-        ;
-        for (var i = 0; i < n; i++)
-            p[n + i] = p[i] = a[i];
-        return p;
-    };
-    TextureBase.prototype.noise = function (x, y, z) {
-        var t = this;
-        var p = this.perm;
-        var X = ~~(x) & 255, Y = ~~(y) & 255, Z = ~~(z) & 255;
-        x -= ~~(x);
-        y -= ~~(y);
-        z -= ~~(z);
-        var u = t.fade(x), v = t.fade(y), w = t.fade(z);
-        var A = p[X] + Y, AA = p[A] + Z, AB = p[A + 1] + Z, B = p[X + 1] + Y, BA = p[B] + Z, BB = p[B + 1] + Z;
-        return t.scale(t.lerp(w, t.lerp(v, t.lerp(u, t.grad(p[AA], x, y, z), t.grad(p[BA], x - 1, y, z)), t.lerp(u, t.grad(p[AB], x, y - 1, z), t.grad(p[BB], x - 1, y - 1, z))), t.lerp(v, t.lerp(u, t.grad(p[AA + 1], x, y, z - 1), t.grad(p[BA + 1], x - 1, y, z - 1)), t.lerp(u, t.grad(p[AB + 1], x, y - 1, z - 1), t.grad(p[BB + 1], x - 1, y - 1, z - 1)))));
-    };
-    return TextureBase;
-}());
-exports.TextureBase = TextureBase;
-var DemolishedTextureGen = (function () {
-    function DemolishedTextureGen(width, height) {
-        var _this = this;
-        this.width = width;
-        this.height = height;
-        this.coord = function (pixel, x, y, w, h, fn) {
-            var r = pixel[0];
-            var g = pixel[1];
-            var b = pixel[2];
-            var res = fn.apply(_this.helpers, [[r, b, g], x, y, w, h]);
-            return res;
-        };
-        var c = document.createElement("canvas");
-        c.width = width;
-        c.height = height;
-        this.ctx = c.getContext("2d");
-        this.ctx.fillStyle = "#000000";
-        this.ctx.fillRect(0, 0, this.width, this.height);
-        this.buffer = this.ctx.getImageData(0, 0, this.width, this.height);
-        this.helpers = new TextureBase();
-    }
-    DemolishedTextureGen.createTexture = function (width, height, fn) {
-        var instance = new DemolishedTextureGen(width, height);
-        instance.render(fn);
-        return instance.toBase64();
-    };
-    DemolishedTextureGen.prototype.render = function (fn) {
-        var buffer = this.buffer;
-        var w = this.width, h = this.height;
-        for (var idx, x = 0; x < w; x++) {
-            for (var y = 0; y < h; y++) {
-                idx = (x + y * w) * 4;
-                var r = buffer.data[idx + 0];
-                var g = buffer.data[idx + 1];
-                var b = buffer.data[idx + 2];
-                var pixel = this.coord([r, g, b], x, y, w, h, fn);
-                buffer.data[idx + 0] = pixel[0];
-                buffer.data[idx + 1] = pixel[1];
-                buffer.data[idx + 2] = pixel[2];
-            }
-        }
-        this.ctx.putImageData(buffer, 0, 0);
-    };
-    DemolishedTextureGen.prototype.toBase64 = function () {
-        return this.ctx.canvas.toDataURL("image/png");
-    };
-    return DemolishedTextureGen;
-}());
-exports.DemolishedTextureGen = DemolishedTextureGen;
-var DemolishedCanvasTextureGen = (function (_super) {
-    __extends(DemolishedCanvasTextureGen, _super);
-    function DemolishedCanvasTextureGen(w, h) {
-        return _super.call(this, w, h) || this;
-    }
-    DemolishedCanvasTextureGen.prototype.draw = function (fn) {
-        var res = fn.apply(this.helpers, [this.ctx, this.width, this, this.height]);
-        return res;
-    };
-    DemolishedCanvasTextureGen.createTexture = function (width, height, fn) {
-        var instance = new DemolishedCanvasTextureGen(width, height);
-        instance.draw(fn);
-        return instance.toBase64();
-    };
-    return DemolishedCanvasTextureGen;
-}(DemolishedTextureGen));
-exports.DemolishedCanvasTextureGen = DemolishedCanvasTextureGen;
-
+eval("\nObject.defineProperty(exports, \"__esModule\", { value: true });\nfunction loadResource(file) {\n    var promise = new Promise(function (resolve, reject) {\n        var wrapper = new XMLHttpRequestWrapper(file, resolve, reject);\n        return wrapper;\n    });\n    return promise;\n}\nexports.default = loadResource;\nvar XMLHttpRequestWrapper = (function () {\n    function XMLHttpRequestWrapper(file, resolve, reject) {\n        this.file = file;\n        var xhr = new XMLHttpRequest();\n        xhr.open(\"GET\", file);\n        xhr.responseType = \"blob\";\n        xhr.onloadend = function (evt) {\n            try {\n                if (xhr.status == 404)\n                    throw \"failed to loadResource \" + file;\n                resolve(new ResponseWrapper(xhr.response));\n            }\n            catch (err) {\n                reject(xhr.statusText);\n            }\n        };\n        xhr.onerror = function (err) {\n            reject(err);\n        };\n        xhr.send();\n        this.xhr = xhr;\n    }\n    return XMLHttpRequestWrapper;\n}());\nvar ResponseWrapper = (function () {\n    function ResponseWrapper(blobData) {\n        this.blobData = blobData;\n    }\n    ResponseWrapper.prototype.arrayBuffer = function () {\n        var _this = this;\n        return new Promise(function (resolve, reject) {\n            var reader = new FileReader();\n            reader.onload = function () {\n                resolve(reader.result);\n            };\n            reader.readAsArrayBuffer(_this.blobData);\n        });\n    };\n    ResponseWrapper.prototype.blob = function () {\n        var _this = this;\n        return new Promise(function (resolve, reject) {\n            resolve(_this.blobData);\n        });\n    };\n    ResponseWrapper.prototype.text = function () {\n        var _this = this;\n        var promise = new Promise(function (resolve, reject) {\n            var reader = new FileReader();\n            reader.onload = function () {\n                resolve(reader.result);\n            };\n            reader.readAsText(_this.blobData);\n        });\n        return promise;\n    };\n    ResponseWrapper.prototype.json = function () {\n        var _this = this;\n        var promise = new Promise(function (resolve, reject) {\n            var reader = new FileReader();\n            reader.onload = function () {\n                resolve(JSON.parse(reader.result));\n            };\n            reader.readAsText(_this.blobData);\n        });\n        return promise;\n    };\n    return ResponseWrapper;\n}());\nexports.ResponseWrapper = ResponseWrapper;\n\n\n//# sourceURL=webpack:///./src/demolishedLoader.js?");
 
 /***/ }),
 
-/***/ 4:
+/***/ "./src/demolishedModels.js":
+/*!*********************************!*\
+  !*** ./src/demolishedModels.js ***!
+  \*********************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedModels_1 = __webpack_require__(1);
-var demolishedLoader_1 = __webpack_require__(2);
-var DemolishedShaderResource = (function () {
-    function DemolishedShaderResource() {
-        throw "not yet mimplamented";
-    }
-    return DemolishedShaderResource;
-}());
-exports.DemolishedShaderResource = DemolishedShaderResource;
-var EntityTexture = (function () {
-    function EntityTexture(image, name, width, height, assetType) {
-        this.image = image;
-        this.name = name;
-        this.width = width;
-        this.height = height;
-        this.assetType = assetType;
-    }
-    return EntityTexture;
-}());
-exports.EntityTexture = EntityTexture;
-var EntityBase = (function () {
-    function EntityBase(gl) {
-        this.gl = gl;
-        this.actions = new Map();
-    }
-    EntityBase.prototype.cacheUniformLocation = function (label) {
-        this.uniformsCache.set(label, this.gl.getUniformLocation(this.glProgram, label));
-    };
-    return EntityBase;
-}());
-exports.EntityBase = EntityBase;
-var ShaderEntity = (function (_super) {
-    __extends(ShaderEntity, _super);
-    function ShaderEntity(gl, name, w, h, textures) {
-        var _this = _super.call(this, gl) || this;
-        _this.gl = gl;
-        _this.name = name;
-        _this.w = w;
-        _this.h = h;
-        _this.textures = textures;
-        _this.uniformsCache = new Map();
-        _this.loadShaders().then(function (numOfShaders) {
-            if (numOfShaders > -1) {
-                _this.initShader();
-                _this.target = _this.createRenderTarget(_this.w, _this.h);
-                _this.backTarget = _this.createRenderTarget(_this.w, _this.h);
-            }
-        });
-        return _this;
-    }
-    ShaderEntity.prototype.addBuffer = function (key) {
-        throw "Not yet implemented";
-    };
-    ShaderEntity.prototype.render = function (engine) {
-        var gl = this.gl;
-        var ent = this;
-        gl.uniform1f(ent.uniformsCache.get('time'), engine.uniforms.time / 1000.);
-        gl.uniform1f(ent.uniformsCache.get("timetotal"), engine.uniforms.timeTotal / 1000.);
-        gl.uniform4fv(ent.uniformsCache.get("datetime"), engine.uniforms.datetime);
-        gl.uniform1f(ent.uniformsCache.get("playbacktime"), engine.audio.currentTime);
-        gl.uniform1i(ent.uniformsCache.get("frameId"), engine.animationFrameCount);
-        gl.uniform1i(ent.uniformsCache.get("subEffectId"), ent.subEffectId);
-        gl.uniform2f(ent.uniformsCache.get("mouse"), engine.uniforms.mouseX, engine.uniforms.mouseY);
-        gl.uniform2f(ent.uniformsCache.get("resolution"), engine.uniforms.screenWidth, engine.uniforms.screenHeight);
-        gl.bindBuffer(gl.ARRAY_BUFFER, ent.mainBuffer);
-        gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer(gl.ARRAY_BUFFER, engine.webGLbuffer);
-        gl.vertexAttribPointer(ent.vertexPosition, 2, gl.FLOAT, false, 0, 0);
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, ent.backTarget.texture);
-        gl.uniform1i(gl.getUniformLocation(ent.glProgram, "backbuffer"), 1);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, engine.fftTexture);
-        gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
-        ent.textures.forEach(function (asset, index) {
-            engine.bindTexture(ent, asset, index);
-        });
-        gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-        ent.swapBuffers();
-    };
-    ShaderEntity.prototype.addAction = function (key, fn) {
-        this.actions.set(key, fn);
-    };
-    ShaderEntity.prototype.runAction = function (key, tm) {
-        try {
-            this.actions.get(key)(this, tm);
-        }
-        catch (_a) {
-            console.warn(this);
-        }
-    };
-    ShaderEntity.prototype.removeAction = function (key) {
-        return this.actions.delete(key);
-    };
-    Object.defineProperty(ShaderEntity.prototype, "vertexHeader", {
-        get: function () {
-            var header = "";
-            header += "#version 300 es\n" +
-                "#ifdef GL_ES\n" +
-                "precision highp float;\n" +
-                "precision highp int;\n" +
-                "precision mediump sampler3D;\n" +
-                "#endif\n";
-            return header;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(ShaderEntity.prototype, "fragmentHeader", {
-        get: function () {
-            var header = "";
-            header += "#version 300 es\n" +
-                "#ifdef GL_ES\n" +
-                "precision highp float;\n" +
-                "precision highp int;\n" +
-                "precision mediump sampler3D;\n" +
-                "#endif\n";
-            return header;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    ShaderEntity.prototype.reset = function () {
-        throw "not yet implemented";
-    };
-    ShaderEntity.prototype.createRenderTarget = function (width, height) {
-        var gl = this.gl;
-        var target = new demolishedModels_1.RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
-        gl.bindTexture(gl.TEXTURE_2D, target.texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, target.frameBuffer);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.texture, 0);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, target.renderBuffer);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, target.renderBuffer);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        return target;
-    };
-    ShaderEntity.prototype.loadShaders = function () {
-        var _this = this;
-        var urls = new Array();
-        urls.push("entities/shaders/" + this.name + "/fragment.glsl");
-        urls.push("entities/shaders/" + this.name + "/vertex.glsl");
-        return Promise.all(urls.map(function (url) {
-            return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });
-        })).then(function (result) {
-            _this.fragmentShader = _this.fragmentHeader + result[0];
-            _this.vertexShader = _this.vertexHeader + result[1];
-            return urls.length;
-        }).catch(function (reason) {
-            _this.onError(reason);
-            return -1;
-        });
-    };
-    ShaderEntity.prototype.compile = function (fs, vs) {
-        if (vs) {
-            this.vertexShader = vs;
-        }
-        this.fragmentShader = fs;
-        this.initShader();
-    };
-    ShaderEntity.prototype.onSuccess = function (shader) {
-    };
-    ShaderEntity.prototype.onError = function (err) {
-    };
-    ShaderEntity.prototype.createTextureFromImage = function (width, height, image) {
-        var gl = this.gl;
-        var texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-        return texture;
-    };
-    ShaderEntity.prototype.initShader = function () {
-        var _this = this;
-        var gl = this.gl;
-        this.mainBuffer = gl.createBuffer();
-        this.glProgram = gl.createProgram();
-        var vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
-        var fs = this.createShader(gl, this.fragmentShader, gl.FRAGMENT_SHADER);
-        gl.attachShader(this.glProgram, vs);
-        gl.attachShader(this.glProgram, fs);
-        gl.linkProgram(this.glProgram);
-        this.cacheUniformLocation('fft');
-        this.cacheUniformLocation("subEffectId");
-        this.cacheUniformLocation("playbacktime");
-        this.cacheUniformLocation('time');
-        this.cacheUniformLocation("datetime");
-        this.cacheUniformLocation('frameId');
-        this.cacheUniformLocation("timetotal");
-        this.cacheUniformLocation('mouse');
-        this.cacheUniformLocation('resolution');
-        this.cacheUniformLocation("backbuffer");
-        this.subEffectId = 0;
-        this.frameId = 0;
-        this.positionAttribute = 0;
-        gl.enableVertexAttribArray(this.positionAttribute);
-        this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
-        gl.enableVertexAttribArray(this.vertexPosition);
-        this.textures.forEach(function (asset) {
-            asset.texture = _this.createTextureFromImage(asset.width, asset.height, asset.image);
-        });
-        gl.useProgram(this.glProgram);
-    };
-    ShaderEntity.prototype.swapBuffers = function () {
-        var tmp = this.target;
-        this.target = this.backTarget;
-        this.backTarget = tmp;
-    };
-    ShaderEntity.prototype.createShader = function (gl, src, type) {
-        var shader = gl.createShader(type);
-        gl.shaderSource(shader, src);
-        gl.compileShader(shader);
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-        if (!success) {
-            this.onError(gl.getShaderInfoLog(shader));
-        }
-        else {
-            this.onSuccess(shader);
-        }
-        return shader;
-    };
-    return ShaderEntity;
-}(EntityBase));
-exports.ShaderEntity = ShaderEntity;
-
+eval("\nObject.defineProperty(exports, \"__esModule\", { value: true });\n;\nvar RenderTarget = (function () {\n    function RenderTarget(frameBuffer, renderBuffer, texture) {\n        this.frameBuffer = frameBuffer;\n        this.renderBuffer = renderBuffer;\n        this.texture = texture;\n    }\n    return RenderTarget;\n}());\nexports.RenderTarget = RenderTarget;\nvar Graph = (function () {\n    function Graph() {\n    }\n    return Graph;\n}());\nexports.Graph = Graph;\nvar TimeFragment = (function () {\n    function TimeFragment(entity, start, stop, subeffects) {\n        this.entity = entity;\n        this.start = start;\n        this.stop = stop;\n        subeffects ? this.subeffects = subeffects : this.subeffects = new Array();\n        this._subeffects = this.subeffects.map(function (a) { return a; });\n    }\n    TimeFragment.prototype.reset = function () {\n        this.subeffects = this._subeffects.map(function (a) { return a; });\n    };\n    TimeFragment.prototype.setEntity = function (ent) {\n        this.entityShader = ent;\n    };\n    TimeFragment.prototype.init = function () {\n        var _this = this;\n        try {\n            this.subeffects.forEach(function (interval) {\n                var shader = _this.entityShader;\n                shader.addAction(\"$subeffects\", function (ent, tm) {\n                    if (_this.subeffects.find(function (a) { return a <= tm; })) {\n                        ent.subEffectId++;\n                        _this.subeffects.shift();\n                    }\n                });\n            });\n        }\n        catch (err) {\n            console.warn(err);\n        }\n    };\n    return TimeFragment;\n}());\nexports.TimeFragment = TimeFragment;\nvar Uniforms = (function () {\n    function Uniforms(width, height) {\n        this.screenWidth = width;\n        this.screenHeight = height;\n        this.time = 0;\n        this.timeTotal = 0;\n        this.mouseX = 0.5;\n        this.mouseY = 0.5;\n    }\n    Object.defineProperty(Uniforms.prototype, \"datetime\", {\n        get: function () {\n            var d = new Date();\n            return [d.getFullYear(), d.getMonth(), d.getDate(),\n                d.getHours() * 60.0 * 60 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000.0];\n        },\n        enumerable: true,\n        configurable: true\n    });\n    Uniforms.prototype.setScreen = function (w, h) {\n        this.screenWidth = w;\n        this.screenWidth = h;\n    };\n    return Uniforms;\n}());\nexports.Uniforms = Uniforms;\nvar Effect = (function () {\n    function Effect() {\n        this.textures = new Array();\n        this.type = 0;\n    }\n    return Effect;\n}());\nexports.Effect = Effect;\nvar AudioAnalyzerSettings = (function () {\n    function AudioAnalyzerSettings(fftSize, smoothingTimeConstant, minDecibels, maxDecibels) {\n        this.fftSize = fftSize;\n        this.smoothingTimeConstant = smoothingTimeConstant;\n        this.minDecibels = minDecibels;\n        this.maxDecibels = maxDecibels;\n    }\n    return AudioAnalyzerSettings;\n}());\nexports.AudioAnalyzerSettings = AudioAnalyzerSettings;\nvar AudioSettings = (function () {\n    function AudioSettings(audioFile, audioAnalyzerSettings, duration, bpm) {\n        this.audioAnalyzerSettings = audioAnalyzerSettings;\n        this.bpm = bpm;\n        this.audioFile;\n        this.duration = duration;\n    }\n    return AudioSettings;\n}());\nexports.AudioSettings = AudioSettings;\n\n\n//# sourceURL=webpack:///./src/demolishedModels.js?");
 
 /***/ }),
 
-/***/ 5:
+/***/ "./src/demolishedSound.js":
+/*!********************************!*\
+  !*** ./src/demolishedSound.js ***!
+  \********************************/
+/*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedLoader_1 = __webpack_require__(2);
-var DemolishedSoundPeaks = (function () {
-    function DemolishedSoundPeaks() {
-    }
-    DemolishedSoundPeaks.peaks = function (buffer, size) {
-        var sampleSize = buffer.length / size;
-        var sampleStep = ~~(sampleSize / 10) || 1;
-        var channels = buffer.numberOfChannels;
-        var peaks;
-        for (var c = 0; c < channels; c++) {
-            var chan = buffer.getChannelData(c);
-            for (var i = 0; i < size; i++) {
-                var start = ~~(i * sampleSize);
-                var end = ~~(start + sampleSize);
-                var min = 0;
-                var max = 0;
-                for (var j = start; j < end; j += sampleStep) {
-                    var value = chan[j];
-                    if (value > max) {
-                        max = value;
-                    }
-                    if (value < min) {
-                        min = value;
-                    }
-                }
-                if (c == 0 || max > peaks[2 * i]) {
-                    peaks[2 * i] = max;
-                }
-                if (c == 0 || min < peaks[2 * i + 1]) {
-                    peaks[2 * i + 1] = min;
-                }
-            }
-        }
-        return peaks;
-    };
-    return DemolishedSoundPeaks;
-}());
-exports.DemolishedSoundPeaks = DemolishedSoundPeaks;
-var DemolishedSoundBase = (function () {
-    function DemolishedSoundBase() {
-    }
-    return DemolishedSoundBase;
-}());
-exports.DemolishedSoundBase = DemolishedSoundBase;
-var DemolishedSIDMusic = (function (_super) {
-    __extends(DemolishedSIDMusic, _super);
-    function DemolishedSIDMusic() {
-        return _super.call(this) || this;
-    }
-    DemolishedSIDMusic.prototype.getTracks = function () {
-        throw "not yet implemented";
-    };
-    Object.defineProperty(DemolishedSIDMusic.prototype, "textureSize", {
-        get: function () {
-            return 16;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedSIDMusic.prototype.play = function () {
-        this.sid.play();
-    };
-    DemolishedSIDMusic.prototype.stop = function () {
-        this.sid.pause();
-    };
-    DemolishedSIDMusic.prototype.mute = function (ismuted) {
-        throw "not implemented";
-    };
-    DemolishedSIDMusic.prototype.getFrequenceData = function () {
-        return this.sid.getFreqByteData();
-    };
-    Object.defineProperty(DemolishedSIDMusic.prototype, "duration", {
-        get: function () {
-            return 0;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(DemolishedSIDMusic.prototype, "currentTime", {
-        get: function () {
-            return this.sid._currentPlaytime;
-        },
-        set: function (n) {
-            return;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedSIDMusic.prototype.createAudio = function (settings) {
-        var useLess = function () { };
-        var ScriptNodePlayer = window["ScriptNodePlayer"];
-        var self = this;
-        return new Promise(function (resolve, reject) {
-            ScriptNodePlayer.createInstance(new SIDBackendAdapter(), "", [], true, useLess, function () {
-                self.sid = this;
-                resolve(true);
-            }, useLess, useLess);
-            ScriptNodePlayer.getInstance().loadMusicFromURL(settings.audioFile, {
-                basePath: ""
-            }, useLess, useLess);
-        });
-    };
-    return DemolishedSIDMusic;
-}(DemolishedSoundBase));
-exports.DemolishedSIDMusic = DemolishedSIDMusic;
-var DemolishedStreamingMusic = (function (_super) {
-    __extends(DemolishedStreamingMusic, _super);
-    function DemolishedStreamingMusic() {
-        return _super.call(this) || this;
-    }
-    DemolishedStreamingMusic.prototype.getTracks = function () {
-        var ms = this.audio.captureStream();
-        return ms.getAudioTracks();
-    };
-    Object.defineProperty(DemolishedStreamingMusic.prototype, "textureSize", {
-        get: function () {
-            return 32;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedStreamingMusic.prototype.getFrequenceData = function () {
-        var bufferLength = this.audioAnalyser.frequencyBinCount;
-        var freqArray = new Uint8Array(bufferLength);
-        this.audioAnalyser.getByteFrequencyData(freqArray);
-        return freqArray;
-    };
-    DemolishedStreamingMusic.prototype.play = function () {
-        this.audio.play();
-    };
-    DemolishedStreamingMusic.prototype.stop = function () {
-        this.audio.pause();
-    };
-    DemolishedStreamingMusic.prototype.mute = function (ismuted) {
-        this.audio.muted = ismuted;
-    };
-    Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
-        get: function () {
-            return Math.floor(this.audio.duration * 1000.);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(DemolishedStreamingMusic.prototype, "currentTime", {
-        get: function () {
-            return this.audio.currentTime;
-        },
-        set: function (time) {
-            this.audio.currentTime = time;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedStreamingMusic.prototype.createAudio = function (audioSettings) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            demolishedLoader_1.default(audioSettings.audioFile).then(function (resp) {
-                return resp.arrayBuffer().then(function (buffer) {
-                    var audioCtx = new AudioContext();
-                    audioCtx.decodeAudioData(buffer, function (audioData) {
-                        var offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
-                        var filteredSource = offlineCtx.createBufferSource();
-                        filteredSource.buffer = audioData;
-                        filteredSource.connect(offlineCtx.destination);
-                        var filterOffline = offlineCtx.createBiquadFilter();
-                        filterOffline.type = 'highpass';
-                        filterOffline.Q.value = 2;
-                        filterOffline.frequency.value = 2000;
-                        filteredSource.connect(filterOffline);
-                        filterOffline.connect(offlineCtx.destination);
-                        filteredSource.start(0);
-                        var source = audioCtx.createBufferSource();
-                        source.buffer = audioData;
-                        source.connect(audioCtx.destination);
-                        offlineCtx.startRendering().then(function (renderedBuffer) {
-                            var audioCtx = new AudioContext();
-                            var audioEl = new Audio();
-                            audioEl.preload = "auto";
-                            audioEl.src = audioSettings.audioFile;
-                            audioEl.crossOrigin = "anonymous";
-                            var onLoad = function () {
-                                var source = audioCtx.createMediaElementSource(audioEl);
-                                var analyser = audioCtx.createAnalyser();
-                                analyser.smoothingTimeConstant = audioSettings.audioAnalyzerSettings.smoothingTimeConstant;
-                                analyser.fftSize = audioSettings.audioAnalyzerSettings.fftSize;
-                                _this.audio = audioEl;
-                                source.connect(analyser);
-                                analyser.connect(audioCtx.destination);
-                                _this.audioAnalyser = analyser;
-                                resolve(true);
-                            };
-                            onLoad();
-                            var bufferSource = audioCtx.createBufferSource();
-                            bufferSource.buffer = renderedBuffer;
-                        });
-                    });
-                });
-            });
-        });
-    };
-    return DemolishedStreamingMusic;
-}(DemolishedSoundBase));
-exports.DemolishedStreamingMusic = DemolishedStreamingMusic;
-
+eval("\nvar __extends = (this && this.__extends) || (function () {\n    var extendStatics = Object.setPrototypeOf ||\n        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||\n        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };\n    return function (d, b) {\n        extendStatics(d, b);\n        function __() { this.constructor = d; }\n        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());\n    };\n})();\nObject.defineProperty(exports, \"__esModule\", { value: true });\nvar demolishedLoader_1 = __webpack_require__(/*! ./demolishedLoader */ \"./src/demolishedLoader.js\");\nvar DemolishedSoundPeaks = (function () {\n    function DemolishedSoundPeaks() {\n    }\n    DemolishedSoundPeaks.peaks = function (buffer, size) {\n        var sampleSize = buffer.length / size;\n        var sampleStep = ~~(sampleSize / 10) || 1;\n        var channels = buffer.numberOfChannels;\n        var peaks;\n        for (var c = 0; c < channels; c++) {\n            var chan = buffer.getChannelData(c);\n            for (var i = 0; i < size; i++) {\n                var start = ~~(i * sampleSize);\n                var end = ~~(start + sampleSize);\n                var min = 0;\n                var max = 0;\n                for (var j = start; j < end; j += sampleStep) {\n                    var value = chan[j];\n                    if (value > max) {\n                        max = value;\n                    }\n                    if (value < min) {\n                        min = value;\n                    }\n                }\n                if (c == 0 || max > peaks[2 * i]) {\n                    peaks[2 * i] = max;\n                }\n                if (c == 0 || min < peaks[2 * i + 1]) {\n                    peaks[2 * i + 1] = min;\n                }\n            }\n        }\n        return peaks;\n    };\n    return DemolishedSoundPeaks;\n}());\nexports.DemolishedSoundPeaks = DemolishedSoundPeaks;\nvar DemolishedSoundBase = (function () {\n    function DemolishedSoundBase() {\n    }\n    return DemolishedSoundBase;\n}());\nexports.DemolishedSoundBase = DemolishedSoundBase;\nvar DemolishedSIDMusic = (function (_super) {\n    __extends(DemolishedSIDMusic, _super);\n    function DemolishedSIDMusic() {\n        return _super.call(this) || this;\n    }\n    DemolishedSIDMusic.prototype.getTracks = function () {\n        throw \"not yet implemented\";\n    };\n    Object.defineProperty(DemolishedSIDMusic.prototype, \"textureSize\", {\n        get: function () {\n            return 16;\n        },\n        enumerable: true,\n        configurable: true\n    });\n    DemolishedSIDMusic.prototype.play = function () {\n        this.sid.play();\n    };\n    DemolishedSIDMusic.prototype.stop = function () {\n        this.sid.pause();\n    };\n    DemolishedSIDMusic.prototype.mute = function (ismuted) {\n        throw \"not implemented\";\n    };\n    DemolishedSIDMusic.prototype.getFrequenceData = function () {\n        return this.sid.getFreqByteData();\n    };\n    Object.defineProperty(DemolishedSIDMusic.prototype, \"duration\", {\n        get: function () {\n            return 0;\n        },\n        enumerable: true,\n        configurable: true\n    });\n    Object.defineProperty(DemolishedSIDMusic.prototype, \"currentTime\", {\n        get: function () {\n            return this.sid._currentPlaytime;\n        },\n        set: function (n) {\n            return;\n        },\n        enumerable: true,\n        configurable: true\n    });\n    DemolishedSIDMusic.prototype.createAudio = function (settings) {\n        var useLess = function () { };\n        var ScriptNodePlayer = window[\"ScriptNodePlayer\"];\n        var self = this;\n        return new Promise(function (resolve, reject) {\n            ScriptNodePlayer.createInstance(new SIDBackendAdapter(), \"\", [], true, useLess, function () {\n                self.sid = this;\n                resolve(true);\n            }, useLess, useLess);\n            ScriptNodePlayer.getInstance().loadMusicFromURL(settings.audioFile, {\n                basePath: \"\"\n            }, useLess, useLess);\n        });\n    };\n    return DemolishedSIDMusic;\n}(DemolishedSoundBase));\nexports.DemolishedSIDMusic = DemolishedSIDMusic;\nvar DemolishedStreamingMusic = (function (_super) {\n    __extends(DemolishedStreamingMusic, _super);\n    function DemolishedStreamingMusic() {\n        return _super.call(this) || this;\n    }\n    DemolishedStreamingMusic.prototype.getTracks = function () {\n        var ms = this.audio.captureStream();\n        return ms.getAudioTracks();\n    };\n    Object.defineProperty(DemolishedStreamingMusic.prototype, \"textureSize\", {\n        get: function () {\n            return 32;\n        },\n        enumerable: true,\n        configurable: true\n    });\n    DemolishedStreamingMusic.prototype.getFrequenceData = function () {\n        var bufferLength = this.audioAnalyser.frequencyBinCount;\n        var freqArray = new Uint8Array(bufferLength);\n        this.audioAnalyser.getByteFrequencyData(freqArray);\n        return freqArray;\n    };\n    DemolishedStreamingMusic.prototype.play = function () {\n        this.audio.play();\n    };\n    DemolishedStreamingMusic.prototype.stop = function () {\n        this.audio.pause();\n    };\n    DemolishedStreamingMusic.prototype.mute = function (ismuted) {\n        this.audio.muted = ismuted;\n    };\n    Object.defineProperty(DemolishedStreamingMusic.prototype, \"duration\", {\n        get: function () {\n            return Math.floor(this.audio.duration * 1000.);\n        },\n        enumerable: true,\n        configurable: true\n    });\n    Object.defineProperty(DemolishedStreamingMusic.prototype, \"currentTime\", {\n        get: function () {\n            return this.audio.currentTime;\n        },\n        set: function (time) {\n            this.audio.currentTime = time;\n        },\n        enumerable: true,\n        configurable: true\n    });\n    DemolishedStreamingMusic.prototype.createAudio = function (audioSettings) {\n        var _this = this;\n        return new Promise(function (resolve, reject) {\n            demolishedLoader_1.default(audioSettings.audioFile).then(function (resp) {\n                return resp.arrayBuffer().then(function (buffer) {\n                    var audioCtx = new AudioContext();\n                    audioCtx.decodeAudioData(buffer, function (audioData) {\n                        var offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);\n                        var filteredSource = offlineCtx.createBufferSource();\n                        filteredSource.buffer = audioData;\n                        filteredSource.connect(offlineCtx.destination);\n                        var filterOffline = offlineCtx.createBiquadFilter();\n                        filterOffline.type = 'highpass';\n                        filterOffline.Q.value = 2;\n                        filterOffline.frequency.value = 2000;\n                        filteredSource.connect(filterOffline);\n                        filterOffline.connect(offlineCtx.destination);\n                        filteredSource.start(0);\n                        var source = audioCtx.createBufferSource();\n                        source.buffer = audioData;\n                        source.connect(audioCtx.destination);\n                        offlineCtx.startRendering().then(function (renderedBuffer) {\n                            var audioCtx = new AudioContext();\n                            var audioEl = new Audio();\n                            audioEl.preload = \"auto\";\n                            audioEl.src = audioSettings.audioFile;\n                            audioEl.crossOrigin = \"anonymous\";\n                            var onLoad = function () {\n                                var source = audioCtx.createMediaElementSource(audioEl);\n                                var analyser = audioCtx.createAnalyser();\n                                analyser.smoothingTimeConstant = audioSettings.audioAnalyzerSettings.smoothingTimeConstant;\n                                analyser.fftSize = audioSettings.audioAnalyzerSettings.fftSize;\n                                _this.audio = audioEl;\n                                source.connect(analyser);\n                                analyser.connect(audioCtx.destination);\n                                _this.audioAnalyser = analyser;\n                                resolve(true);\n                            };\n                            onLoad();\n                            var bufferSource = audioCtx.createBufferSource();\n                            bufferSource.buffer = renderedBuffer;\n                        });\n                    });\n                });\n            });\n        });\n    };\n    return DemolishedStreamingMusic;\n}(DemolishedSoundBase));\nexports.DemolishedStreamingMusic = DemolishedStreamingMusic;\n\n\n//# sourceURL=webpack:///./src/demolishedSound.js?");
 
 /***/ })
 

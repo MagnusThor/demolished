@@ -13,6 +13,7 @@ export interface IGraph{
     effects: Array<Effect>;
     name: string;
     timeline: Array<TimeFragment>;    
+    shared
 }
 
 
@@ -27,6 +28,7 @@ export class Graph {
     effects: Array<Effect>;
     name: string;
     timeline: Array<TimeFragment>;
+    shared:any;
 }
 /**
  * 
@@ -58,7 +60,6 @@ export class TimeFragment {
                 if(this.subeffects.find( (a:number) => { return a <= tm })){
                     ent.subEffectId++;
                     this.subeffects.shift();            
-                    console.log("initializing",this.subeffects,shader.subEffectId,tm);
                 }
             });
         });

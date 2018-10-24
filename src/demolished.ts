@@ -10,10 +10,10 @@ export namespace Demolished {
 
     export class Rendering {
         onFrame(frame: any): void { }
-        onNext(frame: any):void {}
+        onNext(frame: any): void { }
         onStart(): void { }
         onStop(): void { }
-        onReady(graph:IGraph): void { }
+        onReady(graph: IGraph): void { }
         gl: WebGLRenderingContext | any;
         webGLbuffer: WebGLBuffer
         animationFrameCount: number;
@@ -23,22 +23,21 @@ export namespace Demolished {
         entitiesCache: Array<ShaderEntity>;
         timeFragments: Array<TimeFragment>;
         currentTimeFragment: TimeFragment;
-        isPaused:boolean;
+        isPaused: boolean;
         isSoundMuted: boolean;
         fftTexture: WebGLTexture;
         width: number = 1;
         height: number = 1;
         centerX: number = 0;
         centerY: number = 0;
-        resolution : number = 1;
+        resolution: number = 1;
         //@Observe(true)
         uniforms: IUniforms;
 
         private getRendringContext(): WebGLRenderingContext {
 
-            
             let renderingContext: any;
-            
+
             let contextAttributes = {
                 preserveDrawingBuffer: true
             };
@@ -48,36 +47,22 @@ export namespace Demolished {
                 this.canvas.getContext('webgl', contextAttributes) ||
                 this.canvas.getContext('experimental-webgl', contextAttributes);
 
-            // todo: refactor    
-            /*
             renderingContext.getExtension('OES_standard_derivatives');
-            renderingContext.getExtension("OES_texture_float");
-            renderingContext.getExtension("OES_texture_half_float");
-            renderingContext.getExtension("OES_texture_half_float_linear");
-            renderingContext.getExtension("WEBGL_draw_buffers");
+            renderingContext.getExtension('OES_texture_float_linear');
+            renderingContext.getExtension('OES_texture_half_float_linear');
+            renderingContext.getExtension('EXT_texture_filter_anisotropic');
+            renderingContext.getExtension('EXT_color_buffer_float');
             renderingContext.getExtension("WEBGL_depth_texture");
             renderingContext.getExtension("EXT_shader_texture_lod");
-            renderingContext.getExtension("EXT_texture_filter_anisotropic");
-            */
-
-           renderingContext.getExtension('OES_standard_derivatives');
-            renderingContext.getExtension( 'OES_texture_float_linear');
-            renderingContext.getExtension( 'OES_texture_half_float_linear' );
-            renderingContext.getExtension( 'EXT_texture_filter_anisotropic' );
-            renderingContext.getExtension( 'EXT_color_buffer_float');
-            renderingContext.getExtension("WEBGL_depth_texture");
-            renderingContext.getExtension("EXT_shader_texture_lod");
-      
 
 
-     
             this.webGLbuffer = renderingContext.createBuffer();
 
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
 
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER,
-                 new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]),
-                  renderingContext.STATIC_DRAW);
+                new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]),
+                renderingContext.STATIC_DRAW);
 
             return renderingContext;
         }
@@ -90,20 +75,40 @@ export namespace Demolished {
             });
         }
 
+        private loadShared(files: Array<string>): Promise<boolean> {
+
+            return new Promise((resolve, reject) => {
+                Promise.all(files.map((f: string) => {
+                    loadResource(f).then(resp => resp.text()).then(result => {
+
+
+
+                    })
+                })).then(() => {
+
+
+                    resolve(true);
+
+                });
+
+            });
+
+        }
+
         constructor(public canvas: HTMLCanvasElement,
             public parent: Element,
-            public timelineFile?: string,public audio?:IDemolisedAudioContext,
-             uniforms?:IUniforms) {
+            public timelineFile?: string, public audio?: IDemolisedAudioContext,
+            uniforms?: IUniforms) {
 
             this.gl = this.getRendringContext();
-            
-            
-            if(!uniforms){
-                this.uniforms = new Uniforms(this.canvas.width,this.canvas.height);
-            }else{
+
+
+            if (!uniforms) {
+                this.uniforms = new Uniforms(this.canvas.width, this.canvas.height);
+            } else {
                 this.uniforms = uniforms;
             }
-          
+
             this.entitiesCache = new Array<ShaderEntity>();
             this.timeFragments = new Array<TimeFragment>();
 
@@ -112,46 +117,54 @@ export namespace Demolished {
 
             this.addEventListeners();
 
-            // load and add the entities
-            if(this.timelineFile != ""){
-        
-            this.loadGraph(this.timelineFile).then((graph: IGraph) => {
+            if (this.timelineFile != "") {
 
-                let audioSettings: AudioSettings = graph.audioSettings;
+                this.loadGraph(this.timelineFile).then((graph: IGraph) => {
 
-                graph.timeline.forEach((tf: TimeFragment) => {
-                    let _tf = new TimeFragment(tf.entity, tf.start, tf.stop,tf.subeffects);
-                    this.timeFragments.push(_tf)
-                });
+                    let audioSettings: AudioSettings = graph.audioSettings;
+
+                    graph.timeline.forEach((tf: TimeFragment) => {
+                        let _tf = new TimeFragment(tf.entity, tf.start, tf.stop, tf.subeffects);
+                        this.timeFragments.push(_tf)
+                    });
 
                     this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
                         return a.start - b.start;
                     });
 
-                    // todo: make method 
-                    this.audio.createAudio(audioSettings).then((state: boolean) => {
-                        graph.effects.forEach((effect: Effect) => {
-                            let textures = Promise.all(effect.textures.map((texture: any) => {
-                                return new Promise((resolve, reject) => {
-                                    let image = new Image();
-                                    image.src = texture.src;
-                                    image.onload = () => {
-                                        resolve(image);
+                    this.loadShared(graph.shared.glsl).then(() => {
+                        console.log("completed");
+
+
+
+                        this.audio.createAudio(audioSettings).then((state: boolean) => {
+                            graph.effects.forEach((effect: Effect) => {
+                                let textures = Promise.all(effect.textures.map((texture: any) => {
+                                    return new Promise((resolve, reject) => {
+                                        let image = new Image();
+                                        image.src = texture.src;
+                                        image.onload = () => {
+                                            resolve(image);
+                                        }
+                                        image.onerror = (err) => resolve(err);
+                                    }).then((image: HTMLImageElement) => {
+                                        return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
+                                    });
+                                })).then((textures: Array<EntityTexture>) => {
+                                    this.addEntity(effect.name, textures);
+                                    if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
+                                        this.onReady(graph);
                                     }
-                                    image.onerror = (err) => resolve(err);
-                                }).then((image: HTMLImageElement) => {
-                                    return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
                                 });
-                            })).then((textures: Array<EntityTexture>) => {
-                                this.addEntity(effect.name, textures);
-                                if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
-                                    this.onReady(graph);
-                                }
                             });
+                            this.resizeCanvas(this.parent);
                         });
-                        this.resizeCanvas(this.parent);
+
+                    });
+
+
+
                 });
-            });
             }
         }
         // todo:Rename
@@ -161,39 +174,39 @@ export namespace Demolished {
                 this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
             });
         }
-        getEntity(name:string):ShaderEntity{
-            return this.entitiesCache.find ( (p:ShaderEntity) => {
-                    return p.name === name;
+        getEntity(name: string): ShaderEntity {
+            return this.entitiesCache.find((p: ShaderEntity) => {
+                return p.name === name;
             });
         }
-        addEntity(name: string, textures: Array<EntityTexture>
+        addEntity(name: string, textures?: Array<EntityTexture>
         ): void {
             const entity = new ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
 
 
-                this.entitiesCache.push(entity);
-                let tf = this.timeFragments.filter((pre: TimeFragment) => {
-                    return pre.entity === name;
-                });
-                tf.forEach((f: TimeFragment) => {
-                    f.setEntity(entity)
-                });
-              
+            this.entitiesCache.push(entity);
+            let tf = this.timeFragments.filter((pre: TimeFragment) => {
+                return pre.entity === name;
+            });
+            tf.forEach((f: TimeFragment) => {
+                f.setEntity(entity)
+            });
+
 
         }
         private tryFindTimeFragment(time: number): TimeFragment {
-           let fragment = this.timeFragments.find((tf: TimeFragment) => {
+            let fragment = this.timeFragments.find((tf: TimeFragment) => {
                 return time < tf.stop && time >= tf.start
             });
-            if(fragment) fragment.init();
+            if (fragment) fragment.init();
             return fragment;
         }
 
-       resetClock(time:number){
-        this.currentTimeFragment.reset();
-        this.stop();
-        this.start(time);
-       } 
+        resetClock(time: number) {
+            this.currentTimeFragment.reset();
+            this.stop();
+            this.start(time);
+        }
 
         start(time: number) {
             this.uniforms.timeTotal = time;
@@ -203,37 +216,37 @@ export namespace Demolished {
 
             this.animationStartTime = performance.now();
             this.animate(time);
-           
-            this.audio.currentTime = (time / 1000) % 60    
+
+            this.audio.currentTime = (time / 1000) % 60
             this.audio.play();
-            if(!this.isPaused)        
+            if (!this.isPaused)
                 this.onStart();
         }
 
-        stop(): number {     
+        stop(): number {
             this.audio.stop();
             cancelAnimationFrame(this.animationFrameId);;
             this.onStop();
             return this.animationFrameId;
         }
 
-        mute(){
+        mute() {
             this.isSoundMuted = !this.isSoundMuted;
             this.audio.mute(this.isSoundMuted);
         }
 
-        pause():number{
-            if(!this.isPaused){
+        pause(): number {
+            if (!this.isPaused) {
                 this.isPaused = true;
                 this.stop();
-            }else{
+            } else {
                 this.isPaused = false;
-                this.resume( this.uniforms.time); 
+                this.resume(this.uniforms.time);
             }
-           
+
             return this.uniforms.time;
         }
-        resume(time:number){ 
+        resume(time: number) {
             this.start(time);
         }
         updateTextureData(texture: WebGLTexture, size: number, bytes: Uint8Array): void {
@@ -262,15 +275,15 @@ export namespace Demolished {
                 this.updateTextureData(
                     this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());
             }
-            else{
-                 this.updateTextureData(
+            else {
+                this.updateTextureData(
                     this.fftTexture, this.audio.textureSize, new Uint8Array(1024));
             }
-            
+
             if (this.currentTimeFragment) {
-                if (animationTime >= this.currentTimeFragment.stop) 
+                if (animationTime >= this.currentTimeFragment.stop)
                     this.currentTimeFragment = this.tryFindTimeFragment(time);
-                
+
                 this.currentTimeFragment ?
                     this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0)
 
@@ -280,8 +293,8 @@ export namespace Demolished {
                 frame: this.animationFrameCount,
                 ms: animationTime,
                 min: Math.floor(animationTime / 60000) % 60,
-                sec: Math.floor((animationTime/1000) % 60),
-                
+                sec: Math.floor((animationTime / 1000) % 60),
+
             });
         }
 
@@ -305,10 +318,10 @@ export namespace Demolished {
         }
 
 
-        resizeCanvas(parent:Element,resolution?:number) {
+        resizeCanvas(parent: Element, resolution?: number) {
 
-            if(resolution) this.resolution = resolution;
-            
+            if (resolution) this.resolution = resolution;
+
             let width = parent.clientWidth / this.resolution;
             let height = parent.clientHeight / this.resolution;
 
@@ -323,32 +336,32 @@ export namespace Demolished {
 
             this.surfaceCorners();
 
-            this.setViewPort( this.canvas.width, this.canvas.height);
+            this.setViewPort(this.canvas.width, this.canvas.height);
 
         }
 
-        getCurrentUniforms():Map<string,WebGLUniformLocation>{
+        getCurrentUniforms(): Map<string, WebGLUniformLocation> {
             return this.currentTimeFragment.entityShader.uniformsCache;
         }
-        private updateUniforms(){
-                throw "Not yet implemented";
+        private updateUniforms() {
+            throw "Not yet implemented";
         }
         renderEntities(ent: IEntity, ts: number) {
-            this.uniforms.time = ts; 
+            this.uniforms.time = ts;
             this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
             this.gl.useProgram(ent.glProgram);
-            ent.render(this); 
-            this.animationFrameCount ++;
+            ent.render(this);
+            this.animationFrameCount++;
         }
-        addTexture(ent:IEntity, entityTexture:EntityTexture){
-                ent.textures.push(entityTexture);
+        addTexture(ent: IEntity, entityTexture: EntityTexture) {
+            ent.textures.push(entityTexture);
         }
-        bindTexture(ent:IEntity, entityTexture:EntityTexture,c:number){
+        bindTexture(ent: IEntity, entityTexture: EntityTexture, c: number) {
             let gl = this.gl;
             gl.activeTexture(gl.TEXTURE0 + (2 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
             gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 2 + c);
         }
-        
+
     }
 }
