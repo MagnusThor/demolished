@@ -1,12 +1,10 @@
-
-
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
 uniform sampler2D iChannel0;
 out vec4 fragColor;
 
-// https://www.shadertoy.com/view/ldfSWs by IQ
+// based on https://www.shadertoy.com/view/ldfSWs by IQ
 //------------------------------------------------------------------------
 // Camera
 //
@@ -17,8 +15,8 @@ out vec4 fragColor;
 void doCamera( out vec3 camPos, out vec3 camTar, in float time, in float mouseX )
 {
     float an = 0.3*time + 10.0*mouseX;
-	camPos = vec3(3.5*sin(an),1.0,3.5*cos(an));
-    camTar = vec3(0.0,0.0,0.0);
+	camPos = vec3(2.772*sin(an),0.424,2.820*cos(an));
+    camTar = vec3(0.000,0.000,0.000);
 }
 //------------------------------------------------------------------------
 // Background 
@@ -31,13 +29,24 @@ vec3 doBackground( void )
 }
 //------------------------------------------------------------------------
 // Modelling 
-//
-// Defines the shapes (a sphere in this case) through a distance field, in
-// this case it's a sphere of radius 1.
 //------------------------------------------------------------------------
+
+const float width=.22;
+const float scale=5.;
+const float detail=.002;
+
 float doModel( vec3 p )
 {
-    return length(p) - 1.0;
+ 
+    float t=-0.4;
+	float dotp=dot(p,p);
+	p=p/dotp*scale;
+	p=sin(p+vec3(sin(1.+t)*2.,-t,-t*2.));
+	float d=length(p.yz)-width;
+	d=min(d,length(p.xz)-width);
+	d=min(d,length(p.xy)-width);
+	d=min(d,length(p*p*p)-width*0.3);
+	return d*dotp/scale;
 }
 //------------------------------------------------------------------------
 // Material 
