@@ -23,7 +23,7 @@ import 'codemirror/mode/clike/clike.js';
 import 'codemirror/keymap/sublime';
 
 
-import { Utils, ShaderCompiler, ShaderError } from './src/demolishedUtils';
+import { Utils, ShaderCompiler, ShaderError, ImportsParser, IncludeDefinition } from './src/demolishedUtils';
 import { SmartArray } from './src/demolishedSmartArray';
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './src/demolishedModels';
 
@@ -89,13 +89,13 @@ export class DemolishedEd {
     public recorder: DemolishedRecorder;
 
 
-    segmentChange(s:number,e:number){
-            console.log("...",s,e);
+    segmentChange(s: number, e: number) {
+        console.log("...", s, e);
     }
 
     constructor() {
 
-    
+
         this.demoTimeline = new Timeline("#current-time");
 
         let Render2D = new Demolished2D(Utils.$("#canvas-spectrum") as HTMLCanvasElement);
@@ -109,6 +109,8 @@ export class DemolishedEd {
         this.engine = new Demolished.Rendering(Utils.$("#webgl") as HTMLCanvasElement,
             Utils.$("#shader-view"),
             "entities/graph.json", this.music);
+
+
 
         // DemolishedDialogBuilder.render(this.webGlrendering,Utils.$("#dlg > .prop-content"));
 
@@ -128,7 +130,7 @@ export class DemolishedEd {
 
         record.addEventListener("click", (evt: Event) => {
 
-            if (!this.recorder) {                
+            if (!this.recorder) {
                 this.engine.uniforms.time = 0;
                 this.engine.resetClock(0);
 
@@ -139,20 +141,20 @@ export class DemolishedEd {
 
                 this.recorder = new DemolishedRecorder(videoTrack.getTracks()[0],
                     audioTracks[0]);
-               
+
                 this.recorder.start(60);
 
-                let p =Utils.el("p","Recording");
-                
+                let p = Utils.el("p", "Recording");
+
                 immediate.appendChild(p);
-                
+
             } else {
                 this.recorder.stop();
                 let filename = Math.random().toString(36).substring(2) + ".webm";
                 let p = Utils.el("p");
-                let a = Utils.el("a","Download recording",{ download:filename,href: this.recorder.toBlob()});        
+                let a = Utils.el("a", "Download recording", { download: filename, href: this.recorder.toBlob() });
                 p.appendChild(a);
-                immediate.appendChild(p);                
+                immediate.appendChild(p);
             }
         });
 
@@ -161,11 +163,11 @@ export class DemolishedEd {
 
         tabButtons.forEach((el: HTMLElement, idx: number) => {
             el.addEventListener("click", (evt: Event) => {
-                tabs.forEach((b:HTMLElement) => {
+                tabs.forEach((b: HTMLElement) => {
                     b.classList.add("hide");
                 });
 
-                tabButtons.forEach((b:HTMLElement) => {
+                tabButtons.forEach((b: HTMLElement) => {
                     b.classList.remove("tab-active");
                 });
                 let src = evt.srcElement as HTMLElement;
@@ -224,27 +226,24 @@ export class DemolishedEd {
         this.engine.onFrame = (frame) => {
             // todo:  Implmement a method the gives duration in milliscconds on IDemolishedAudio.,
             this.spectrum.frequencData = this.music.getFrequenceData();
-            
+
             timeLine.style.width = ((parseInt(frame.ms) / this.engine.audio.duration) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
-        
-       
-        this.engine.onReady = (graph:Graph) => {
-
-            console.log("loaded timeline");
-            console.log(this.engine.timeFragments);
-
-             this.engine.timeFragments.forEach ( (t:TimeFragment) => {
-                    let s = this.demoTimeline.createSegment(t.entity,t.start,t.stop, this.segmentChange);
-                    console.log("segment ->",s); // 
-             });
 
 
-             this.onReady();
-             window.setTimeout(() => {
+        this.engine.onReady = (graph: Graph) => {
+
+
+            this.engine.timeFragments.forEach((t: TimeFragment) => {
+                let s = this.demoTimeline.createSegment(t.entity, t.start, t.stop, this.segmentChange);
+            });
+
+
+            this.onReady();
+            window.setTimeout(() => {
                 this.engine.start(0);
-             }, 2000);
+            }, 2000);
 
         }
         this.engine.onNext = (frameInfo: any) => {
@@ -253,15 +252,15 @@ export class DemolishedEd {
         }
         this.engine.onStart = () => {
 
-         
-            
-            let shader = this.engine.currentTimeFragment.entityShader.fragmentShader;
+            let fragmentShaderSource = this.engine.currentTimeFragment.entityShader.fragmentShader;
 
             this.engine.currentTimeFragment.init();
 
             let mirror = Utils.$("#fragment") as HTMLDivElement;
-            mirror.textContent = shader;
-            let lastCompile = performance.now();
+
+            mirror.textContent = fragmentShaderSource;
+
+
             let editor = CodeMirror.fromTextArea(Utils.$("#fragment"),
                 {
                     gutters: ["note-gutter", "CodeMirror-linenumbers"],
@@ -282,41 +281,57 @@ export class DemolishedEd {
 
             this.helpers = new DemoishedEditorHelper(editor);
 
-
-            /*
-                   Längtar så efter Super Sara :-)
-           */
             this.shaderCompiler.onError = (shaderErrors: Array<ShaderError>) => {
                 shaderErrors.forEach((err: ShaderError) => {
-
                     let errNode = Utils.el("abbr");
-                    
                     errNode.classList.add("error-info");
                     errNode.title = err.error;
+
                     editor.setGutterMarker(err.line - 1, "note-gutter", errNode);
 
-                    let p =Utils.el("p");
-                    let m = Utils.el("mark",err.line.toString());
-                    let s =Utils.el("span",err.error);
+                    let p = Utils.el("p");
+                    let m = Utils.el("mark", err.line.toString());
+                    let s = Utils.el("span", err.error);
+
                     p.appendChild(m);
                     p.appendChild(s);
+
                     immediate.appendChild(p);
-                    
+
                 });
             };
-            this.shaderCompiler.onSuccess = (fs: string) => {
+            let parser = new ImportsParser();
+
+            this.shaderCompiler.onSuccess = (source: string, header: string) => {
                 let shaderErrors = Utils.$$(".error-info");
                 shaderErrors.forEach((el: Element) => {
                     el.classList.remove("error-info");
                 });
 
-                this.engine.currentTimeFragment.entityShader.compile(fs);
+                // we to parse for imports, and append source
+                let globalSource = ""
+                var results = parser.parseIncludes(source);
+                results.map(x => {
+
+                    globalSource +=  this.engine.shared.get(x.path);
+                    
+                    
+                });
+
+                console.clear();
+                console.log(globalSource);
+
+                this.engine.currentTimeFragment.entityShader.setFragment(source,globalSource);
+
+
+
+
             }
 
             editor.on("change", (cm: CodeMirror) => {
                 let fs = cm.getValue();
                 if (fs.length == 0 && !this.shaderCompiler.canCompile()) return;
-                let vs = this.engine.currentTimeFragment.entityShader.vertexShader;
+                // todo: fragmentHeader skall be moved to Static , and shall not be tied to ShaderEntity
                 this.shaderCompiler.compile(fs);
             });
 

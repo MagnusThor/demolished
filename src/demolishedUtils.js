@@ -82,6 +82,29 @@ var ShaderError = (function () {
     return ShaderError;
 }());
 exports.ShaderError = ShaderError;
+var IncludeDefinition = (function () {
+    function IncludeDefinition(path) {
+        this.path = path;
+    }
+    return IncludeDefinition;
+}());
+exports.IncludeDefinition = IncludeDefinition;
+var ImportsParser = (function () {
+    function ImportsParser() {
+    }
+    ImportsParser.prototype.parseIncludes = function (data) {
+        var regex = new RegExp('//#include\\s"(.*)"', 'g');
+        var matcher = regex.exec(data);
+        var result = new Array();
+        while (matcher != null) {
+            result.push(new IncludeDefinition(matcher[1]));
+            matcher = regex.exec(data);
+        }
+        return result;
+    };
+    return ImportsParser;
+}());
+exports.ImportsParser = ImportsParser;
 var ShaderCompiler = (function () {
     function ShaderCompiler() {
         this.lastCompile = performance.now();
@@ -89,10 +112,38 @@ var ShaderCompiler = (function () {
         this.canvas = document.createElement("canvas");
         this.gl = this.canvas.getContext("webgl");
     }
+    Object.defineProperty(ShaderCompiler, "vertexHeader", {
+        get: function () {
+            var header = "";
+            header += "#version 300 es\n" +
+                "#ifdef GL_ES\n" +
+                "precision highp float;\n" +
+                "precision highp int;\n" +
+                "precision mediump sampler3D;\n" +
+                "#endif\n";
+            return header;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ShaderCompiler, "fragmentHeader", {
+        get: function () {
+            var header = "";
+            header += "#version 300 es\n" +
+                "#ifdef GL_ES\n" +
+                "precision highp float;\n" +
+                "precision highp int;\n" +
+                "precision mediump sampler3D;\n" +
+                "#endif\n";
+            return header;
+        },
+        enumerable: true,
+        configurable: true
+    });
     ShaderCompiler.prototype.onError = function (error) {
         throw "Not implememnted";
     };
-    ShaderCompiler.prototype.onSuccess = function (fs) {
+    ShaderCompiler.prototype.onSuccess = function (source, header) {
         throw "Not implemented";
     };
     ShaderCompiler.prototype.toErrorLines = function (error) {
@@ -123,10 +174,12 @@ var ShaderCompiler = (function () {
         var bounce = -(this.lastCompile - performance.now());
         return bounce > 500. && !this.isCompiling;
     };
-    ShaderCompiler.prototype.compile = function (fs) {
+    ShaderCompiler.prototype.compile = function (fragmentShader, fragmentHeader) {
+        if (!fragmentHeader)
+            fragmentHeader = ShaderCompiler.fragmentHeader;
         this.isCompiling = true;
         var gl = this.gl;
-        var compileResults = this.createShader(fs, gl.FRAGMENT_SHADER);
+        var compileResults = this.createShader(fragmentHeader + fragmentShader, gl.FRAGMENT_SHADER);
         if (compileResults.length > 0) {
             this.isCompiling = false;
             this.lastCompile = performance.now();
@@ -135,7 +188,7 @@ var ShaderCompiler = (function () {
         else {
             this.isCompiling = false;
             this.lastCompile = performance.now();
-            this.onSuccess(fs);
+            this.onSuccess(fragmentShader, fragmentHeader);
         }
     };
     ShaderCompiler.prototype.createShader = function (src, type) {

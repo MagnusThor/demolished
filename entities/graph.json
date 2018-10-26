@@ -12,10 +12,7 @@
         "bmp": 129
     },
     "shared": {
-        "glsl": [
-            "entities/shared/common.glsl","entities/shared/geometry.glsl"
-          
-        ]
+        "glsl": ["entities/shared/common.glsl","entities/shared/geometry.glsl"]
     },
     "timeline": [
         {

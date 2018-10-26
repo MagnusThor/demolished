@@ -168,11 +168,8 @@ var DemolishedEd = (function () {
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
         this.engine.onReady = function (graph) {
-            console.log("loaded timeline");
-            console.log(_this.engine.timeFragments);
             _this.engine.timeFragments.forEach(function (t) {
                 var s = _this.demoTimeline.createSegment(t.entity, t.start, t.stop, _this.segmentChange);
-                console.log("segment ->", s);
             });
             _this.onReady();
             window.setTimeout(function () {
@@ -184,11 +181,10 @@ var DemolishedEd = (function () {
         this.engine.onStop = function () {
         };
         this.engine.onStart = function () {
-            var shader = _this.engine.currentTimeFragment.entityShader.fragmentShader;
+            var fragmentShaderSource = _this.engine.currentTimeFragment.entityShader.fragmentShader;
             _this.engine.currentTimeFragment.init();
             var mirror = demolishedUtils_1.Utils.$("#fragment");
-            mirror.textContent = shader;
-            var lastCompile = performance.now();
+            mirror.textContent = fragmentShaderSource;
             var editor = CodeMirror.fromTextArea(demolishedUtils_1.Utils.$("#fragment"), {
                 gutters: ["note-gutter", "CodeMirror-linenumbers"],
                 viewportMargin: Infinity,
@@ -218,18 +214,25 @@ var DemolishedEd = (function () {
                     immediate.appendChild(p);
                 });
             };
-            _this.shaderCompiler.onSuccess = function (fs) {
+            var parser = new demolishedUtils_1.ImportsParser();
+            _this.shaderCompiler.onSuccess = function (source, header) {
                 var shaderErrors = demolishedUtils_1.Utils.$$(".error-info");
                 shaderErrors.forEach(function (el) {
                     el.classList.remove("error-info");
                 });
-                _this.engine.currentTimeFragment.entityShader.compile(fs);
+                var globalSource = "";
+                var results = parser.parseIncludes(source);
+                results.map(function (x) {
+                    globalSource += _this.engine.shared.get(x.path);
+                });
+                console.clear();
+                console.log(globalSource);
+                _this.engine.currentTimeFragment.entityShader.setFragment(source, globalSource);
             };
             editor.on("change", function (cm) {
                 var fs = cm.getValue();
                 if (fs.length == 0 && !_this.shaderCompiler.canCompile())
                     return;
-                var vs = _this.engine.currentTimeFragment.entityShader.vertexShader;
                 _this.shaderCompiler.compile(fs);
             });
         };

@@ -4,6 +4,9 @@ uniform vec2 resolution;
 uniform sampler2D iChannel0;
 out vec4 fragColor;
 
+//#include "entities/shared/common.glsl";
+//#include "entities/shared/geometry.glsl";
+
 // based on https://www.shadertoy.com/view/ldfSWs by IQ
 //------------------------------------------------------------------------
 // Camera

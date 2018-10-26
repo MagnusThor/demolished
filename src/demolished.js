@@ -28,6 +28,7 @@ var Demolished;
             this.timeFragments = new Array();
             this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
+            this.shared = new Map();
             this.addEventListeners();
             if (this.timelineFile != "") {
                 this.loadGraph(this.timelineFile).then(function (graph) {
@@ -40,7 +41,6 @@ var Demolished;
                         return a.start - b.start;
                     });
                     _this.loadShared(graph.shared.glsl).then(function () {
-                        console.log("completed");
                         _this.audio.createAudio(audioSettings).then(function (state) {
                             graph.effects.forEach(function (effect) {
                                 var textures = Promise.all(effect.textures.map(function (texture) {
@@ -101,12 +101,14 @@ var Demolished;
             });
         };
         Rendering.prototype.loadShared = function (files) {
+            var _this = this;
             return new Promise(function (resolve, reject) {
                 Promise.all(files.map(function (f) {
                     demolishedLoader_1.default(f).then(function (resp) { return resp.text(); }).then(function (result) {
+                        _this.shared.set(f, result + "\n");
                     });
                 })).then(function () {
-                    console.log("complated");
+                    console.log("shared", _this.shared);
                     resolve(true);
                 });
             });

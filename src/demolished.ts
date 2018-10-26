@@ -34,6 +34,8 @@ export namespace Demolished {
         //@Observe(true)
         uniforms: IUniforms;
 
+        shared: Map<string,string>;
+
         private getRendringContext(): WebGLRenderingContext {
 
             let renderingContext: any;
@@ -81,11 +83,15 @@ export namespace Demolished {
                 Promise.all(files.map((f: string) => {
                     loadResource(f).then(resp => resp.text()).then(result => {
 
+                     
+                        this.shared.set(f,result + "\n") ;
 
+                    
 
                     })
                 })).then(() => {
 
+                    console.log("shared", this.shared);
 
                     resolve(true);
 
@@ -115,6 +121,8 @@ export namespace Demolished {
             this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
 
+            this.shared = new Map();
+
             this.addEventListeners();
 
             if (this.timelineFile != "") {
@@ -133,8 +141,6 @@ export namespace Demolished {
                     });
 
                     this.loadShared(graph.shared.glsl).then(() => {
-                        console.log("completed");
-
 
 
                         this.audio.createAudio(audioSettings).then((state: boolean) => {

@@ -1,12 +1,8 @@
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './demolishedModels'
 import loadResource from './demolishedLoader'
 import { Demolished } from './demolished';
+import { ShaderCompiler } from './demolishedUtils';
 
-export class DemolishedShaderResource{
-        constructor(){
-                throw "not yet mimplamented";
-        }
-}
 export class EntityTexture {
     texture: WebGLTexture;
     constructor(public image: any, public name: string, public width: number, public height: number, public assetType: number) { }
@@ -133,27 +129,27 @@ export class ShaderEntity extends EntityBase implements IEntity {
     removeAction(key: string): boolean {
         return this.actions.delete(key);
     }
-    get vertexHeader(){
-        let header  = "";
-        header += "#version 300 es\n" +
-                            "#ifdef GL_ES\n"+
-                            "precision highp float;\n" +
-                            "precision highp int;\n"+
-                            "precision mediump sampler3D;\n"+
-                            "#endif\n";
-        return header;
+    // get vertexHeader(){
+    //     let header  = "";
+    //     header += "#version 300 es\n" +
+    //                         "#ifdef GL_ES\n"+
+    //                         "precision highp float;\n" +
+    //                         "precision highp int;\n"+
+    //                         "precision mediump sampler3D;\n"+
+    //                         "#endif\n";
+    //     return header;
 
-    }
-    get fragmentHeader(){
-        let header = "";
-        header += "#version 300 es\n"+
-                    "#ifdef GL_ES\n"+
-                    "precision highp float;\n"+
-                    "precision highp int;\n"+
-                    "precision mediump sampler3D;\n"+
-                    "#endif\n"
-            return header;
-    }
+    // }
+    // get fragmentHeader(){
+    //     let header = "";
+    //     header += "#version 300 es\n"+
+    //                 "#ifdef GL_ES\n"+
+    //                 "precision highp float;\n"+
+    //                 "precision highp int;\n"+
+    //                 "precision mediump sampler3D;\n"+
+    //                 "#endif\n"
+    //         return header;
+    // }
 
     constructor(public gl: WebGLRenderingContext, public name: string, public w: number, public h: number,
         public textures?: Array<EntityTexture>, public shared?: Array<string>
@@ -164,7 +160,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
 
         this.loadShaders().then((numOfShaders: number) => {
             if (numOfShaders > -1) {
-                this.initShader();
+                this.setupShader();
                 this.target = this.createRenderTarget(this.w, this.h);
                 this.backTarget = this.createRenderTarget(this.w, this.h);
             }
@@ -211,26 +207,20 @@ export class ShaderEntity extends EntityBase implements IEntity {
         urls.push("entities/shaders/" + this.name + "/fragment.glsl");
         urls.push("entities/shaders/" + this.name + "/vertex.glsl");
 
-    
-
         return Promise.all(urls.map((url: string) =>
             loadResource(url).then(resp => resp.text())
         )).then(result => {
-            this.fragmentShader = this.fragmentHeader + result[0];
-            this.vertexShader = this.vertexHeader + result[1];
+            this.fragmentShader = result[0];
+            this.vertexShader = result[1];
             return urls.length;
         }).catch((reason) => {
             this.onError(reason);
             return -1;
         });
     }
-
-    public compile(fs: string, vs?: string) {
-        if (vs) {
-            this.vertexShader = vs;
-        }
+    public setFragment(fs: string,globals:string) {
         this.fragmentShader = fs;
-        this.initShader();
+        this.setupShader();
     }
     onSuccess(shader:WebGLShader){ 
     }
@@ -248,13 +238,13 @@ export class ShaderEntity extends EntityBase implements IEntity {
         return texture;
     }
 
-    private initShader() {
+    private setupShader() {
         let gl = this.gl;
         this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
 
-        let vs: WebGLShader = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
-        let fs: WebGLShader = this.createShader(gl, this.fragmentShader, gl.FRAGMENT_SHADER);
+        let vs: WebGLShader = this.createShader(gl,ShaderCompiler.vertexHeader + this.vertexShader, gl.VERTEX_SHADER);
+        let fs: WebGLShader = this.createShader(gl,ShaderCompiler.fragmentHeader + this.fragmentShader, gl.FRAGMENT_SHADER);
 
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);

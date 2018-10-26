@@ -1,15 +1,12 @@
 //const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 module.exports = {
-    mode:"development",
+  mode:"development",
   node: {
    fs: "empty"
   },
   watch: true,
   entry: {
-    editor: './index.js',
-    ninelives:'./ninelives.js',
-    demo: './demo.js',
-    lab: './lab2d.js'
+    editor: './index.js'
   },
   output: {
     path: __dirname + '/dist',

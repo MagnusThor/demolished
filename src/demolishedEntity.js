@@ -12,13 +12,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolishedModels_1 = require("./demolishedModels");
 var demolishedLoader_1 = require("./demolishedLoader");
-var DemolishedShaderResource = (function () {
-    function DemolishedShaderResource() {
-        throw "not yet mimplamented";
-    }
-    return DemolishedShaderResource;
-}());
-exports.DemolishedShaderResource = DemolishedShaderResource;
+var demolishedUtils_1 = require("./demolishedUtils");
 var EntityTexture = (function () {
     function EntityTexture(image, name, width, height, assetType) {
         this.image = image;
@@ -54,7 +48,7 @@ var ShaderEntity = (function (_super) {
         _this.uniformsCache = new Map();
         _this.loadShaders().then(function (numOfShaders) {
             if (numOfShaders > -1) {
-                _this.initShader();
+                _this.setupShader();
                 _this.target = _this.createRenderTarget(_this.w, _this.h);
                 _this.backTarget = _this.createRenderTarget(_this.w, _this.h);
             }
@@ -110,34 +104,6 @@ var ShaderEntity = (function (_super) {
     ShaderEntity.prototype.removeAction = function (key) {
         return this.actions.delete(key);
     };
-    Object.defineProperty(ShaderEntity.prototype, "vertexHeader", {
-        get: function () {
-            var header = "";
-            header += "#version 300 es\n" +
-                "#ifdef GL_ES\n" +
-                "precision highp float;\n" +
-                "precision highp int;\n" +
-                "precision mediump sampler3D;\n" +
-                "#endif\n";
-            return header;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(ShaderEntity.prototype, "fragmentHeader", {
-        get: function () {
-            var header = "";
-            header += "#version 300 es\n" +
-                "#ifdef GL_ES\n" +
-                "precision highp float;\n" +
-                "precision highp int;\n" +
-                "precision mediump sampler3D;\n" +
-                "#endif\n";
-            return header;
-        },
-        enumerable: true,
-        configurable: true
-    });
     ShaderEntity.prototype.reset = function () {
         throw "not yet implemented";
     };
@@ -168,20 +134,17 @@ var ShaderEntity = (function (_super) {
         return Promise.all(urls.map(function (url) {
             return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });
         })).then(function (result) {
-            _this.fragmentShader = _this.fragmentHeader + result[0];
-            _this.vertexShader = _this.vertexHeader + result[1];
+            _this.fragmentShader = result[0];
+            _this.vertexShader = result[1];
             return urls.length;
         }).catch(function (reason) {
             _this.onError(reason);
             return -1;
         });
     };
-    ShaderEntity.prototype.compile = function (fs, vs) {
-        if (vs) {
-            this.vertexShader = vs;
-        }
+    ShaderEntity.prototype.setFragment = function (fs, globals) {
         this.fragmentShader = fs;
-        this.initShader();
+        this.setupShader();
     };
     ShaderEntity.prototype.onSuccess = function (shader) {
     };
@@ -198,13 +161,13 @@ var ShaderEntity = (function (_super) {
         gl.bindTexture(gl.TEXTURE_2D, null);
         return texture;
     };
-    ShaderEntity.prototype.initShader = function () {
+    ShaderEntity.prototype.setupShader = function () {
         var _this = this;
         var gl = this.gl;
         this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
-        var vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
-        var fs = this.createShader(gl, this.fragmentShader, gl.FRAGMENT_SHADER);
+        var vs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.vertexHeader + this.vertexShader, gl.VERTEX_SHADER);
+        var fs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.fragmentHeader + this.fragmentShader, gl.FRAGMENT_SHADER);
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);
         gl.linkProgram(this.glProgram);
