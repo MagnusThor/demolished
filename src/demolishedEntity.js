@@ -142,7 +142,7 @@ var ShaderEntity = (function (_super) {
             return -1;
         });
     };
-    ShaderEntity.prototype.setFragment = function (fs, globals) {
+    ShaderEntity.prototype.setFragment = function (fs) {
         this.fragmentShader = fs;
         this.setupShader();
     };
@@ -166,8 +166,10 @@ var ShaderEntity = (function (_super) {
         var gl = this.gl;
         this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
-        var vs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.vertexHeader + this.vertexShader, gl.VERTEX_SHADER);
-        var fs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.fragmentHeader + this.fragmentShader, gl.FRAGMENT_SHADER);
+        var vs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.vertexHeader +
+            demolishedUtils_1.ShaderCompiler.parseIncludes(this.vertexShader, this.shared), gl.VERTEX_SHADER);
+        var fs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.fragmentHeader +
+            demolishedUtils_1.ShaderCompiler.parseIncludes(this.fragmentShader, this.shared), gl.FRAGMENT_SHADER);
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);
         gl.linkProgram(this.glProgram);

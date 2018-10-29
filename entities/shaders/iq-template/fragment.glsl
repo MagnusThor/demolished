@@ -4,10 +4,10 @@ uniform vec2 resolution;
 uniform sampler2D iChannel0;
 out vec4 fragColor;
 
-//#include "entities/shared/common.glsl";
-//#include "entities/shared/geometry.glsl";
+#include "entities/shared/common.glsl";
+#include "entities/shared/geometry.glsl";
 
-// based on https://www.shadertoy.com/view/ldfSWs by IQ
+// Temlate based on https://www.shadertoy.com/view/ldfSWs by IQ
 //------------------------------------------------------------------------
 // Camera
 //
@@ -38,18 +38,10 @@ const float width=.22;
 const float scale=5.;
 const float detail=.002;
 
-float doModel( vec3 p )
+ float doModel( vec3 p )
 {
- 
-    float t=-0.4;
-	float dotp=dot(p,p);
-	p=p/dotp*scale;
-	p=sin(p+vec3(sin(1.+t)*2.,-t,-t*2.));
-	float d=length(p.yz)-width;
-	d=min(d,length(p.xz)-width);
-	d=min(d,length(p.xy)-width);
-	d=min(d,length(p*p*p)-width*0.3);
-	return d*dotp/scale;
+ 	// sampleThingy comes from entities/shared/geometry.glsl
+    return sampleThingy(p);    
 }
 //------------------------------------------------------------------------
 // Material 

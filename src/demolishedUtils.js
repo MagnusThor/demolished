@@ -93,7 +93,7 @@ var ImportsParser = (function () {
     function ImportsParser() {
     }
     ImportsParser.prototype.parseIncludes = function (data) {
-        var regex = new RegExp('//#include\\s"(.*)"', 'g');
+        var regex = new RegExp('#include\\s"(.*)"', 'g');
         var matcher = regex.exec(data);
         var result = new Array();
         while (matcher != null) {
@@ -126,6 +126,15 @@ var ShaderCompiler = (function () {
         enumerable: true,
         configurable: true
     });
+    ShaderCompiler.parseIncludes = function (source, shared) {
+        var parser = new ImportsParser();
+        var results = parser.parseIncludes(source);
+        results.map(function (x) {
+            console.log("resolving include", x.path);
+            source = source.replace('#include "' + x.path + '";', shared.get(x.path));
+        });
+        return source;
+    };
     Object.defineProperty(ShaderCompiler, "fragmentHeader", {
         get: function () {
             var header = "";

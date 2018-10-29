@@ -300,39 +300,22 @@ export class DemolishedEd {
 
                 });
             };
-            let parser = new ImportsParser();
-
+      
             this.shaderCompiler.onSuccess = (source: string, header: string) => {
                 let shaderErrors = Utils.$$(".error-info");
                 shaderErrors.forEach((el: Element) => {
                     el.classList.remove("error-info");
                 });
-
-                // we to parse for imports, and append source
-                let globalSource = ""
-                var results = parser.parseIncludes(source);
-                results.map(x => {
-
-                    globalSource +=  this.engine.shared.get(x.path);
-                    
-                    
-                });
-
-                console.clear();
-                console.log(globalSource);
-
-                this.engine.currentTimeFragment.entityShader.setFragment(source,globalSource);
-
-
-
+                this.engine.currentTimeFragment.entityShader.setFragment(source);
 
             }
 
             editor.on("change", (cm: CodeMirror) => {
-                let fs = cm.getValue();
-                if (fs.length == 0 && !this.shaderCompiler.canCompile()) return;
-                // todo: fragmentHeader skall be moved to Static , and shall not be tied to ShaderEntity
-                this.shaderCompiler.compile(fs);
+                let source = cm.getValue();
+                if (source.length == 0 && !this.shaderCompiler.canCompile()) return;
+             
+
+                this.shaderCompiler.compile(ShaderCompiler.parseIncludes(source,this.engine.shared));
             });
 
         }

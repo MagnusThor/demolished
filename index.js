@@ -214,26 +214,18 @@ var DemolishedEd = (function () {
                     immediate.appendChild(p);
                 });
             };
-            var parser = new demolishedUtils_1.ImportsParser();
             _this.shaderCompiler.onSuccess = function (source, header) {
                 var shaderErrors = demolishedUtils_1.Utils.$$(".error-info");
                 shaderErrors.forEach(function (el) {
                     el.classList.remove("error-info");
                 });
-                var globalSource = "";
-                var results = parser.parseIncludes(source);
-                results.map(function (x) {
-                    globalSource += _this.engine.shared.get(x.path);
-                });
-                console.clear();
-                console.log(globalSource);
-                _this.engine.currentTimeFragment.entityShader.setFragment(source, globalSource);
+                _this.engine.currentTimeFragment.entityShader.setFragment(source);
             };
             editor.on("change", function (cm) {
-                var fs = cm.getValue();
-                if (fs.length == 0 && !_this.shaderCompiler.canCompile())
+                var source = cm.getValue();
+                if (source.length == 0 && !_this.shaderCompiler.canCompile())
                     return;
-                _this.shaderCompiler.compile(fs);
+                _this.shaderCompiler.compile(demolishedUtils_1.ShaderCompiler.parseIncludes(source, _this.engine.shared));
             });
         };
         window.onerror = function () {

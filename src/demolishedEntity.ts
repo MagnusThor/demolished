@@ -152,7 +152,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
     // }
 
     constructor(public gl: WebGLRenderingContext, public name: string, public w: number, public h: number,
-        public textures?: Array<EntityTexture>, public shared?: Array<string>
+        public textures?: Array<EntityTexture>, public shared?: Map<string,string>
     ) {
         super(gl);
         this.uniformsCache = new Map<string, WebGLUniformLocation>();
@@ -218,10 +218,13 @@ export class ShaderEntity extends EntityBase implements IEntity {
             return -1;
         });
     }
-    public setFragment(fs: string,globals:string) {
+    
+    public setFragment(fs: string) {
+      
         this.fragmentShader = fs;
         this.setupShader();
     }
+
     onSuccess(shader:WebGLShader){ 
     }
     onError(err: any) {
@@ -243,8 +246,11 @@ export class ShaderEntity extends EntityBase implements IEntity {
         this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
 
-        let vs: WebGLShader = this.createShader(gl,ShaderCompiler.vertexHeader + this.vertexShader, gl.VERTEX_SHADER);
-        let fs: WebGLShader = this.createShader(gl,ShaderCompiler.fragmentHeader + this.fragmentShader, gl.FRAGMENT_SHADER);
+        let vs: WebGLShader = this.createShader(gl,ShaderCompiler.vertexHeader + 
+            ShaderCompiler.parseIncludes(this.vertexShader,this.shared), gl.VERTEX_SHADER);
+        let fs: WebGLShader = this.createShader(gl,ShaderCompiler.fragmentHeader + 
+            
+            ShaderCompiler.parseIncludes(this.fragmentShader,this.shared), gl.FRAGMENT_SHADER);
 
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);

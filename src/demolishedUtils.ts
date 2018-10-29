@@ -104,7 +104,7 @@ export class IncludeDefinition {
 
 export class ImportsParser {
     parseIncludes(data: string): Array<IncludeDefinition> {
-        let regex = new RegExp('//#include\\s"(.*)"', 'g');
+        let regex = new RegExp('#include\\s"(.*)"', 'g');
         let matcher = regex.exec(data);
         let result = new Array<IncludeDefinition>();
         while (matcher != null) {
@@ -127,6 +127,16 @@ export class ShaderCompiler {
             "#endif\n";
         return header;
 
+    }
+
+    static parseIncludes(source:string,shared:Map<string,string>):string{
+        let parser = new ImportsParser();
+        var results = parser.parseIncludes(source);
+        results.map(x => {
+            console.log("resolving include" , x.path);
+            source =source.replace('#include "'+  x.path + '";',shared.get(x.path));
+        });   
+        return source; 
     }
 
     static get fragmentHeader(): string {

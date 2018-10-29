@@ -187,9 +187,9 @@ export namespace Demolished {
         }
         addEntity(name: string, textures?: Array<EntityTexture>
         ): void {
-            const entity = new ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
+            const entity = new ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures,this.shared);
 
-
+          
             this.entitiesCache.push(entity);
             let tf = this.timeFragments.filter((pre: TimeFragment) => {
                 return pre.entity === name;

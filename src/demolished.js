@@ -126,7 +126,7 @@ var Demolished;
             });
         };
         Rendering.prototype.addEntity = function (name, textures) {
-            var entity = new demolishedEntity_1.ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures);
+            var entity = new demolishedEntity_1.ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures, this.shared);
             this.entitiesCache.push(entity);
             var tf = this.timeFragments.filter(function (pre) {
                 return pre.entity === name;
