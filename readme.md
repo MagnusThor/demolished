@@ -21,17 +21,19 @@ We are currently working on writing a brief documentation, but we are focusing o
 
 ## Links
 
-https://magnusthor.github.io/demolished/ 
-Early deploy of the editor ( 1 effect + Steaming Music)
-
-https://magnusthor.github.io/demolished/demo.html  
-One effect (shader) and Sonant music synth's audio using 'standard' playback.  Total size 66kb
+TBD
 
 ## Other
 
 In parallel with our free-time-work with demolished we are creating useful help libraries such as procedural texture generation, compression and optimization. Note we are doing this for fun!.
 
 One example is this initiative ; https://github.com/MagnusThor/demolishedTexture
+
+
+## Greetings
+
+Thanks to MERCURY http://mercury.sexy for providing a brilliant glsl lib , HG_SDF library ( http://mercury.sexy/hg_sdf ).   
+
 
 ## Help us out?
 

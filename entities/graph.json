@@ -1,7 +1,7 @@
 {
     "name": "default-demo",
     "audioSettings": {
-        "audioFile": "assets/vol.mp3",
+        "audioFile": "assets/felt.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
@@ -12,7 +12,9 @@
         "bmp": 129
     },
     "shared": {
-        "glsl": ["entities/shared/common.glsl","entities/shared/geometry.glsl"]
+        "glsl": ["entities/shared/common.glsl","entities/shared/geometry.glsl",
+        "entities/shared/helpers.glsl","entities/shared/primitives.glsl","entities/shared/manipulation.glsl",
+        "entities/shared/combination.glsl"]
     },
     "timeline": [
         {
@@ -24,13 +26,13 @@
         {
             "start": 1250200,
             "stop": 6250200,
-            "entity": "hope",
+            "entity": "iq-template",
             "subeffects": []
         }
     ],
     "effects": [
         {
-            "name": "hope",
+            "name": "nurse",
             "description": "",
             "textures": [
                 {

@@ -224,7 +224,6 @@ export class DemolishedEd {
         });
 
         this.engine.onFrame = (frame) => {
-            // todo:  Implmement a method the gives duration in milliscconds on IDemolishedAudio.,
             this.spectrum.frequencData = this.music.getFrequenceData();
 
             timeLine.style.width = ((parseInt(frame.ms) / this.engine.audio.duration) * 100.).toString() + "%";
@@ -233,18 +232,13 @@ export class DemolishedEd {
 
 
         this.engine.onReady = (graph: Graph) => {
-
-
-            this.engine.timeFragments.forEach((t: TimeFragment) => {
+           this.engine.timeFragments.forEach((t: TimeFragment) => {
                 let s = this.demoTimeline.createSegment(t.entity, t.start, t.stop, this.segmentChange);
             });
-
-
             this.onReady();
             window.setTimeout(() => {
                 this.engine.start(0);
             }, 2000);
-
         }
         this.engine.onNext = (frameInfo: any) => {
         };
@@ -318,6 +312,8 @@ export class DemolishedEd {
                 this.shaderCompiler.compile(ShaderCompiler.parseIncludes(source,this.engine.shared));
             });
 
+
+            
         }
         window.onerror = () => {
             this.engine.stop();

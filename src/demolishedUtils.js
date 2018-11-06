@@ -92,7 +92,7 @@ exports.IncludeDefinition = IncludeDefinition;
 var ImportsParser = (function () {
     function ImportsParser() {
     }
-    ImportsParser.prototype.parseIncludes = function (data) {
+    ImportsParser.parseIncludes = function (data) {
         var regex = new RegExp('#include\\s"(.*)"', 'g');
         var matcher = regex.exec(data);
         var result = new Array();
@@ -127,10 +127,8 @@ var ShaderCompiler = (function () {
         configurable: true
     });
     ShaderCompiler.parseIncludes = function (source, shared) {
-        var parser = new ImportsParser();
-        var results = parser.parseIncludes(source);
+        var results = ImportsParser.parseIncludes(source);
         results.map(function (x) {
-            console.log("resolving include", x.path);
             source = source.replace('#include "' + x.path + '";', shared.get(x.path));
         });
         return source;

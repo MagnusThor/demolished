@@ -1,5 +1,3 @@
-
-
 /**
     * Utils
     * 
@@ -103,7 +101,7 @@ export class IncludeDefinition {
 }
 
 export class ImportsParser {
-    parseIncludes(data: string): Array<IncludeDefinition> {
+    static parseIncludes(data: string): Array<IncludeDefinition> {
         let regex = new RegExp('#include\\s"(.*)"', 'g');
         let matcher = regex.exec(data);
         let result = new Array<IncludeDefinition>();
@@ -130,10 +128,9 @@ export class ShaderCompiler {
     }
 
     static parseIncludes(source:string,shared:Map<string,string>):string{
-        let parser = new ImportsParser();
-        var results = parser.parseIncludes(source);
+       
+        let results = ImportsParser.parseIncludes(source);
         results.map(x => {
-            console.log("resolving include" , x.path);
             source =source.replace('#include "'+  x.path + '";',shared.get(x.path));
         });   
         return source; 
