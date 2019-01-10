@@ -13,6 +13,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var demolishedModels_1 = require("./demolishedModels");
 var demolishedLoader_1 = require("./demolishedLoader");
 var demolishedUtils_1 = require("./demolishedUtils");
+var AudioSettings = (function () {
+    function AudioSettings() {
+    }
+    return AudioSettings;
+}());
+exports.AudioSettings = AudioSettings;
 var EntityTexture = (function () {
     function EntityTexture(image, name, width, height, assetType) {
         this.image = image;

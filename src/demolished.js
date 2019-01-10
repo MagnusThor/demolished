@@ -164,6 +164,7 @@ var Demolished;
             this.animationStartTime = performance.now();
             this.animate(time);
             this.audio.currentTime = (time / 1000) % 60;
+            this.audio.play();
             if (!this.isPaused)
                 this.onStart();
         };

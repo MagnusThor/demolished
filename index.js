@@ -80,7 +80,6 @@ var DemolishedEd = (function () {
         var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
         var immediate = demolishedUtils_1.Utils.$(".immediate");
         var resetTimers = demolishedUtils_1.Utils.$("#reset-clocks");
-        var timeLine = demolishedUtils_1.Utils.$("#current-time");
         var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
         var shaderWin = demolishedUtils_1.Utils.$("#shader-win");
         var record = demolishedUtils_1.Utils.$("#btn-record");
@@ -163,10 +162,11 @@ var DemolishedEd = (function () {
         });
         this.engine.onFrame = function (frame) {
             _this.spectrum.frequencData = _this.music.getFrequenceData();
-            timeLine.style.width = ((parseInt(frame.ms) / _this.engine.audio.duration) * 100.).toString() + "%";
+            _this.timeLime.updateAudioPosition();
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
         this.engine.onReady = function (graph) {
+            _this.timeLime = new demolishedUtils_1.AudioWaveform(_this.engine.audio.audioBuffer, _this.engine.audio);
             _this.demoTimeline = new demolishedTimeline_1.Timeline("#current-time", _this.engine.graph.duration);
             _this.engine.timeFragments.forEach(function (fragment) {
                 var segment = _this.demoTimeline.createSegment(fragment.entity, fragment.start, fragment.stop, _this.segmentChange);

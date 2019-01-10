@@ -211,7 +211,8 @@ export namespace Demolished {
 
 
         }
-        private tryFindTimeFragment(time: number): TimeFragment {
+        
+        public tryFindTimeFragment(time: number): TimeFragment {
             let fragment = this.timeFragments.find((tf: TimeFragment) => {
                 return time < tf.stop && time >= tf.start
             });
@@ -235,7 +236,7 @@ export namespace Demolished {
             this.animate(time);
 
             this.audio.currentTime = (time / 1000) % 60
-          //  this.audio.play();
+            this.audio.play();
             if (!this.isPaused)
                 this.onStart();
         }

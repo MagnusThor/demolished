@@ -170,6 +170,7 @@ var DemolishedStreamingMusic = (function (_super) {
                 return resp.arrayBuffer().then(function (buffer) {
                     var audioCtx = new AudioContext();
                     audioCtx.decodeAudioData(buffer, function (audioData) {
+                        _this.audioBuffer = audioData;
                         var offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
                         var filteredSource = offlineCtx.createBufferSource();
                         filteredSource.buffer = audioData;

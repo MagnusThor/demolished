@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var demolishedPlayer_1 = require("./src/demolishedPlayer");
-var PlayerDemo = /** @class */ (function () {
+var PlayerDemo = (function () {
     function PlayerDemo() {
         var shaders = [{ v: '', f: '' }, { v: '', f: '' }];
         this.player = new demolishedPlayer_1.DemolishedPlayer(512, 512, {

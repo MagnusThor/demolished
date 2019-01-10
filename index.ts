@@ -23,7 +23,7 @@ import 'codemirror/mode/clike/clike.js';
 import 'codemirror/keymap/sublime';
 
 
-import { Utils, ShaderCompiler, ShaderError, ImportsParser, IncludeDefinition } from './src/demolishedUtils';
+import { Utils, ShaderCompiler, ShaderError, ImportsParser, IncludeDefinition, AudioWaveform } from './src/demolishedUtils';
 import { SmartArray } from './src/demolishedSmartArray';
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './src/demolishedModels';
 
@@ -33,8 +33,6 @@ import { DemoishedEditorHelper } from './src/ui/editor/demoishedEditorHelper';
 import { BaseEntity2D, IEntity2D, Demolished2D } from './src/demolished2D';
 import { DemolishedRecorder } from './src/demolishedRecoder';
 import { Timeline } from './src/demolishedTimeline';
-//import { SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG } from 'constants';
-
 
 export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
     start: 0;
@@ -51,7 +49,6 @@ export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
     bars: number;
 
     frequencData: Uint8Array
-
     // todo: scale_average must be relative
     update(time: number) {
         let sum = 0;
@@ -93,6 +90,8 @@ export class DemolishedEd {
     public recorder: DemolishedRecorder;
 
 
+    private timeLime: AudioWaveform;
+
     segmentChange(...args:any) {
         console.log("...",args);
     }
@@ -121,10 +120,9 @@ export class DemolishedEd {
         let fullscreen = Utils.$("#btn-fullscreen");
         let immediate = Utils.$(".immediate");
         let resetTimers = Utils.$("#reset-clocks");
-        let timeLine = Utils.$("#current-time") as HTMLInputElement;
+
         let shaderResolution = Utils.$("#shader-resolution") as HTMLInputElement;
         let shaderWin = Utils.$("#shader-win");
-
         let record = Utils.$("#btn-record");
 
         record.addEventListener("click", (evt: Event) => {
@@ -143,8 +141,8 @@ export class DemolishedEd {
 
                 this.recorder.start(60);
 
-                let p = Utils.el("p", "Recording");
-
+                let p = Utils.el("p", "Recording"); 
+                
                 immediate.appendChild(p);
 
             } else {
@@ -226,18 +224,26 @@ export class DemolishedEd {
 
             this.spectrum.frequencData = this.music.getFrequenceData();
 
-            timeLine.style.width = ((parseInt(frame.ms) / this.engine.audio.duration) * 100.).toString() + "%";
+            this.timeLime.updateAudioPosition();
+     //       timeLine.style.width = ((parseInt(frame.ms) / this.engine.audio.duration) * 100.).toString() + "%";
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
+     
         };
 
 
         this.engine.onReady = (graph: Graph) => {
+
+
+            this.timeLime = new AudioWaveform(this.engine.audio.audioBuffer,this.engine.audio)
 
             this.demoTimeline = new Timeline("#current-time",this.engine.graph.duration);
 
            this.engine.timeFragments.forEach((fragment: TimeFragment) => {
                  let segment = this.demoTimeline.createSegment(fragment.entity, fragment.start, fragment.stop, this.segmentChange);
             });
+
+            // Decode PCM / Waveform ... this is kinf of a messy , ugly thing...
+
             this.onReady();
             window.setTimeout(() => {
                 this.engine.start(0);

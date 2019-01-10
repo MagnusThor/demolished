@@ -11,8 +11,6 @@ uniform sampler2D fft;
 
 out vec4 fragColor;
 
-
-
 float sp(vec3 p,float s){
     	return length(p) * s;
 }
@@ -28,7 +26,7 @@ void main(){
    
     
     for( int i=0; i<16; i++ ){
-        vec4 aa = texture( fft, vec2( 0.05 + 0.5*float(i)/16.0, 0.25));
+        vec4 aa = texture( fft, vec2( -0.934 + 0.5*float(i)/15.128, -0.574));
         freqs[i] = clamp( 1.9*pow( aa.x, 3.0 ), 0.0, 1.0 );
         
     }

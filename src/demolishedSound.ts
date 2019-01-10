@@ -48,7 +48,10 @@ export class DemolishedSoundPeaks{
 export class DemolishedSoundBase {
     audioAnalyser: AnalyserNode
     audio: any;
+   audioBuffer:AudioBuffer;
+
     constructor() { }
+    
    
 }
 
@@ -68,6 +71,7 @@ export interface IDemolisedAudioContext {
     textureSize: number 
     duration: number;
     getTracks():MediaStreamTrack
+    audioBuffer:AudioBuffer
 }
 declare var SIDBackendAdapter: any;
 
@@ -136,6 +140,7 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
  * @implements {IDemolisedAudioContext}
  */
 export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
+    
     getTracks():MediaStreamTrack{
         let ms = this.audio.captureStream();
         return ms.getAudioTracks();
@@ -182,6 +187,8 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
                     let audioCtx = new AudioContext();
                     audioCtx.decodeAudioData(buffer, (audioData: AudioBuffer) => {
 
+                        this.audioBuffer = audioData;
+                  
                         let offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
 
                         var filteredSource = offlineCtx.createBufferSource();

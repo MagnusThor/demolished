@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var DemolishedPlayer = /** @class */ (function () {
+var DemolishedPlayer = (function () {
     function DemolishedPlayer(w, h, graph, shaders) {
         var _this = this;
         this.w = w;
@@ -28,7 +28,6 @@ var DemolishedPlayer = /** @class */ (function () {
         var p = g.createProgram();
         this.p = p;
         this.g = g;
-        // set up an array of "program's", fragment and vertex will be provided by shaders object 
         this.D(this.S(35633, "attribute vec3 b;varying vec2 u;void main(){gl_Position=vec4(b,1.);u=(b.xy+1.)/2.;}"));
         this.D(this.S(35632, "precision highp float;uniform vec2 p;varying vec2 u;uniform sampler2D s;void main(){gl_FragColor=texture2D(s,u)*.98+vec4(clamp(1.-length(u-p)*9.,0.,1.))+vec4(0,0,0,1);}"));
         g.linkProgram(p);

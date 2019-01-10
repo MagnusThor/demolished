@@ -2,7 +2,7 @@
     "name": "default-demo",
     "duration" :6250200,
     "audioSettings": {
-        "audioFile": "assets/vol.mp3",
+        "audioFile": "assets/felt.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,

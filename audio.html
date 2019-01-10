@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Waveform drawer</title>
+</head>
+<body>
+  <input type="file" /><br />
+  <svg preserveAspectRatio="none" width="2000" height="100" style="width:900px;height:50px;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <linearGradient id="Gradient" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="white" />
+      <stop offset="90%" stop-color="white" stop-opacity="0.75" />
+      <stop offset="100%" stop-color="white" stop-opacity="0" />
+    </linearGradient>
+    <mask id="Mask">
+      <path fill="url(#Gradient)" />
+    </mask>
+    <rect id="progress" mask="url(#Mask)" x="0" y="0" width="0" height="100" fill="rgb(255, 106, 106)"  />
+    <rect id="remaining" mask="url(#Mask)" x="0" y="0" width="0" height="100" fill="rgb(170, 56, 56)"  />
+  </svg>
+  <script>
+    const audio = document.createElement('audio');
+    const audioContext = new window.AudioContext();
+
+    const svg = document.querySelector('svg');
+    const progress = svg.querySelector('#progress');
+    const remaining = svg.querySelector('#remaining');
+    const width = svg.getAttribute('width');
+    const height = svg.getAttribute('height');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    const smoothing = 2;
+
+    svg.addEventListener('click', e => {
+      const position = e.offsetX / svg.getBoundingClientRect().width;
+      audio.currentTime = position * audio.duration;
+    });
+
+    document.querySelector('input').addEventListener('change', e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = e => processTrack(e.target.result);
+      reader.readAsArrayBuffer(file);
+      attachToAudio(file);
+    });
+
+    const RMS = values => Math.sqrt(
+      values.reduce((sum, value) => sum + Math.pow(value, 2), 0) / values.length
+    );
+    const avg = values => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const max = values => values.reduce((max, value) => Math.max(max, value), 0);
+
+    function getWaveformData(audioBuffer, dataPoints) {
+      const leftChannel = audioBuffer.getChannelData(0);
+      const rightChannel = audioBuffer.getChannelData(1);
+
+      const values = new Float32Array(dataPoints);
+      const dataWindow = Math.round(leftChannel.length / dataPoints);
+      for (let i = 0, y = 0, buffer = []; i < leftChannel.length; i++) {
+        const summedValue = (Math.abs(leftChannel[i]) + Math.abs(rightChannel[i])) / 2;
+        buffer.push(summedValue);
+        if (buffer.length === dataWindow) {
+          values[y++] = avg(buffer);
+          buffer = [];
+        }
+      }
+      return values;
+    }
+
+    function getSVGPath(waveformData) {
+      const maxValue = max(waveformData);
+
+      let path = `M 0 ${height} `;
+      for (let i = 0; i < waveformData.length; i++) {
+        path += `L ${i * smoothing} ${(1 - waveformData[i] / maxValue) * height} `;
+      }
+      path += `V ${height} H 0 Z`;
+
+      return path;
+    }
+
+    function attachToAudio(file) {
+      audio.setAttribute('autoplay', true);
+      audio.src = URL.createObjectURL(file);
+      updateAudioPosition();
+    }
+
+    function updateAudioPosition() {
+      const {currentTime, duration} = audio;
+      const physicalPosition = currentTime / duration * width;
+      if (physicalPosition) {
+        progress.setAttribute('width', physicalPosition);
+        remaining.setAttribute('x', physicalPosition);
+        remaining.setAttribute('width', width - physicalPosition);
+      }
+      requestAnimationFrame(updateAudioPosition);
+    }
+
+    function processTrack(buffer) {
+      const source = audioContext.createBufferSource();
+
+      console.time('decodeAudioData');
+      return audioContext.decodeAudioData(buffer)
+      .then(audioBuffer => {
+        console.timeEnd('decodeAudioData');
+
+        console.time('getWaveformData');
+        const waveformData = getWaveformData(audioBuffer, width / smoothing);
+        console.timeEnd('getWaveformData');
+
+        console.time('getSVGPath');
+        svg.querySelector('path').setAttribute('d', getSVGPath(waveformData, height, smoothing));
+        console.timeEnd('getSVGPath');
+
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+      })
+      .catch(console.error);
+    }
+  </script>
+</body>
+</html>
