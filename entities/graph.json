@@ -1,0 +1,75 @@
+{
+    "name": "default-demo",
+    "duration" :6250200,
+    "audioSettings": {
+        "audioFile": "assets/vol.mp3",
+        "audioAnalyzerSettings": {
+            "fftSize": 8192,
+            "smoothingTimeConstant": 0.85,
+            "minDecibels": -90,
+            "maxDecibels": -10
+        },
+        "duration": 6250200,
+        "bmp": 129
+    },
+    "shared": {
+        "glsl": [
+            "entities/shared/common.glsl",
+            "entities/shared/helpers.glsl",
+            "entities/shared/primitives.glsl",
+            "entities/shared/manipulation.glsl",
+            "entities/shared/combination.glsl"
+        ]
+    },
+    "timeline": [
+        {
+            "start": 0,
+            "stop": 3125100,
+            "entity": "stub",
+            "subeffects": []
+        },
+        {
+            "start": 3125100,
+            "stop": 6250200,
+            "entity": "iq-template",
+            "subeffects": []
+        }
+    ],
+    "effects": [
+        {
+            "name": "stub",
+            "description": "",
+            "textures": [
+                {
+                    "src": "assets/channel0.jpg",
+                    "uniform": "iChannel0",
+                    "width": 256,
+                    "height": 256
+                },
+                {
+                    "src": "assets/channel1.jpg",
+                    "uniform": "iChannel1",
+                    "width": 1024,
+                    "height": 1024
+                },
+                {
+                    "src": "assets/channel2.jpg",
+                    "uniform": "iChannel2",
+                    "width": 512,
+                    "height": 512
+                },
+                {
+                    "src": "assets/channel3.jpg",
+                    "uniform": "iChannel3",
+                    "width": 1024,
+                    "height": 1024
+                }
+            ]
+        },
+        {
+            "name": "iq-template",
+            "textures": [],
+            "subeffets": []
+        }
+    ]
+}
