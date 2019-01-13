@@ -191,10 +191,16 @@ export class Segment extends TimeFragment {
 
     updateInfo(): void {
 
+        let x = Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.left)));
+        let w = Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.width)))
+
+        x < 0 ? x = 0 : x = x;
+        
         let evt = {
             name: this.title,
-            start: Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.left))),
-            stop: Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.width)))
+            start: x,
+            stop: x+w,
+            length: w,
         };
 
         DemolishedEd.showJSON(evt, Utils.$(".dlg-timeline"));

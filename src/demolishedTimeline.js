@@ -161,10 +161,14 @@ var Segment = (function (_super) {
         this.hostElement.style.left = this.scaleToFit(this.start).toString();
     };
     Segment.prototype.updateInfo = function () {
+        var x = Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.left)));
+        var w = Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.width)));
+        x < 0 ? x = 0 : x = x;
         var evt = {
             name: this.title,
-            start: Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.left))),
-            stop: Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.width)))
+            start: x,
+            stop: x + w,
+            length: w,
         };
         index_1.DemolishedEd.showJSON(evt, demolishedUtils_1.Utils.$(".dlg-timeline"));
         if (this.updateCallback)
