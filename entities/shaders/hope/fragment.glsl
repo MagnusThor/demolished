@@ -28,6 +28,7 @@ out vec4 fragColor;
 #define moonRefl vec3(.477784395284944,.179169148231854,.8600119115129)
 
 int hitObj = SKY;
+
 float hitScale = 1.;
 
 float Hsh(in float v) { 						
@@ -69,7 +70,6 @@ float map(in vec2 xz)
     
     float tex = 1.*Hp*Pp + .5*Hq*Pq +.3*Hr*Pr;	  
     hitScale = Pp + 2.5*Pq + 5.*Pr;
-    
     return tex;
     
 }
@@ -150,19 +150,13 @@ vec4 traceWindow(in vec3 pos, in vec3 ray, in float t, in vec3 norm){
         vec3 boxDim = vec3(.25,.025,.1);
         for(int i=0;i<5;i++){
             vec3 boxCtr = vec3(floor(p.x*2.), floor(p.y*20.), refz);
-            if(checkWindow(boxCtr.xy)){
-                info = boxImpact(pos, ray,(boxCtr+vec3(.5,.5,0.))/vec3(2.,20.,1.), boxDim);
-            }
-            else break;
-            if(bool(info.z)){
-                hitObj = WIN;), boxDim);
-            }
-            else break;
-            if(bool(info.z)){
-            	break;
-            }
-            hitObj = SIDE;
-            p = pos + (info.w+.001)*ray;
+     
+            
+            
+            
+            
+            
+            
         }
     }
     else{
@@ -231,7 +225,8 @@ vec3 stars(in vec3 ray){
 }
 
 vec3 fewStars(in vec3 ray){
-	vec3 col = vec3(0.);
+
+    vec3 col = vec3(0.);
     float az = atan(.5*ray.z,-.5*ray.x)/PIdiv2;
     vec2 a = vec2(az,ray.y);
     
@@ -409,6 +404,15 @@ vec3 getRay(in vec2 st, in vec3 pos, in vec3 camTarget){
 	return normalize( st.x*uu + st.y*vv + focal*ww );
 }
 
+
+vec3 postprocess(vec2 uv,vec3 col){
+	col.gb *=  uv.y * .6; 
+	col.g = 0.0+0.6*smoothstep(-0.1,0.9,col.g*2.0);
+	col = 0.001+pow(col, vec3(1.2))*1.5;
+    col *= mod(gl_FragCoord.y, 4.0)<2.0 ? 0.6 : 1.0;
+	return col;
+}
+
 void main(){
     vec2 st = gl_FragCoord.xy/resolution.xy-.5;
     st.x *= resolution.x/resolution.y;
@@ -483,5 +487,26 @@ void main(){
     if(moonside)
     	if(!shadTrace(pos,moonRefl))
     		color += lensflare3D(ray, getRay(vec2(0.), pos,camTarget));   
+    color = postprocess(st,color);
+    
 	fragColor = vec4(color,1.);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

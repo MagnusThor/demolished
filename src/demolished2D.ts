@@ -7,19 +7,22 @@ export class BaseEntity2D {
         this.width = ctx.canvas.width;
         this.height = ctx.canvas.height;
     }
-    update(t: number) {
+    update(t: number):void {
     }
-
     getPixels(): ImageData {
         return this.ctx.getImageData(0, 0, this.width, this.height);
     }
-    putPixels() {
-        throw "not implemented";
+    putPixels(data:ImageData,x:number,y:number):BaseEntity2D {
+            this.ctx.putImageData(data,x,y);
+            return this;
+    }
+    setPixel(r:number,g:number,b:number,x:number,y:number):BaseEntity2D{
+        let data = new Uint8ClampedArray([r,g,b]);
+        this.ctx.putImageData(new ImageData(data,1,1),x,y);
+        return this;
     }
 }
 export class Point3D {
-
-    public w:number;
     constructor(public x: number, public y: number, public z: number) {
     }
     rotateX(angle:number):Point3D{

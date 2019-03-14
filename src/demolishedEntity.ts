@@ -282,7 +282,6 @@ export class ShaderEntity extends EntityBase implements IEntity {
         gl.linkProgram(this.glProgram);
 
         this.cacheUniformLocation('fft');
-        this.cacheUniformLocation("subEffectId");
         this.cacheUniformLocation("playbacktime");
         this.cacheUniformLocation('time');
         this.cacheUniformLocation("datetime");

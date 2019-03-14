@@ -91,9 +91,6 @@ export namespace Demolished {
 
                     })
                 })).then(() => {
-
-                    console.log("shared", this.shared);
-
                     resolve(true);
 
                 });
@@ -376,9 +373,9 @@ export namespace Demolished {
         }
         bindTexture(ent: IEntity, entityTexture: EntityTexture, c: number) {
             let gl = this.gl;
-            gl.activeTexture(gl.TEXTURE0 + (2 + c));
+            gl.activeTexture(gl.TEXTURE0 + (1 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 2 + c);
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 1 + c);
         }
 
     }

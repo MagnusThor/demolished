@@ -1,8 +1,11 @@
 "use strict";
 var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
     return function (d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
@@ -34,6 +37,7 @@ var demoishedEditorHelper_1 = require("./src/ui/editor/demoishedEditorHelper");
 var demolished2D_1 = require("./src/demolished2D");
 var demolishedRecoder_1 = require("./src/demolishedRecoder");
 var demolishedTimeline_1 = require("./src/demolishedTimeline");
+var demolishedAudioWaveform_1 = require("./src/demolishedAudioWaveform");
 var SpectrumAnalyzer = (function (_super) {
     __extends(SpectrumAnalyzer, _super);
     function SpectrumAnalyzer(ctx) {
@@ -75,7 +79,6 @@ var DemolishedEd = (function () {
         this.engine = new demolished_1.Demolished.Rendering(demolishedUtils_1.Utils.$("#webgl"), demolishedUtils_1.Utils.$("#shader-view"), "entities/graph.json", this.music);
         var timeEl = demolishedUtils_1.Utils.$(".time");
         var playback = demolishedUtils_1.Utils.$("#toogle-playback");
-        var vertextCode = demolishedUtils_1.Utils.$("#vertex");
         var sound = demolishedUtils_1.Utils.$("#toggle-sound");
         var fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
         var immediate = demolishedUtils_1.Utils.$(".immediate");
@@ -83,7 +86,7 @@ var DemolishedEd = (function () {
         var shaderResolution = demolishedUtils_1.Utils.$("#shader-resolution");
         var shaderWin = demolishedUtils_1.Utils.$("#shader-win");
         var record = demolishedUtils_1.Utils.$("#btn-record");
-        record.addEventListener("click", function (evt) {
+        record.addEventListener("click", function () {
             if (!_this.recorder) {
                 _this.engine.uniforms.time = 0;
                 _this.engine.resetClock(0);
@@ -106,7 +109,7 @@ var DemolishedEd = (function () {
         });
         var tabButtons = demolishedUtils_1.Utils.$$(".tab-caption");
         var tabs = demolishedUtils_1.Utils.$$(".tab");
-        tabButtons.forEach(function (el, idx) {
+        tabButtons.forEach(function (el) {
             el.addEventListener("click", function (evt) {
                 tabs.forEach(function (b) {
                     b.classList.add("hide");
@@ -135,10 +138,10 @@ var DemolishedEd = (function () {
             var view = demolishedUtils_1.Utils.$("#webgl");
             view.webkitRequestFullscreen();
         });
-        shaderResolution.addEventListener("change", function (evt) {
+        shaderResolution.addEventListener("change", function () {
             _this.engine.resizeCanvas(demolishedUtils_1.Utils.$("#shader-view"), parseInt(shaderResolution.value));
         });
-        document.addEventListener("webkitfullscreenchange", function (evt) {
+        document.addEventListener("webkitfullscreenchange", function () {
             var target = document.webkitFullscreenElement;
             if (target) {
                 target.classList.add("shader-fullscreen");
@@ -165,18 +168,17 @@ var DemolishedEd = (function () {
             _this.timeLime.updateAudioPosition();
             timeEl.textContent = frame.min + ":" + frame.sec + ":" + (frame.ms / 10).toString().match(/^-?\d+(?:\.\d{0,-1})?/)[0];
         };
-        this.engine.onReady = function (graph) {
-            _this.timeLime = new demolishedUtils_1.AudioWaveform(_this.engine.audio.audioBuffer, _this.engine.audio);
+        this.engine.onReady = function () {
+            _this.timeLime = new demolishedAudioWaveform_1.AudioWaveform(_this.engine.audio.audioBuffer, _this.engine.audio);
             _this.demoTimeline = new demolishedTimeline_1.Timeline("#current-time", _this.engine.graph.duration);
             _this.engine.timeFragments.forEach(function (fragment) {
-                var segment = _this.demoTimeline.createSegment(fragment.entity, fragment.start, fragment.stop, _this.segmentChange);
             });
             _this.onReady();
             window.setTimeout(function () {
                 _this.engine.start(0);
             }, 2000);
         };
-        this.engine.onNext = function (frameInfo) {
+        this.engine.onNext = function () {
         };
         this.engine.onStop = function () {
         };
@@ -197,7 +199,10 @@ var DemolishedEd = (function () {
                 theme: "monokai",
                 indentUnit: 4,
                 lineWrapping: true,
-                autofocus: true
+                autofocus: true,
+                "Ctrl-S": function () {
+                    alert("save");
+                }
             });
             _this.helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(editor);
             _this.shaderCompiler.onError = function (shaderErrors) {
@@ -214,7 +219,7 @@ var DemolishedEd = (function () {
                     immediate.appendChild(p);
                 });
             };
-            _this.shaderCompiler.onSuccess = function (source, header) {
+            _this.shaderCompiler.onSuccess = function (source) {
                 var shaderErrors = demolishedUtils_1.Utils.$$(".error-info");
                 shaderErrors.forEach(function (el) {
                     el.classList.remove("error-info");

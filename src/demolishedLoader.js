@@ -68,7 +68,7 @@ var ResponseWrapper = (function () {
         var promise = new Promise(function (resolve, reject) {
             var reader = new FileReader();
             reader.onload = function () {
-                resolve(JSON.parse(reader.result));
+                resolve(JSON.parse(reader.result.toString()));
             };
             reader.readAsText(_this.blobData);
         });

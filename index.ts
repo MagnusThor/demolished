@@ -23,16 +23,15 @@ import 'codemirror/mode/clike/clike.js';
 import 'codemirror/keymap/sublime';
 
 
-import { Utils, ShaderCompiler, ShaderError, ImportsParser, IncludeDefinition, AudioWaveform } from './src/demolishedUtils';
-import { SmartArray } from './src/demolishedSmartArray';
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './src/demolishedModels';
+import { Utils, ShaderCompiler, ShaderError } from './src/demolishedUtils';
+import { TimeFragment, Graph } from './src/demolishedModels';
 
-import { DemolishedStreamingMusic, DemolishedSIDMusic } from "./src/demolishedSound";
-import { DemolishedDialogBuilder } from './src/demolishedProperties';
+import { DemolishedStreamingMusic } from "./src/demolishedSound";
 import { DemoishedEditorHelper } from './src/ui/editor/demoishedEditorHelper';
 import { BaseEntity2D, IEntity2D, Demolished2D } from './src/demolished2D';
 import { DemolishedRecorder } from './src/demolishedRecoder';
 import { Timeline } from './src/demolishedTimeline';
+import { AudioWaveform } from './src/demolishedAudioWaveform';
 
 export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
     start: 0;
@@ -47,7 +46,6 @@ export class SpectrumAnalyzer extends BaseEntity2D implements IEntity2D {
         this.frequencData = new Uint8Array(8192);
     }
     bars: number;
-
     frequencData: Uint8Array
     // todo: scale_average must be relative
     update(time: number) {
@@ -80,11 +78,9 @@ export class DemolishedEd {
     onReady(): void {
         Utils.$(".loader").classList.add("hide");
     }
-
     static showJSON(data:any,t:HTMLElement | Element){
         t.textContent = JSON.stringify(data);
     }
-    
     private spectrum: SpectrumAnalyzer;
 
     public recorder: DemolishedRecorder;
@@ -114,7 +110,6 @@ export class DemolishedEd {
 
         let timeEl = Utils.$(".time");
         let playback = Utils.$("#toogle-playback");
-        let vertextCode = Utils.$("#vertex");
 
         let sound = Utils.$("#toggle-sound");
         let fullscreen = Utils.$("#btn-fullscreen");
@@ -125,7 +120,7 @@ export class DemolishedEd {
         let shaderWin = Utils.$("#shader-win");
         let record = Utils.$("#btn-record");
 
-        record.addEventListener("click", (evt: Event) => {
+        record.addEventListener("click", () => {
 
             if (!this.recorder) {
                 this.engine.uniforms.time = 0;
@@ -158,7 +153,7 @@ export class DemolishedEd {
         let tabButtons = Utils.$$(".tab-caption");
         let tabs = Utils.$$(".tab")
 
-        tabButtons.forEach((el: HTMLElement, idx: number) => {
+        tabButtons.forEach((el: HTMLElement) => {
             el.addEventListener("click", (evt: Event) => {
                 tabs.forEach((b: HTMLElement) => {
                     b.classList.add("hide");
@@ -192,11 +187,11 @@ export class DemolishedEd {
             view.webkitRequestFullscreen();
 
         });
-        shaderResolution.addEventListener("change", (evt: Event) => {
+        shaderResolution.addEventListener("change", () => {
             this.engine.resizeCanvas(Utils.$("#shader-view"),
                 parseInt(shaderResolution.value));
         });
-        document.addEventListener("webkitfullscreenchange", (evt) => {
+        document.addEventListener("webkitfullscreenchange", () => {
             let target = document.webkitFullscreenElement;
             if (target) {
                 target.classList.add("shader-fullscreen");
@@ -231,7 +226,7 @@ export class DemolishedEd {
         };
 
 
-        this.engine.onReady = (graph: Graph) => {
+        this.engine.onReady = () => {
 
 
             this.timeLime = new AudioWaveform(this.engine.audio.audioBuffer,this.engine.audio)
@@ -239,7 +234,6 @@ export class DemolishedEd {
             this.demoTimeline = new Timeline("#current-time",this.engine.graph.duration);
 
            this.engine.timeFragments.forEach((fragment: TimeFragment) => {
-                 let segment = this.demoTimeline.createSegment(fragment.entity, fragment.start, fragment.stop, this.segmentChange);
             });
 
             // Decode PCM / Waveform ... this is kinf of a messy , ugly thing...
@@ -249,7 +243,7 @@ export class DemolishedEd {
                 this.engine.start(0);
             }, 2000);
         }
-        this.engine.onNext = (frameInfo: any) => {
+        this.engine.onNext = () => {
         };
         this.engine.onStop = () => {
         }
@@ -277,7 +271,9 @@ export class DemolishedEd {
                     theme: "monokai",
                     indentUnit: 4,
                     lineWrapping: true,
-                    autofocus: true
+                    autofocus: true,
+                    "Ctrl-S": function() { 
+                        alert("save");                     }
                 }
             );
 
@@ -304,7 +300,7 @@ export class DemolishedEd {
                 });
             };
       
-            this.shaderCompiler.onSuccess = (source: string, header: string) => {
+            this.shaderCompiler.onSuccess = (source: string) => {
                 let shaderErrors = Utils.$$(".error-info");
                 shaderErrors.forEach((el: Element) => {
                     el.classList.remove("error-info");

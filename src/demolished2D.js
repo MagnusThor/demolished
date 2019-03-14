@@ -12,8 +12,14 @@ var BaseEntity2D = (function () {
     BaseEntity2D.prototype.getPixels = function () {
         return this.ctx.getImageData(0, 0, this.width, this.height);
     };
-    BaseEntity2D.prototype.putPixels = function () {
-        throw "not implemented";
+    BaseEntity2D.prototype.putPixels = function (data, x, y) {
+        this.ctx.putImageData(data, x, y);
+        return this;
+    };
+    BaseEntity2D.prototype.setPixel = function (r, g, b, x, y) {
+        var data = new Uint8ClampedArray([r, g, b]);
+        this.ctx.putImageData(new ImageData(data, 1, 1), x, y);
+        return this;
     };
     return BaseEntity2D;
 }());

@@ -24,20 +24,20 @@
     "timeline": [
         {
             "start": 0,
-            "stop": 3125100,
-            "entity": "stub",
+            "stop": 5125100,
+            "entity": "iq-template",
             "subeffects": []
         },
         {
-            "start": 3125100,
+            "start": 5125100,
             "stop": 6250200,
-            "entity": "iq-template",
+            "entity": "stub",
             "subeffects": []
         }
     ],
     "effects": [
         {
-            "name": "stub",
+            "name": "hope",
             "description": "",
             "textures": [
                 {

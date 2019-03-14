@@ -42,8 +42,7 @@ class XMLHttpRequestWrapper{
     export class ResponseWrapper{
        constructor(private blobData: Blob) {      
     }
-
-    public arrayBuffer():Promise<ArrayBuffer>{
+     arrayBuffer():Promise<ArrayBuffer|string>{
              return new Promise((resolve, reject) =>{
                     let reader = new FileReader();
                         reader.onload = () => {   
@@ -53,12 +52,12 @@ class XMLHttpRequestWrapper{
              });
     }
 
-    public blob():Promise<any>{
+   blob():Promise<any>{
              return new Promise((resolve, reject) =>{
                     resolve(this.blobData);
              });
     }
-    public text():Promise<any>{
+    text():Promise<any>{
             let promise = new Promise((resolve, reject) =>{
                 let reader = new FileReader();
                 reader.onload = () => {   
@@ -68,11 +67,11 @@ class XMLHttpRequestWrapper{
             });
             return promise;
     }
-    public json():Promise<any>{
+    json():Promise<any>{
             let promise = new Promise((resolve, reject) =>{
                 let reader = new FileReader();
                 reader.onload = () => {   
-                    resolve(JSON.parse(reader.result));                     
+                    resolve(JSON.parse(reader.result.toString()));                     
                 }
                 reader.readAsText(this.blobData);
             });

@@ -148,7 +148,6 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
     constructor() {
         super();
     }
-  
     get textureSize(){
         return 32;
     }

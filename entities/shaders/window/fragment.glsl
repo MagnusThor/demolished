@@ -21,7 +21,7 @@ vec3 N13(float p) {
 
 vec4 N14(float t) {
 	return fract(sin(t*vec4(123., 1024., 1456., 264.))*vec4(6547., 345., 8799., 1564.));
-}
+} 
 float N(float t) {
     return fract(sin(t*12345.564)*7658.76);
 }

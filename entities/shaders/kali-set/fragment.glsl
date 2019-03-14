@@ -44,7 +44,7 @@ void main(){
 	vec3 rd=normalize(vec3((2.0*gl_FragCoord.xy-resolution.xy)/resolution.y,2.0));
 	rd=lookat(vec3(1.0,0.0,0.0)-ro,vec3(0.0,1.0,0.0))*rd;
 	//ro=eye;rd=normalize(dir);
-	vec3 LDir=normalize(vec3(0.4,0.75,0.4));//direction to light
+	vec3 LDir=	;//direction to light
 	vec3 bcol=vec3(0.0);
 	//march
 	

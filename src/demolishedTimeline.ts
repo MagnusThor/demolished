@@ -18,13 +18,13 @@ export class Timeline {
         return segment;
     }
     multiline() {
-        var _allSegments = document.getElementsByClassName("segment");
+        var _allSegments = Utils.$$(".segment");
         for (var i = 0; i < _allSegments.length; i++) {
             (<HTMLElement>_allSegments[i]).style.top = i * (<HTMLElement>_allSegments[i]).clientHeight + "px";
         }
     }
     singleline() {
-        var _allSegments = document.getElementsByClassName("segment");
+        var _allSegments =  Utils.$$("segment");
         for (var i = 0; i < _allSegments.length; i++) {
             (<HTMLElement>_allSegments[i]).style.top = "0px";
         }
@@ -195,7 +195,7 @@ export class Segment extends TimeFragment {
         let w = Math.ceil(this.scaleToGraph(parseInt(this.hostElement.style.width)))
 
         x < 0 ? x = 0 : x = x;
-        
+
         let evt = {
             name: this.title,
             start: x,
