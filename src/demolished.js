@@ -44,17 +44,35 @@ var Demolished;
                     _this.loadShared(graph.shared.glsl).then(function () {
                         _this.audio.createAudio(audioSettings).then(function (state) {
                             graph.effects.forEach(function (effect) {
-                                var textures = Promise.all(effect.textures.map(function (texture) {
-                                    return new Promise(function (resolve, reject) {
-                                        var image = new Image();
-                                        image.src = texture.src;
-                                        image.onload = function () {
-                                            resolve(image);
-                                        };
-                                        image.onerror = function (err) { return resolve(err); };
-                                    }).then(function (image) {
-                                        return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
-                                    });
+                                Promise.all(effect.textures.map(function (texture) {
+                                    console.log(texture);
+                                    if (texture.type == 0) {
+                                        return new Promise(function (resolve, reject) {
+                                            var image = new Image();
+                                            image.src = texture.src;
+                                            image.onload = function () {
+                                                resolve(image);
+                                            };
+                                            image.onerror = function (err) { return resolve(err); };
+                                        }).then(function (image) {
+                                            return new demolishedEntity_1.EntityTexture(image, texture.uniform, texture.width, texture.height);
+                                        });
+                                    }
+                                    else {
+                                        return new Promise(function (resolve, reject) {
+                                            var video = document.createElement('video');
+                                            video.src = texture.src;
+                                            video.muted = true;
+                                            video.loop = true;
+                                            video.addEventListener("canplaythrough", function () {
+                                                video.play();
+                                                resolve(video);
+                                            });
+                                            video.onerror = function (err) { return resolve(err); };
+                                        }).then(function (video) {
+                                            return new demolishedEntity_1.EntityVideoTexture(video, texture.uniform, texture.width, texture.height);
+                                        });
+                                    }
                                 })).then(function (textures) {
                                     _this.addEntity(effect.name, textures);
                                     if (_this.entitiesCache.length === graph.effects.length) {
@@ -276,6 +294,8 @@ var Demolished;
             gl.activeTexture(gl.TEXTURE0 + (1 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
             gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 1 + c);
+            if (entityTexture.assetType == 1)
+                entityTexture.update(this.gl);
         };
         return Rendering;
     }());

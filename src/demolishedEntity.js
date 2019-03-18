@@ -22,17 +22,50 @@ var AudioSettings = (function () {
     return AudioSettings;
 }());
 exports.AudioSettings = AudioSettings;
+var IEntityTexture = (function () {
+    function IEntityTexture() {
+    }
+    return IEntityTexture;
+}());
+exports.IEntityTexture = IEntityTexture;
 var EntityTexture = (function () {
-    function EntityTexture(image, name, width, height, assetType) {
-        this.image = image;
+    function EntityTexture(data, name, width, height) {
+        this.data = data;
         this.name = name;
         this.width = width;
         this.height = height;
-        this.assetType = assetType;
+        this.assetType = 0;
     }
+    EntityTexture.prototype.update = function (gl) {
+    };
     return EntityTexture;
 }());
 exports.EntityTexture = EntityTexture;
+var Pipleline = (function () {
+    function Pipleline() {
+    }
+    return Pipleline;
+}());
+exports.Pipleline = Pipleline;
+var EntityVideoTexture = (function () {
+    function EntityVideoTexture(data, name, width, height) {
+        this.data = data;
+        this.name = name;
+        this.width = width;
+        this.height = height;
+        this.assetType = 1;
+    }
+    EntityVideoTexture.prototype.update = function (gl) {
+        var level = 0;
+        var internalFormat = gl.RGBA;
+        var srcFormat = gl.RGBA;
+        var srcType = gl.UNSIGNED_BYTE;
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, this.data);
+    };
+    return EntityVideoTexture;
+}());
+exports.EntityVideoTexture = EntityVideoTexture;
 var EntityBase = (function () {
     function EntityBase(gl) {
         this.gl = gl;
@@ -159,6 +192,22 @@ var ShaderEntity = (function (_super) {
     };
     ShaderEntity.prototype.onError = function (err) {
     };
+    ShaderEntity.prototype.craeteTextureFromVideo = function (width, height, video) {
+        var gl = this.gl;
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        var level = 0;
+        var internalFormat = gl.RGBA;
+        var border = 0;
+        var srcFormat = gl.RGBA;
+        var srcType = gl.UNSIGNED_BYTE;
+        var pixel = new Uint8Array([0, 0, 255, 255]);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 1, 1, border, srcFormat, srcType, pixel);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        return texture;
+    };
     ShaderEntity.prototype.createTextureFromImage = function (width, height, image) {
         var gl = this.gl;
         var texture = gl.createTexture();
@@ -198,7 +247,9 @@ var ShaderEntity = (function (_super) {
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
         gl.enableVertexAttribArray(this.vertexPosition);
         this.textures.forEach(function (asset) {
-            asset.texture = _this.createTextureFromImage(asset.width, asset.height, asset.image);
+            asset.assetType == 0 ?
+                asset.texture = _this.createTextureFromImage(asset.width, asset.height, asset.data) :
+                asset.texture = _this.craeteTextureFromVideo(asset.width, asset.height, asset.data);
         });
         gl.useProgram(this.glProgram);
     };

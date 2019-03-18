@@ -1,6 +1,6 @@
 import { Utils } from './demolishedUtils'
 import { SmartArray } from './demolishedSmartArray';
-import { ShaderEntity, EntityTexture, IEntity } from './demolishedEntity';
+import { ShaderEntity, EntityTexture, IEntity, IEntityTexture, EntityVideoTexture } from './demolishedEntity';
 import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings, IUniforms, IGraph } from './demolishedModels';
 import loadResource from './demolishedLoader'
 import { IDemolisedAudioContext } from "./demolishedSound";
@@ -79,24 +79,16 @@ export namespace Demolished {
         }
 
         private loadShared(files: Array<string>): Promise<boolean> {
-
             return new Promise((resolve, reject) => {
                 Promise.all(files.map((f: string) => {
                     loadResource(f).then(resp => resp.text()).then(result => {
-
-                     
                         this.shared.set(f,result + "\n") ;
-
-                    
 
                     })
                 })).then(() => {
                     resolve(true);
-
                 });
-
             });
-
         }
 
         get duration():number{
@@ -149,21 +141,44 @@ export namespace Demolished {
                     });
 
                     this.loadShared(graph.shared.glsl).then(() => {
-
-
+                        // todo: Make video texurework, and this is a shitty implementation.
                         this.audio.createAudio(audioSettings).then((state: boolean) => {
                             graph.effects.forEach((effect: Effect) => {
-                                let textures = Promise.all(effect.textures.map((texture: any) => {
-                                    return new Promise((resolve, reject) => {
-                                        let image = new Image();
-                                        image.src = texture.src;
-                                        image.onload = () => {
-                                            resolve(image);
-                                        }
-                                        image.onerror = (err) => resolve(err);
-                                    }).then((image: HTMLImageElement) => {
-                                        return new EntityTexture(image, texture.uniform, texture.width, texture.height, 0);
-                                    });
+                                    Promise.all(effect.textures.map((texture: any) => {
+                                        
+                                 
+                                        if(texture.type == 0){
+                                        return  new Promise((resolve, reject) => {
+                                            let image = new Image();
+                                            image.src = texture.src;
+                                            image.onload = () => {
+                                                resolve(image);
+                                            }
+                                            image.onerror = (err) => resolve(err);
+                                        }).then((image: HTMLImageElement) => {
+                                            return new EntityTexture(image, texture.uniform, texture.width, texture.height);
+                                        });
+                                    }else{
+                                        return  new Promise((resolve, reject) => {
+                                            let video = document.createElement('video');
+                                            video.src = texture.src;
+                                            video.muted = true;
+                                            video.loop = true;
+                                            video.addEventListener("canplaythrough", () => {
+                                                video.play();
+                                                resolve(video);
+                                            });
+
+                                            video.onerror = (err) => resolve(err);
+
+                                        }).then((video: any) => {
+                                            return new EntityVideoTexture(video, texture.uniform, texture.width, texture.height);
+                                        });
+
+                                       
+                                    }
+
+
                                 })).then((textures: Array<EntityTexture>) => {
                                     this.addEntity(effect.name, textures);
                                     if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
@@ -371,11 +386,17 @@ export namespace Demolished {
         addTexture(ent: IEntity, entityTexture: EntityTexture) {
             ent.textures.push(entityTexture);
         }
-        bindTexture(ent: IEntity, entityTexture: EntityTexture, c: number) {
+        bindTexture(ent: IEntity, entityTexture: IEntityTexture, c: number) {
+       
+            
             let gl = this.gl;
             gl.activeTexture(gl.TEXTURE0 + (1 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
             gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 1 + c);
+
+            if(entityTexture.assetType ==1)
+            entityTexture.update(this.gl);
+
         }
 
     }

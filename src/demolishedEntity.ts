@@ -15,35 +15,81 @@ import { ShaderCompiler } from './demolishedUtils';
         "duration": 6250200,
         "bmp": 129
     }
-*/export class  AudioSettings{
-        audioFile:string;
-        duration:number;
-        bmp:number;
-        audioAnalyzerSettings: {
-            fftSize:number,
-            smoothingTimeConstant:number,
-            minDecibels: number,
-            maxDecibels: number
-        };
+*/export class AudioSettings {
+    audioFile: string;
+    duration: number;
+    bmp: number;
+    audioAnalyzerSettings: {
+        fftSize: number,
+        smoothingTimeConstant: number,
+        minDecibels: number,
+        maxDecibels: number
+    };
 }
 
-export class EntityTexture {
-    texture: WebGLTexture;
-    constructor(public image: any, public name: string, public width: number, public height: number, public assetType: number) { }
+export class IEntityTexture {
+    texture: WebGLTexture
+    name: string;
+    width: number;
+    height: number
+    assetType: number
+    update: any;
 }
+
+export class EntityTexture implements IEntityTexture {
+    texture: WebGLTexture;
+    assetType:number;
+    constructor(public data: any, public name: string, public width: number, public height: number) {
+        //       console.log("Createing a texture",assetType)
+        this.assetType = 0;
+    }
+    update(gl): void {
+
+    }
+}
+
+/**
+ *
+ *
+ * @export
+ * @class Pipleline
+ */
+export class Pipleline {
+
+}
+export class EntityVideoTexture implements IEntityTexture {
+    texture: WebGLTexture;
+    assetType: number;
+    update(gl) {
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+            srcFormat, srcType, this.data);
+    }
+
+    constructor(public data: any, public name: string, public width: number, public height: number) {
+        this.assetType = 1;
+    }
+
+}
+
+
 export interface IEntity {
     render(engine: Demolished.Rendering);
     onError(err: any): void;
     swapBuffers(): void;
     glProgram: WebGLProgram;
-    textures?: Array<EntityTexture>;
+    textures?: Array<IEntityTexture>;
     mainBuffer: WebGLBuffer;
     vertexPosition: number;
     positionAttribute: number;
     target: RenderTarget;
     backTarget: RenderTarget;
     uniformsCache: Map<string, WebGLUniformLocation>;
-    subEffectId: number;
+    //  subEffectId: number;
     frameId: number;
     actions: Map<string, (ent: ShaderEntity, tm: number) => void>;
     addAction(key: string, fn: (ent: ShaderEntity, tm: number) => void);
@@ -141,14 +187,14 @@ export class ShaderEntity extends EntityBase implements IEntity {
     addAction(key: string, fn: (ent: ShaderEntity, tm: number) => void) {
         this.actions.set(key, fn);
     }
-    runAction(key: string, tm: number):void {
-        try{
+    runAction(key: string, tm: number): void {
+        try {
             this.actions.get(key)(this, tm);
-        }catch{
+        } catch{
             console.warn(this);
         }
-       
-         
+
+
     }
     removeAction(key: string): boolean {
         return this.actions.delete(key);
@@ -176,11 +222,11 @@ export class ShaderEntity extends EntityBase implements IEntity {
     // }
 
     constructor(public gl: WebGLRenderingContext, public name: string, public w: number, public h: number,
-        public textures?: Array<EntityTexture>, public shared?: Map<string,string>
+        public textures?: Array<EntityTexture>, public shared?: Map<string, string>
     ) {
         super(gl);
         this.uniformsCache = new Map<string, WebGLUniformLocation>();
-        
+
 
         this.loadShaders().then((numOfShaders: number) => {
             if (numOfShaders > -1) {
@@ -196,7 +242,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
     private createRenderTarget(width: number, height: number): RenderTarget {
         let gl = this.gl;
         let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
-    
+
         gl.bindTexture(gl.TEXTURE_2D, target.texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
@@ -242,17 +288,40 @@ export class ShaderEntity extends EntityBase implements IEntity {
             return -1;
         });
     }
-    
+
     public setFragment(fs: string) {
-      
+
         this.fragmentShader = fs;
         this.setupShader();
     }
 
-    onSuccess(shader:WebGLShader){ 
+    onSuccess(shader: WebGLShader) {
     }
     onError(err: any) {
     }
+
+    private craeteTextureFromVideo(width: number, height: number, video: HTMLVideoElement) {
+        const gl = this.gl;
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+            1, 1, border, srcFormat, srcType,
+            pixel);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        return texture;
+
+    }
+
     private createTextureFromImage(width: number, height: number, image: HTMLImageElement) {
         let gl = this.gl;
         let texture = gl.createTexture()
@@ -270,11 +339,11 @@ export class ShaderEntity extends EntityBase implements IEntity {
         this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
 
-        let vs: WebGLShader = this.createShader(gl,ShaderCompiler.vertexHeader + 
-            ShaderCompiler.parseIncludes(this.vertexShader,this.shared), gl.VERTEX_SHADER);
-        let fs: WebGLShader = this.createShader(gl,ShaderCompiler.fragmentHeader + 
-            
-            ShaderCompiler.parseIncludes(this.fragmentShader,this.shared), gl.FRAGMENT_SHADER);
+        let vs: WebGLShader = this.createShader(gl, ShaderCompiler.vertexHeader +
+            ShaderCompiler.parseIncludes(this.vertexShader, this.shared), gl.VERTEX_SHADER);
+        let fs: WebGLShader = this.createShader(gl, ShaderCompiler.fragmentHeader +
+
+            ShaderCompiler.parseIncludes(this.fragmentShader, this.shared), gl.FRAGMENT_SHADER);
 
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);
@@ -300,7 +369,11 @@ export class ShaderEntity extends EntityBase implements IEntity {
         gl.enableVertexAttribArray(this.vertexPosition);
 
         this.textures.forEach((asset: EntityTexture) => {
-            asset.texture = this.createTextureFromImage(asset.width, asset.height, asset.image);
+
+            asset.assetType == 0 ?
+                asset.texture = this.createTextureFromImage(asset.width, asset.height, asset.data) :
+                asset.texture = this.craeteTextureFromVideo(asset.width, asset.height, asset.data);
+
         });
         gl.useProgram(this.glProgram);
     }
@@ -316,7 +389,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
         let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
             this.onError(gl.getShaderInfoLog(shader));
-        }else{
+        } else {
             this.onSuccess(shader);
         }
         return shader;

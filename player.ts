@@ -1,4 +1,4 @@
-// import { DemolishedPlayer } from './src/demolishedPlayer';
+import { DemolishedPlayer } from './src/demolishedPlayer';
 // import { DemolishedSonant } from './src/DemolishedSonant';
 
 

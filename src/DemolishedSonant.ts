@@ -108,10 +108,6 @@ export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedA
     private getnotefreq(n: number): number {
         return 0.00390625 * Math.pow(1.059463094, n - 128);
     }
-
-
-
-
     constructor(public song: any) {
 
         super();
@@ -282,7 +278,6 @@ export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedA
         return d;
     };
 }
-
 /*
     SoundBox support is beeing implemented.
 */
