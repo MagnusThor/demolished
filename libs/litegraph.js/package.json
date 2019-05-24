@@ -1,0 +1,68 @@
+{
+  "_from": "litegraph.js",
+  "_id": "litegraph.js@0.7.0",
+  "_inBundle": false,
+  "_integrity": "sha512-IAFE+92moYuHlmmDjcJjC/orP/xfBuILKjSCImr5PlEcohdXUr5kj4rBgnmTviEZY8i6KUhgYO97kHmhxrvvlg==",
+  "_location": "/litegraph.js",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "litegraph.js",
+    "name": "litegraph.js",
+    "escapedName": "litegraph.js",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/litegraph.js/-/litegraph.js-0.7.0.tgz",
+  "_shasum": "cfe1e9dfcca1aa1c0f4ab1f35048531c2753b55b",
+  "_spec": "litegraph.js",
+  "_where": "/home/joakim/Dokument/code/demolished",
+  "author": {
+    "name": "jagenjo"
+  },
+  "bugs": {
+    "url": "https://github.com/jagenjo/litegraph.js/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "A graph node editor similar to PD or UDK Blueprints, it works in a HTML5 Canvas and allow to exported graphs to be included in applications.",
+  "devDependencies": {
+    "express": "^4.16.4",
+    "google-closure-compiler": "^20171112.0.0",
+    "grunt": "^1.0.3",
+    "grunt-cli": "^1.2.0",
+    "grunt-closure-tools": "^1.0.0",
+    "grunt-contrib-concat": "^1.0.1",
+    "nodemon": "^1.18.9",
+    "rimraf": "^2.6.2"
+  },
+  "directories": {
+    "doc": "doc"
+  },
+  "files": [
+    "build",
+    "css/litegraph.css"
+  ],
+  "homepage": "https://github.com/kriffe/litegraph.js#readme",
+  "license": "MIT",
+  "main": "build/litegraph.js",
+  "name": "litegraph.js",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jagenjo/litegraph.js.git"
+  },
+  "scripts": {
+    "build": "grunt build",
+    "prebuild": "rimraf build",
+    "start": "nodemon utils/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "0.7.0"
+}
