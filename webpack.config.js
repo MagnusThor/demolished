@@ -1,4 +1,6 @@
 //const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
+const path = require('path');
+
 module.exports = {
   mode:"development",
   node: {
@@ -6,8 +8,7 @@ module.exports = {
   },
   watch: true,
   entry: {
-    editor: './index.js',
-    player: './player.js'
+    editor: './index.js'
   },
   output: {
     path: __dirname + '/dist',
@@ -15,5 +16,10 @@ module.exports = {
   },
   plugins: [
     //	new UglifyJSPlugin()
-  ]
+  ],
+  devServer: {
+    contentBase: path.join(__dirname, '.'),
+    compress: true,
+    port: 3000
+  }
 }

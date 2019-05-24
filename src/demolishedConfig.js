@@ -1,32 +1,30 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var DemolishedConfig = (function () {
-    function DemolishedConfig() {
+class DemolishedConfig {
+    static getInstance() {
+        return new DemolishedConfig();
+    }
+    constructor() {
         this.configuration = new Map();
     }
-    DemolishedConfig.getInstance = function () {
-        return new DemolishedConfig();
-    };
-    DemolishedConfig.prototype.load = function (key) {
+    load(key) {
         return this.cast(key);
-    };
-    DemolishedConfig.prototype.cast = function (key) {
+    }
+    cast(key) {
         return this.configuration.get(key);
-    };
-    DemolishedConfig.prototype.save = function (key, value) {
+    }
+    save(key, value) {
         this.configuration.set(key, value);
-    };
-    DemolishedConfig.prototype.loadStore = function () {
-        var _this = this;
-        this.configuration.forEach(function (a, b) {
-            _this.configuration.set(b, JSON.parse(a));
+    }
+    loadStore() {
+        this.configuration.forEach((a, b) => {
+            this.configuration.set(b, JSON.parse(a));
         });
-    };
-    DemolishedConfig.prototype.updateStore = function () {
-        this.configuration.forEach(function (a, b) {
+    }
+    updateStore() {
+        this.configuration.forEach((a, b) => {
             localStorage.setItem(b, JSON.stringify(a));
         });
-    };
-    return DemolishedConfig;
-}());
+    }
+}
 exports.DemolishedConfig = DemolishedConfig;

@@ -1,27 +1,13 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedSound_1 = require("./demolishedSound");
-var DemolishedSonant = (function (_super) {
-    __extends(DemolishedSonant, _super);
-    function DemolishedSonant(song) {
-        var _this = _super.call(this) || this;
-        _this.song = song;
-        _this.WAVE_SPS = 44100;
-        _this.WAVE_CHAN = 2;
-        _this.generate = function (track) {
+const demolishedSound_1 = require("./demolishedSound");
+class DemolishedSonant extends demolishedSound_1.DemolishedSoundBase {
+    constructor(song) {
+        super();
+        this.song = song;
+        this.WAVE_SPS = 44100;
+        this.WAVE_CHAN = 2;
+        this.generate = function (track) {
             var oscillators = [
                 this.osc_sin,
                 this.osc_square,
@@ -29,7 +15,7 @@ var DemolishedSonant = (function (_super) {
                 this.osc_tri
             ];
             var i, j, k, b, p, row, n, currentpos, cp, c1, c2, q, low, band, high, t, lfor, e, x, rsample, f, da, o1t, o2t;
-            var chnBuf = this.chnBufWork, mixBuf = this.mixBufWork, waveSamples = this.WAVE_SIZE, waveBytes = this.WAVE_SIZE * this.WAVE_CHAN * 2, instr = this.song.songData[track], rowLen = this.song.rowLen, osc_lfo = oscillators[instr.lfo_waveform], osc1 = oscillators[instr.osc1_waveform], osc2 = oscillators[instr.osc2_waveform], attack = instr.env_attack, sustain = instr.env_sustain, release = instr.env_release, panFreq = Math.pow(2, instr.fx_pan_freq - 8) / rowLen, lfoFreq = Math.pow(2, instr.lfo_freq - 8) / rowLen;
+            let chnBuf = this.chnBufWork, mixBuf = this.mixBufWork, waveSamples = this.WAVE_SIZE, waveBytes = this.WAVE_SIZE * this.WAVE_CHAN * 2, instr = this.song.songData[track], rowLen = this.song.rowLen, osc_lfo = oscillators[instr.lfo_waveform], osc1 = oscillators[instr.osc1_waveform], osc2 = oscillators[instr.osc2_waveform], attack = instr.env_attack, sustain = instr.env_sustain, release = instr.env_release, panFreq = Math.pow(2, instr.fx_pan_freq - 8) / rowLen, lfoFreq = Math.pow(2, instr.lfo_freq - 8) / rowLen;
             for (b = 0; b < waveBytes; b += 2) {
                 chnBuf[b] = 0;
                 chnBuf[b + 1] = 128;
@@ -125,24 +111,22 @@ var DemolishedSonant = (function (_super) {
                 mixBuf[b + 1] = (x >> 8) & 255;
             }
         };
-        _this.WAVE_SIZE = _this.WAVE_SPS * song.songLen;
-        var size = Math.ceil(Math.sqrt(_this.WAVE_SIZE * _this.WAVE_CHAN / 2));
-        var ctx = document.createElement('canvas').getContext('2d');
-        _this.chnBufWork = ctx.createImageData(size, size).data;
+        this.WAVE_SIZE = this.WAVE_SPS * song.songLen;
+        let size = Math.ceil(Math.sqrt(this.WAVE_SIZE * this.WAVE_CHAN / 2));
+        let ctx = document.createElement('canvas').getContext('2d');
+        this.chnBufWork = ctx.createImageData(size, size).data;
         var b, mixBuf = ctx.createImageData(size, size).data;
         for (b = size * size * 4 - 2; b >= 0; b -= 2) {
             mixBuf[b] = 0;
             mixBuf[b + 1] = 128;
         }
-        _this.mixBufWork = mixBuf;
-        return _this;
+        this.mixBufWork = mixBuf;
     }
-    DemolishedSonant.prototype.createAudio = function (settings) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
+    createAudio(settings) {
+        return new Promise((resolve, reject) => {
             var b, k, x, wave, l1, l2, s, y;
-            var mixBuf = _this.mixBufWork, waveBytes = _this.WAVE_SIZE * _this.WAVE_CHAN * 2;
-            _this.chnBufWork = null;
+            var mixBuf = this.mixBufWork, waveBytes = this.WAVE_SIZE * this.WAVE_CHAN * 2;
+            this.chnBufWork = null;
             l1 = waveBytes - 8;
             l2 = l1 - 36;
             wave = String.fromCharCode(82, 73, 70, 70, l1 & 255, (l1 >> 8) & 255, (l1 >> 16) & 255, (l1 >> 24) & 255, 87, 65, 86, 69, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 2, 0, 68, 172, 0, 0, 16, 177, 2, 0, 4, 0, 16, 0, 100, 97, 116, 97, l2 & 255, (l2 >> 8) & 255, (l2 >> 16) & 255, (l2 >> 24) & 255);
@@ -157,107 +141,97 @@ var DemolishedSonant = (function (_super) {
             }
             s = "data:audio/wav;base64," + btoa(wave);
             wave = null;
-            var audioCtx = new AudioContext();
-            var audioEl = new Audio();
+            let audioCtx = new AudioContext();
+            let audioEl = new Audio();
             audioEl.preload = "auto";
             audioEl.crossOrigin = "anonymous";
             audioEl.src = s;
-            var onLoad = function () {
-                var source = audioCtx.createMediaElementSource(audioEl);
-                var analyser = audioCtx.createAnalyser();
+            const onLoad = () => {
+                let source = audioCtx.createMediaElementSource(audioEl);
+                let analyser = audioCtx.createAnalyser();
                 analyser.smoothingTimeConstant = 0.85;
                 analyser.fftSize = 8192;
-                _this.audio = audioEl;
+                this.audio = audioEl;
                 source.connect(analyser);
                 analyser.connect(audioCtx.destination);
-                _this.audioAnalyser = analyser;
+                this.audioAnalyser = analyser;
                 resolve(true);
             };
             onLoad();
         });
-    };
-    DemolishedSonant.prototype.play = function () {
+    }
+    play() {
         this.audio.play();
-    };
-    DemolishedSonant.prototype.stop = function () {
+    }
+    stop() {
         this.audio.pause();
-    };
-    DemolishedSonant.prototype.mute = function (ismuted) {
+    }
+    mute(ismuted) {
         this.audio.muted = ismuted;
-    };
-    Object.defineProperty(DemolishedSonant.prototype, "currentTime", {
-        get: function () {
-            return this.audio.currentTime;
-        },
-        set: function (time) {
-            this.audio.currentTime = time;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedSonant.prototype.getTracks = function () {
+    }
+    get currentTime() {
+        return this.audio.currentTime;
+    }
+    set currentTime(time) {
+        this.audio.currentTime = time;
+    }
+    getTracks() {
         throw "not yet implemented";
-    };
-    DemolishedSonant.prototype.getFrequenceData = function () {
-        var bufferLength = this.audioAnalyser.frequencyBinCount;
-        var freqArray = new Uint8Array(bufferLength);
+    }
+    getFrequenceData() {
+        let bufferLength = this.audioAnalyser.frequencyBinCount;
+        let freqArray = new Uint8Array(bufferLength);
         this.audioAnalyser.getByteFrequencyData(freqArray);
         return freqArray;
-    };
-    DemolishedSonant.prototype.osc_sin = function (value) {
+    }
+    osc_sin(value) {
         return Math.sin(value * 6.283184);
-    };
-    DemolishedSonant.prototype.osc_square = function (value) {
+    }
+    osc_square(value) {
         if (this.osc_sin(value) < 0)
             return -1;
         return 1;
-    };
-    DemolishedSonant.prototype.osc_saw = function (value) {
+    }
+    osc_saw(value) {
         return (value % 1) - 0.5;
-    };
-    DemolishedSonant.prototype.osc_tri = function (value) {
+    }
+    osc_tri(value) {
         var v2 = (value % 1) * 4;
         if (v2 < 2)
             return v2 - 1;
         return 3 - v2;
-    };
-    DemolishedSonant.prototype.getnotefreq = function (n) {
+    }
+    getnotefreq(n) {
         return 0.00390625 * Math.pow(1.059463094, n - 128);
-    };
-    DemolishedSonant.prototype.getData = function (t, n) {
+    }
+    getData(t, n) {
         for (var i = Math.floor(t * this.WAVE_SPS), j = 0, d = [], b = this.mixBufWork; j < 2 * n; j += 2) {
             var k = 4 * (i + j) + 1;
             d.push(t > 0 && k < b.length ? (b[k] + b[k - 1] / 256) / 256 : 0.5);
         }
         return d;
-    };
-    ;
-    return DemolishedSonant;
-}(demolishedSound_1.DemolishedSoundBase));
-exports.DemolishedSonant = DemolishedSonant;
-var DemolishedSoundBox = (function (_super) {
-    __extends(DemolishedSoundBox, _super);
-    function DemolishedSoundBox() {
-        return _super !== null && _super.apply(this, arguments) || this;
     }
-    DemolishedSoundBox.prototype.getTracks = function () {
+    ;
+}
+exports.DemolishedSonant = DemolishedSonant;
+class DemolishedSoundBox extends demolishedSound_1.DemolishedSoundBase {
+    getTracks() {
         throw "not yet implemented";
-    };
-    DemolishedSoundBox.prototype.createAudio = function (settings) {
+    }
+    createAudio(settings) {
         throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.play = function (tm) {
+    }
+    play(tm) {
         throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.stop = function (tm) {
+    }
+    stop(tm) {
         throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.mute = function (ismuted) {
+    }
+    mute(ismuted) {
         throw new Error("Method not implemented.");
-    };
-    DemolishedSoundBox.prototype.getFrequenceData = function () {
+    }
+    getFrequenceData() {
         throw new Error("Method not implemented.");
-    };
-    return DemolishedSoundBox;
-}(demolishedSound_1.DemolishedSoundBase));
+    }
+}
 exports.DemolishedSoundBox = DemolishedSoundBox;

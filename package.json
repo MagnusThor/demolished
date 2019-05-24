@@ -8,22 +8,23 @@
     "email": "magnus.thor74@gmail.com"
   },
   "scripts": {
-    "bundle": "webpack --w --config webpack.config.js",
-    "debug": "./node_modules/.bin/electron .",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder deb"
+    "start:dev": "webpack-dev-server"
   },
   "build": {
     "appId": "dev.demolished"
   },
   "license": "MIT",
   "devDependencies": {
+    "copy-webpack-plugin": "^5.0.3",
     "express": "^4.16.4",
-    "webpack": "^4.23.1"
+    "webpack": "^4.31.0",
+    "webpack-cli": "^3.3.2",
+    "webpack-dev-server": "^3.3.1"
   },
   "dependencies": {
-    "codemirror": "^5.41.0",
+    "codemirror": "^5.46.0",
     "demolishedtexture": "^1.0.1",
-    "reflect-metadata": "^0.1.12"
+    "litegraph.js": "^0.7.0",
+    "reflect-metadata": "^0.1.13"
   }
 }

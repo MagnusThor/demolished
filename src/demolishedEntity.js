@@ -1,116 +1,100 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedModels_1 = require("./demolishedModels");
-var demolishedLoader_1 = require("./demolishedLoader");
-var demolishedUtils_1 = require("./demolishedUtils");
-var AudioSettings = (function () {
-    function AudioSettings() {
-    }
-    return AudioSettings;
-}());
-exports.AudioSettings = AudioSettings;
-var IEntityTexture = (function () {
-    function IEntityTexture() {
-    }
-    return IEntityTexture;
-}());
+const demolishedModels_1 = require("./demolishedModels");
+const Uniforms_1 = require("./Uniforms");
+const demolishedLoader_1 = require("./demolishedLoader");
+const demolishedUtils_1 = require("./demolishedUtils");
+class IEntityTexture {
+}
 exports.IEntityTexture = IEntityTexture;
-var EntityTexture = (function () {
-    function EntityTexture(data, name, width, height) {
+class EntityTexture {
+    constructor(data, name, width, height) {
         this.data = data;
         this.name = name;
         this.width = width;
         this.height = height;
         this.assetType = 0;
     }
-    EntityTexture.prototype.update = function (gl) {
-    };
-    return EntityTexture;
-}());
-exports.EntityTexture = EntityTexture;
-var Pipleline = (function () {
-    function Pipleline() {
+    update(gl) {
     }
-    return Pipleline;
-}());
-exports.Pipleline = Pipleline;
-var EntityVideoTexture = (function () {
-    function EntityVideoTexture(data, name, width, height) {
+}
+exports.EntityTexture = EntityTexture;
+class EntityVideoTexture {
+    constructor(data, name, width, height) {
         this.data = data;
         this.name = name;
         this.width = width;
         this.height = height;
         this.assetType = 1;
     }
-    EntityVideoTexture.prototype.update = function (gl) {
-        var level = 0;
-        var internalFormat = gl.RGBA;
-        var srcFormat = gl.RGBA;
-        var srcType = gl.UNSIGNED_BYTE;
+    update(gl) {
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, this.data);
-    };
-    return EntityVideoTexture;
-}());
-exports.EntityVideoTexture = EntityVideoTexture;
-var EntityBase = (function () {
-    function EntityBase(gl) {
-        this.gl = gl;
-        this.actions = new Map();
     }
-    EntityBase.prototype.cacheUniformLocation = function (label) {
-        this.uniformsCache.set(label, this.gl.getUniformLocation(this.glProgram, label));
-    };
-    return EntityBase;
-}());
+}
+exports.EntityVideoTexture = EntityVideoTexture;
+class EntityBase {
+    constructor(gl) {
+        this.gl = gl;
+    }
+    getUniformValues() {
+        throw "not implemented";
+    }
+}
 exports.EntityBase = EntityBase;
-var ShaderEntity = (function (_super) {
-    __extends(ShaderEntity, _super);
-    function ShaderEntity(gl, name, w, h, textures, shared) {
-        var _this = _super.call(this, gl) || this;
-        _this.gl = gl;
-        _this.name = name;
-        _this.w = w;
-        _this.h = h;
-        _this.textures = textures;
-        _this.shared = shared;
-        _this.uniformsCache = new Map();
-        _this.loadShaders().then(function (numOfShaders) {
+class ShaderEntity extends EntityBase {
+    constructor(gl, name, w, h, textures, shared, engine) {
+        super(gl);
+        this.gl = gl;
+        this.name = name;
+        this.w = w;
+        this.h = h;
+        this.textures = textures;
+        this.shared = shared;
+        this.engine = engine;
+        this.frameId = 0;
+        this.positionAttribute = 0;
+        this.loadShaders().then((numOfShaders) => {
             if (numOfShaders > -1) {
-                _this.setupShader();
-                _this.target = _this.createRenderTarget(_this.w, _this.h);
-                _this.backTarget = _this.createRenderTarget(_this.w, _this.h);
+                this.init();
+                this.target = this.createRenderTarget(this.w, this.h);
+                this.backTarget = this.createRenderTarget(this.w, this.h);
             }
         });
-        return _this;
     }
-    ShaderEntity.prototype.addBuffer = function (key) {
-        throw "Not yet implemented";
-    };
-    ShaderEntity.prototype.render = function (engine) {
-        var gl = this.gl;
-        var ent = this;
-        gl.uniform1f(ent.uniformsCache.get('time'), engine.uniforms.time / 1000.);
-        gl.uniform1f(ent.uniformsCache.get("timetotal"), engine.uniforms.timeTotal / 1000.);
-        gl.uniform4fv(ent.uniformsCache.get("datetime"), engine.uniforms.datetime);
-        gl.uniform1f(ent.uniformsCache.get("playbacktime"), engine.audio.currentTime);
-        gl.uniform1i(ent.uniformsCache.get("frameId"), engine.animationFrameCount);
-        gl.uniform1i(ent.uniformsCache.get("subEffectId"), ent.subEffectId);
-        gl.uniform2f(ent.uniformsCache.get("mouse"), engine.uniforms.mouseX, engine.uniforms.mouseY);
-        gl.uniform2f(ent.uniformsCache.get("resolution"), engine.uniforms.screenWidth, engine.uniforms.screenHeight);
+    onShaderElapsed() {
+    }
+    onShaderCreated() { }
+    onError(err) { }
+    setTime(start, stop) {
+        this.start = start;
+        this.stop = stop;
+        ;
+    }
+    get isElapsed() {
+        return this.uniforms.timeTotal >= this.stop;
+    }
+    render(engine) {
+        let gl = this.gl;
+        let ent = this;
+        this.uniforms.time = performance.now() / 1000;
+        this.uniforms.resolution = [this.gl.canvas.width, this.gl.canvas.height];
+        this.uniforms.timeTotal = (performance.now() - engine.animationStartTime);
+        this.uniforms.mouse = [0.5, 0.5];
+        if (this.isElapsed)
+            this.onShaderElapsed();
         gl.bindBuffer(gl.ARRAY_BUFFER, ent.mainBuffer);
         gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
         gl.bindBuffer(gl.ARRAY_BUFFER, engine.webGLbuffer);
@@ -121,7 +105,7 @@ var ShaderEntity = (function (_super) {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, engine.fftTexture);
         gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
-        ent.textures.forEach(function (asset, index) {
+        ent.textures.forEach((asset, index) => {
             engine.bindTexture(ent, asset, index);
         });
         gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
@@ -131,27 +115,14 @@ var ShaderEntity = (function (_super) {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         ent.swapBuffers();
-    };
-    ShaderEntity.prototype.addAction = function (key, fn) {
-        this.actions.set(key, fn);
-    };
-    ShaderEntity.prototype.runAction = function (key, tm) {
-        try {
-            this.actions.get(key)(this, tm);
-        }
-        catch (_a) {
-            console.warn(this);
-        }
-    };
-    ShaderEntity.prototype.removeAction = function (key) {
-        return this.actions.delete(key);
-    };
-    ShaderEntity.prototype.reset = function () {
-        throw "not yet implemented";
-    };
-    ShaderEntity.prototype.createRenderTarget = function (width, height) {
-        var gl = this.gl;
-        var target = new demolishedModels_1.RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
+    }
+    reset() {
+        this.uniforms.time = 0;
+        this.uniforms.timeTotal = 0;
+    }
+    createRenderTarget(width, height) {
+        let gl = this.gl;
+        let target = new demolishedModels_1.RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
         gl.bindTexture(gl.TEXTURE_2D, target.texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -167,50 +138,62 @@ var ShaderEntity = (function (_super) {
         gl.bindRenderbuffer(gl.RENDERBUFFER, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         return target;
-    };
-    ShaderEntity.prototype.loadShaders = function () {
-        var _this = this;
-        var urls = new Array();
+    }
+    loadShaders() {
+        let urls = new Array();
         urls.push("entities/shaders/" + this.name + "/fragment.glsl");
         urls.push("entities/shaders/" + this.name + "/vertex.glsl");
-        return Promise.all(urls.map(function (url) {
-            return demolishedLoader_1.default(url).then(function (resp) { return resp.text(); });
-        })).then(function (result) {
-            _this.fragmentShader = result[0];
-            _this.vertexShader = result[1];
+        return Promise.all(urls.map((url) => __awaiter(this, void 0, void 0, function* () {
+            const resp = yield demolishedLoader_1.default(url);
+            return resp.text();
+        }))).then(result => {
+            this.fragmentShader = result[0];
+            this.vertexShader = result[1];
             return urls.length;
-        }).catch(function (reason) {
-            _this.onError(reason);
+        }).catch((reason) => {
+            this.onError(reason);
             return -1;
         });
-    };
-    ShaderEntity.prototype.setFragment = function (fs) {
+    }
+    setFragment(fs) {
         this.fragmentShader = fs;
-        this.setupShader();
-    };
-    ShaderEntity.prototype.onSuccess = function (shader) {
-    };
-    ShaderEntity.prototype.onError = function (err) {
-    };
-    ShaderEntity.prototype.craeteTextureFromVideo = function (width, height, video) {
-        var gl = this.gl;
-        var texture = gl.createTexture();
+        this.init();
+    }
+    createTextureFromArray(data) {
+        const gl = this.gl;
+        const texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
-        var level = 0;
-        var internalFormat = gl.RGBA;
-        var border = 0;
-        var srcFormat = gl.RGBA;
-        var srcType = gl.UNSIGNED_BYTE;
-        var pixel = new Uint8Array([0, 0, 255, 255]);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const pixels = new Uint8Array(data);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 1, 1, border, srcFormat, srcType, pixels);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        return texture;
+    }
+    createTextureFromVideo() {
+        const gl = this.gl;
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+        const pixel = new Uint8Array([0, 0, 255, 255]);
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 1, 1, border, srcFormat, srcType, pixel);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         return texture;
-    };
-    ShaderEntity.prototype.createTextureFromImage = function (width, height, image) {
-        var gl = this.gl;
-        var texture = gl.createTexture();
+    }
+    createTextureFromImage(image) {
+        let gl = this.gl;
+        let texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -218,59 +201,56 @@ var ShaderEntity = (function (_super) {
         gl.generateMipmap(gl.TEXTURE_2D);
         gl.bindTexture(gl.TEXTURE_2D, null);
         return texture;
-    };
-    ShaderEntity.prototype.setupShader = function () {
-        var _this = this;
-        var gl = this.gl;
+    }
+    init() {
+        let gl = this.gl;
         this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
-        var vs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.vertexHeader +
-            demolishedUtils_1.ShaderCompiler.parseIncludes(this.vertexShader, this.shared), gl.VERTEX_SHADER);
-        var fs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.fragmentHeader +
-            demolishedUtils_1.ShaderCompiler.parseIncludes(this.fragmentShader, this.shared), gl.FRAGMENT_SHADER);
+        let vs = this.createShader(gl, this.vertexShader, gl.VERTEX_SHADER);
+        let fs = this.createShader(gl, demolishedUtils_1.ShaderCompiler.parseIncludes(this.fragmentShader, this.shared), gl.FRAGMENT_SHADER);
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);
         gl.linkProgram(this.glProgram);
-        this.cacheUniformLocation('fft');
-        this.cacheUniformLocation("playbacktime");
-        this.cacheUniformLocation('time');
-        this.cacheUniformLocation("datetime");
-        this.cacheUniformLocation('frameId');
-        this.cacheUniformLocation("timetotal");
-        this.cacheUniformLocation('mouse');
-        this.cacheUniformLocation('resolution');
-        this.cacheUniformLocation("backbuffer");
-        this.subEffectId = 0;
-        this.frameId = 0;
-        this.positionAttribute = 0;
+        if (!gl.getProgramParameter(this.glProgram, gl.LINK_STATUS)) {
+            var info = gl.getProgramInfoLog(this.glProgram);
+            this.onError(info);
+        }
+        let proxy = new Uniforms_1.Uniforms(this.gl, this.glProgram);
+        this.uniforms = proxy.createPipleline();
+        this.uniforms.cacheUniformLocation('fft')
+            .cacheUniformLocation("backbuffer")
+            .activeUniforms.forEach((u) => {
+            this.uniforms.cacheUniformLocation(u.name);
+        });
         gl.enableVertexAttribArray(this.positionAttribute);
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
         gl.enableVertexAttribArray(this.vertexPosition);
-        this.textures.forEach(function (asset) {
+        this.textures.forEach((asset) => {
             asset.assetType == 0 ?
-                asset.texture = _this.createTextureFromImage(asset.width, asset.height, asset.data) :
-                asset.texture = _this.craeteTextureFromVideo(asset.width, asset.height, asset.data);
+                asset.texture = this.createTextureFromImage(asset.data) :
+                asset.texture = this.createTextureFromVideo();
         });
         gl.useProgram(this.glProgram);
-    };
-    ShaderEntity.prototype.swapBuffers = function () {
-        var tmp = this.target;
+    }
+    swapBuffers() {
+        let tmp = this.target;
         this.target = this.backTarget;
         this.backTarget = tmp;
-    };
-    ShaderEntity.prototype.createShader = function (gl, src, type) {
-        var shader = gl.createShader(type);
-        gl.shaderSource(shader, src);
+    }
+    createShader(gl, src, type) {
+        let shader = gl.createShader(type);
+        let header = type == this.gl.FRAGMENT_SHADER ? demolishedUtils_1.ShaderCompiler.fragmentHeader : demolishedUtils_1.ShaderCompiler.vertexHeader;
+        gl.shaderSource(shader, header + src);
         gl.compileShader(shader);
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
-            this.onError(gl.getShaderInfoLog(shader));
+            let message = gl.getShaderInfoLog(shader);
+            this.onError(message);
         }
         else {
-            this.onSuccess(shader);
+            this.onShaderCreated();
         }
         return shader;
-    };
-    return ShaderEntity;
-}(EntityBase));
+    }
+}
 exports.ShaderEntity = ShaderEntity;

@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        "target": "es5",
+        "target": "ES2016",
         "moduleResolution": "node",
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
@@ -12,6 +12,8 @@
             "es6",
             "dom"
         ]
+
+
     },
     "exclude": [
         "typings",

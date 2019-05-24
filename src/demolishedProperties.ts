@@ -18,11 +18,9 @@ export class DemolishedPropertyHandler<T> implements ProxyHandler<Object>{
         }
 
 }
-
 /*
 Decorator 
 */
-
 export function Observe(isObserved:boolean){
         return function (target:any,key:string) {
                return Reflect.defineMetadata("isObserved",isObserved,target,key);

@@ -1,11 +1,12 @@
 <html>
 
 <head>
-	<title>demlolished - Editor 0.6 - Astrid Edition</title>
+	<title>demlolished - Editor 0.8 - Hanna Edition</title>
 	<link href="css/fontawesome-all.min.css" rel="stylesheet" type="text/css">
 	<link href="css/codemirror.css" rel="stylesheet" type="text/css">
 	<link href="css/monokai.css" rel="stylesheet" type="text/css">
 	<link href="css/style.css" rel="stylesheet" type="text/css">
+	<link href="/vendor/litegraph.js/css/litegraph.css" rel="stylesheet" type="text/css">
 	<script>
 		RegExp.prototype.execAll = function (string) {
 			let match = null;
@@ -28,14 +29,13 @@
 <body>
 	<nav class="menu">
 		<div id="logo">
-			demolishEditor 0.6 - Astrid Edition
+			demlolishedEd 0.8 - Hanna Edition
 			</span>
 	</nav>
 
-	<div class="dlg-timeline">
-		
+	<div class="dlg-uniforms dialog hide">
+			<span data-close="dlg-uniforms" class="right"><i class="far fa-times-circle"></i></span>
 	</div>
-
 
 	<div id="spectrum-analyzer">
 		<canvas id="canvas-spectrum"></canvas>
@@ -59,34 +59,46 @@
 
 	<div class="wrapper">
 		<div class="tabs">
-			<div class="tab-caption tab-active" data-target="tab-fragment">Fragment</div>
-			<div class="tab-caption" data-target="tab-vertex">Vertex</div>
-			<div class="tab-caption" id="tab-custom" data-target="tab-custom">TypeScript</div>
-			<div class="tab" id="tab-fragment">
+			<div class="menu">
+					
+				<i class="fa fa-archive fa-2x" id="show-shaders"></i>
+				<div id="shader-list" class="hide dialog">
+					<span data-close="shader-list" class="right"><i class="far fa-times-circle"></i></span>
+					<ul>
+					</ul>
+				</div>
+			</div>
+			<div class="tab-caption tab-active" data-target="tab-fragment" id="frag">
+				<i class="fa fa-circle hide"></i>
+				Fragment shader</div>
+			<div class="tab-caption" data-target="tab-vertex">
+					<i class="fa fa-circle hide"></i>Vertex shader</div>
+					<div class="tab-caption" data-target="tab-graph">
+						<i class="fa fa-circle hide"></i>Graph</div>
 
-				<form id="editor">
+						<div class="tab-caption" data-target="tab-globals">
+							<i class="fa fa-circle hide"></i>Globals</div>
+
+						
+			<div class="tab" id="tab-fragment">
+				<form id="editor-fragment">
 					<textarea id="fragment" col="10" rows="10">
 					</textarea>
 				</form>
 			</div>
 			<div class="tab hide" id="tab-vertex">
-				<pre id="vertex">
-				<code>
-layout(location = 2) in vec2 pos; 
-out vec4  fragColor;
-void main() { 
-	gl_Position = vec4(pos.xy,0.0,1.0);
-}
-
-</code>
-					</pre>
+					<form id="editor-vertex">
+				<textarea id="vertex" col="10" rows="10">
+				</textarea>
+				</form>
+				
 
 			</div>
-			<div class="tab hide" id="tab-custom">
-
-		
-
+			<div class="tab hide" id="tab-graph">
+				<canvas id='lgraph' width='1024' height='720' style='border: 1px solid;margin-left: auto;margin-right: auto;display: block;width: 1024px;margin-top: 50px;'></canvas>
 			</div>
+			<div class="tab hide" id="tab-globals">
+				</div>
 		</div>
 	</div>
 	<div id="shader-win" draggable="true">
@@ -133,6 +145,7 @@ void main() {
 	<script src="libs/scriptProcessor.js"></script>
 	<script src="libs/tinysid.js"></script> 
 	-->
+	<script src="/vendor/litegraph.js/build/litegraph.min.js"></script>
 	<script src="dist/editor-bundle.js"></script>
 </body>
 

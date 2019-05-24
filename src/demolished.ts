@@ -1,20 +1,19 @@
-import { Utils } from './demolishedUtils'
-import { SmartArray } from './demolishedSmartArray';
-import { ShaderEntity, EntityTexture, IEntity, IEntityTexture, EntityVideoTexture } from './demolishedEntity';
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect, AudioSettings, IUniforms, IGraph } from './demolishedModels';
-import loadResource from './demolishedLoader'
+import { ShaderEntity, EntityTexture, IEntity, IEntityTexture } from './demolishedEntity';
+import { IGraph } from './demolishedModels';
+import { Graph } from "./Graph";
 import { IDemolisedAudioContext } from "./demolishedSound";
-import { DemoishedProperty, Observe } from './demolishedProperties';
+import { DemolishedConfig } from './demolishedConfig';
 
 export namespace Demolished {
 
     export class Rendering {
         graph: IGraph;
-        onFrame(frame: any): void { }
-        onNext(frame: any): void { }
+        onFrame(a:any): void { }
+        onNext(a:any): void { }
         onStart(): void { }
         onStop(): void { }
-        onReady(graph: IGraph): void { }
+        onReady(): void { }
+
         gl: WebGLRenderingContext | any;
         webGLbuffer: WebGLBuffer
         animationFrameCount: number;
@@ -22,29 +21,30 @@ export namespace Demolished {
         animationFrameId: number;
         animationOffsetTime: number;
         entitiesCache: Array<ShaderEntity>;
-        timeFragments: Array<TimeFragment>;
-        currentTimeFragment: TimeFragment;
+        shaderEntity: ShaderEntity;
         isPaused: boolean;
         isSoundMuted: boolean;
         fftTexture: WebGLTexture;
+       
         width: number = 1;
         height: number = 1;
         centerX: number = 0;
         centerY: number = 0;
+       
         resolution: number = 1;
-        //@Observe(true)
-        uniforms: IUniforms;
-
+       
         shared: Map<string,string>;
 
+        isPlaybackMode : boolean
+
+
+        config: DemolishedConfig;
+
         private getRendringContext(): WebGLRenderingContext {
-
             let renderingContext: any;
-
             let contextAttributes = {
                 preserveDrawingBuffer: true
             };
-
             renderingContext =
                 this.canvas.getContext('webgl2', contextAttributes) ||
                 this.canvas.getContext('webgl', contextAttributes) ||
@@ -58,192 +58,82 @@ export namespace Demolished {
             renderingContext.getExtension("WEBGL_depth_texture");
             renderingContext.getExtension("EXT_shader_texture_lod");
 
-
             this.webGLbuffer = renderingContext.createBuffer();
 
             renderingContext.bindBuffer(renderingContext.ARRAY_BUFFER, this.webGLbuffer);
-
             renderingContext.bufferData(renderingContext.ARRAY_BUFFER,
                 new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0]),
                 renderingContext.STATIC_DRAW);
 
             return renderingContext;
         }
-
-        loadGraph(graphFile: string): Promise<IGraph> {
-            return loadResource(graphFile).then((response: Response) => {
-                return response.json();
-            }).then((graph: IGraph) => {
-                return graph;
-            });
-        }
-
-        private loadShared(files: Array<string>): Promise<boolean> {
-            return new Promise((resolve, reject) => {
-                Promise.all(files.map((f: string) => {
-                    loadResource(f).then(resp => resp.text()).then(result => {
-                        this.shared.set(f,result + "\n") ;
-
-                    })
-                })).then(() => {
-                    resolve(true);
-                });
-            });
-        }
-
         get duration():number{
-               return 0; 
+                return this.graph.duration;
         }
 
         constructor(public canvas: HTMLCanvasElement,
             public parent: Element,
-            public timelineFile?: string, public audio?: IDemolisedAudioContext,
-            uniforms?: IUniforms) {
-
+            public timelineFile?: string, public audio?: IDemolisedAudioContext) {
+                
             this.gl = this.getRendringContext();
 
-
-
-            if (!uniforms) {
-                this.uniforms = new Uniforms(this.canvas.width, this.canvas.height);
-            } else {
-                this.uniforms = uniforms;
-            }
-
             this.entitiesCache = new Array<ShaderEntity>();
-            this.timeFragments = new Array<TimeFragment>();
-
-        
-
+            
             this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
 
-            this.shared = new Map();
+            Graph.Load(this.timelineFile,this).then( (g:Graph) => {
 
-            this.addEventListeners();
-
-            if (this.timelineFile != "") {
-
-                this.loadGraph(this.timelineFile).then((graph: IGraph) => {
-
-                    this.graph = graph;
-
-
-                    let audioSettings: AudioSettings = graph.audioSettings;
-
-                    graph.timeline.forEach((tf: TimeFragment) => {
-                        let _tf = new TimeFragment(tf.entity, tf.start, tf.stop, tf.subeffects);
-                        this.timeFragments.push(_tf)
-                    });
-
-                    this.timeFragments.sort((a: TimeFragment, b: TimeFragment) => {
-                        return a.start - b.start;
-                    });
-
-                    this.loadShared(graph.shared.glsl).then(() => {
-                        // todo: Make video texurework, and this is a shitty implementation.
-                        this.audio.createAudio(audioSettings).then((state: boolean) => {
-                            graph.effects.forEach((effect: Effect) => {
-                                    Promise.all(effect.textures.map((texture: any) => {
-                                        
-                                 
-                                        if(texture.type == 0){
-                                        return  new Promise((resolve, reject) => {
-                                            let image = new Image();
-                                            image.src = texture.src;
-                                            image.onload = () => {
-                                                resolve(image);
-                                            }
-                                            image.onerror = (err) => resolve(err);
-                                        }).then((image: HTMLImageElement) => {
-                                            return new EntityTexture(image, texture.uniform, texture.width, texture.height);
-                                        });
-                                    }else{
-                                        return  new Promise((resolve, reject) => {
-                                            let video = document.createElement('video');
-                                            video.src = texture.src;
-                                            video.muted = true;
-                                            video.loop = true;
-                                            video.addEventListener("canplaythrough", () => {
-                                                video.play();
-                                                resolve(video);
-                                            });
-
-                                            video.onerror = (err) => resolve(err);
-
-                                        }).then((video: any) => {
-                                            return new EntityVideoTexture(video, texture.uniform, texture.width, texture.height);
-                                        });
-
-                                       
-                                    }
-
-
-                                })).then((textures: Array<EntityTexture>) => {
-                                    this.addEntity(effect.name, textures);
-                                    if (this.entitiesCache.length === graph.effects.length) { // todo: refactor, still 
-                                        this.onReady(graph);
-                                    }
-                                });
-                            });
-                            this.resizeCanvas(this.parent);
-                        });
-
-                    });
-
-
-
-                });
-            }
-        }
-        // todo:Rename
-        private addEventListeners() {
-            document.addEventListener("mousemove", (evt: MouseEvent) => {
-                this.uniforms.mouseX = evt.clientX / window.innerWidth;
-                this.uniforms.mouseY = 1 - evt.clientY / window.innerHeight;
+                   
+                    this.resizeCanvas(this.parent);
+                    this.onReady();
+                  
             });
+           
         }
         getEntity(name: string): ShaderEntity {
             return this.entitiesCache.find((p: ShaderEntity) => {
                 return p.name === name;
             });
         }
-        addEntity(name: string, textures?: Array<EntityTexture>
-        ): void {
-            const entity = new ShaderEntity(this.gl, name, this.canvas.width, this.canvas.height, textures,this.shared);
-
-          
+        addEntity(name: string, textures?: Array<EntityTexture>): ShaderEntity {
+            const entity = new ShaderEntity(this.gl, name, 
+                this.canvas.width, this.canvas.height, textures,this.shared,this); 
             this.entitiesCache.push(entity);
-            let tf = this.timeFragments.filter((pre: TimeFragment) => {
-                return pre.entity === name;
+            return entity;
+        }        
+        /**
+         * Get the nextEntity from timeline if not i playback mode
+         *
+         * @param {*} time
+         * @returns {ShaderEntity}
+         * ndering
+         */
+        public nextEntity():ShaderEntity{
+            if(!this.isPlaybackMode){
+            return this.entitiesCache.find( (a:ShaderEntity) => {
+                    return  a.name === "hemi";
             });
-            tf.forEach((f: TimeFragment) => {
-                f.setEntity(entity)
-            });
-
-
-        }
-        
-        public tryFindTimeFragment(time: number): TimeFragment {
-            let fragment = this.timeFragments.find((tf: TimeFragment) => {
-                return time < tf.stop && time >= tf.start
-            });
-            if (fragment) fragment.init();
-            return fragment;
+            }else{
+                throw "Playmode not implemented"
+            }            
         }
 
         resetClock(time: number) {
-            this.currentTimeFragment.reset();
-            this.stop();
-            this.start(time);
+        
+            this.shaderEntity.uniforms.time = 0;
+            this.shaderEntity.uniforms.timeTotal = 0;
+            this.audio.currentTime  = 0;
         }
 
         start(time: number) {
-            this.uniforms.timeTotal = time;
+         
             this.animationFrameCount = 0;
             this.animationOffsetTime = time;
-            this.currentTimeFragment = this.tryFindTimeFragment(time);
-
+            this.shaderEntity = this.nextEntity();
+        //    this.currentTimeFragment.init();
+           // this.currentTimeFragment.uniforms.timeTotal = time;
+        
             this.animationStartTime = performance.now();
             this.animate(time);
 
@@ -271,10 +161,9 @@ export namespace Demolished {
                 this.stop();
             } else {
                 this.isPaused = false;
-                this.resume(this.uniforms.time);
+                this.resume(this.shaderEntity.uniforms.time);
             }
-
-            return this.uniforms.time;
+            return this.shaderEntity.uniforms.time;           
         }
         resume(time: number) {
             this.start(time);
@@ -292,12 +181,12 @@ export namespace Demolished {
         }
         /**
          *  animation loop
-         *  todo: needs to be refactored
          * @private
          * @param {number} time 
          * @memberof Rendering
          */
         private animate(time: number) {
+        
             let animationTime = time - this.animationStartTime;
 
             this.animationFrameId = requestAnimationFrame((_time: number) => this.animate(_time));
@@ -309,28 +198,23 @@ export namespace Demolished {
                 this.updateTextureData(
                     this.fftTexture, this.audio.textureSize, new Uint8Array(1024));
             }
-
-            if (this.currentTimeFragment) {
-                if (animationTime >= this.currentTimeFragment.stop)
-                    this.currentTimeFragment = this.tryFindTimeFragment(time);
-
-                this.currentTimeFragment ?
-                    this.renderEntities(this.currentTimeFragment.entityShader, animationTime) : this.start(0)
+       
+            if (this.shaderEntity) {
+              
+                this.shaderEntity ?
+                    this.renderEntities(this.shaderEntity, animationTime) : this.start(0)
 
             }
 
             this.onFrame({
-                frame: this.animationFrameCount,
-                ms: animationTime,
-                min: Math.floor(animationTime / 60000) % 60,
-                sec: Math.floor((animationTime / 1000) % 60),
-
+                id: this.animationFrameId,
+                c: this.animationFrameCount,
             });
         }
 
-        private surfaceCorners() {
+        private surfaceCorners(sw:number,sh:number) {
             if (this.gl) {
-                this.width = this.height * this.uniforms.screenWidth / this.uniforms.screenHeight;
+                this.width = this.height * sw / sh;
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.webGLbuffer);
                 this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
                     this.centerX - this.width, this.centerY - this.height,
@@ -351,7 +235,7 @@ export namespace Demolished {
         resizeCanvas(parent: Element, resolution?: number) {
 
             if (resolution) this.resolution = resolution;
-
+            
             let width = parent.clientWidth / this.resolution;
             let height = parent.clientHeight / this.resolution;
 
@@ -360,25 +244,15 @@ export namespace Demolished {
 
             this.canvas.style.width = parent.clientWidth + 'px';
             this.canvas.style.height = parent.clientHeight + 'px';
-
-            this.uniforms.screenWidth = width;
-            this.uniforms.screenHeight = height;
-
-            this.surfaceCorners();
+            
+            this.surfaceCorners(width,height);
 
             this.setViewPort(this.canvas.width, this.canvas.height);
 
         }
-
-        getCurrentUniforms(): Map<string, WebGLUniformLocation> {
-            return this.currentTimeFragment.entityShader.uniformsCache;
-        }
-        private updateUniforms() {
-            throw "Not yet implemented";
-        }
-        renderEntities(ent: IEntity, ts: number) {
-            this.uniforms.time = ts;
-            this.uniforms.timeTotal = (performance.now() - this.animationStartTime);
+        renderEntities(ent: IEntity, ts: number) {        
+           this.shaderEntity.uniforms.time = ts;
+            this.shaderEntity.uniforms.timeTotal = (performance.now() - this.animationStartTime);
             this.gl.useProgram(ent.glProgram);
             ent.render(this);
             this.animationFrameCount++;
@@ -387,13 +261,10 @@ export namespace Demolished {
             ent.textures.push(entityTexture);
         }
         bindTexture(ent: IEntity, entityTexture: IEntityTexture, c: number) {
-       
-            
             let gl = this.gl;
             gl.activeTexture(gl.TEXTURE0 + (1 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
             gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 1 + c);
-
             if(entityTexture.assetType ==1)
             entityTexture.update(this.gl);
 

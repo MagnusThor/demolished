@@ -9,16 +9,19 @@ Demolished supports audio formats such as streaming (mp3's), SID, and minimalist
 
 We are currently working on writing a brief documentation, but we are focusing on getting all our ideas in place.
 
-## Piple line (Inprogress)
+## In progress
 
-    - Timeline - Add, remove and modify TimeFragments ( segments ) using the UI. This features enables multiple effects , audio and scene managament. 
-    - Buffer/Channels - Multiple Shader buffers/Channels 
-    - Custom Uniforms - Add , Remove and modify uniforms using property-boxes.
-    - Enhanced vertex shaders.
-    - TextureGenerator - Embed and create a UI for the generator.  
-    - 2D layers with custom inline TS/JS code. 
-      More info at https://github.com/MagnusThor/demolishedTexture
+  1. Timeline - TimeFragments (segments) using the UI. This features enables multiple effects,audio and scene managament.
 
+  2. Buffer/Channels - Multiple Shader buffers/Channels 
+
+  3.  Custom Uniforms - Add , Remove and modify uniforms using property-boxes.
+
+  4. Custom uniforms & uniform edit
+
+
+ Enhanced vertex shaders.
+  
 ## Links
 
 TBD
@@ -41,3 +44,6 @@ If you are interested in helping out, code or just fiddle with demolished, dont 
 
 Regards
 Team Demloished - Magnus Thor & Ricky Davies
+
+
+  "codemirror": "^5.41.0",

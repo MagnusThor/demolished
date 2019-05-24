@@ -1,29 +1,14 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var demolishedLoader_1 = require("./demolishedLoader");
-var DemolishedSoundPeaks = (function () {
-    function DemolishedSoundPeaks() {
-    }
-    DemolishedSoundPeaks.peaks = function (buffer, size) {
-        var sampleSize = buffer.length / size;
-        var sampleStep = ~~(sampleSize / 10) || 1;
-        var channels = buffer.numberOfChannels;
-        var peaks;
+const demolishedLoader_1 = require("./demolishedLoader");
+class DemolishedSoundPeaks {
+    static peaks(buffer, size) {
+        let sampleSize = buffer.length / size;
+        let sampleStep = ~~(sampleSize / 10) || 1;
+        let channels = buffer.numberOfChannels;
+        let peaks;
         for (var c = 0; c < channels; c++) {
-            var chan = buffer.getChannelData(c);
+            const chan = buffer.getChannelData(c);
             for (var i = 0; i < size; i++) {
                 var start = ~~(i * sampleSize);
                 var end = ~~(start + sampleSize);
@@ -47,64 +32,51 @@ var DemolishedSoundPeaks = (function () {
             }
         }
         return peaks;
-    };
-    return DemolishedSoundPeaks;
-}());
+    }
+}
 exports.DemolishedSoundPeaks = DemolishedSoundPeaks;
-var DemolishedSoundBase = (function () {
-    function DemolishedSoundBase() {
+class DemolishedSoundBase {
+    getAudioEl() {
+        return this.audio;
     }
-    return DemolishedSoundBase;
-}());
+    constructor() { }
+}
 exports.DemolishedSoundBase = DemolishedSoundBase;
-var DemolishedSIDMusic = (function (_super) {
-    __extends(DemolishedSIDMusic, _super);
-    function DemolishedSIDMusic() {
-        return _super.call(this) || this;
-    }
-    DemolishedSIDMusic.prototype.getTracks = function () {
+class DemolishedSIDMusic extends DemolishedSoundBase {
+    getTracks() {
         throw "not yet implemented";
-    };
-    Object.defineProperty(DemolishedSIDMusic.prototype, "textureSize", {
-        get: function () {
-            return 16;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedSIDMusic.prototype.play = function () {
+    }
+    get textureSize() {
+        return 16;
+    }
+    constructor() {
+        super();
+    }
+    play() {
         this.sid.play();
-    };
-    DemolishedSIDMusic.prototype.stop = function () {
+    }
+    stop() {
         this.sid.pause();
-    };
-    DemolishedSIDMusic.prototype.mute = function (ismuted) {
+    }
+    mute(ismuted) {
         throw "not implemented";
-    };
-    DemolishedSIDMusic.prototype.getFrequenceData = function () {
+    }
+    getFrequenceData() {
         return this.sid.getFreqByteData();
-    };
-    Object.defineProperty(DemolishedSIDMusic.prototype, "duration", {
-        get: function () {
-            return 0;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(DemolishedSIDMusic.prototype, "currentTime", {
-        get: function () {
-            return this.sid._currentPlaytime;
-        },
-        set: function (n) {
-            return;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedSIDMusic.prototype.createAudio = function (settings) {
-        var useLess = function () { };
-        var ScriptNodePlayer = window["ScriptNodePlayer"];
-        var self = this;
+    }
+    get duration() {
+        return 0;
+    }
+    get currentTime() {
+        return this.sid._currentPlaytime;
+    }
+    set currentTime(n) {
+        return;
+    }
+    createAudio(settings) {
+        const useLess = () => { };
+        let ScriptNodePlayer = window["ScriptNodePlayer"];
+        let self = this;
         return new Promise(function (resolve, reject) {
             ScriptNodePlayer.createInstance(new SIDBackendAdapter(), "", [], true, useLess, function () {
                 self.sid = this;
@@ -114,67 +86,52 @@ var DemolishedSIDMusic = (function (_super) {
                 basePath: ""
             }, useLess, useLess);
         });
-    };
-    return DemolishedSIDMusic;
-}(DemolishedSoundBase));
-exports.DemolishedSIDMusic = DemolishedSIDMusic;
-var DemolishedStreamingMusic = (function (_super) {
-    __extends(DemolishedStreamingMusic, _super);
-    function DemolishedStreamingMusic() {
-        return _super.call(this) || this;
     }
-    DemolishedStreamingMusic.prototype.getTracks = function () {
-        var ms = this.audio.captureStream();
+}
+exports.DemolishedSIDMusic = DemolishedSIDMusic;
+class DemolishedStreamingMusic extends DemolishedSoundBase {
+    getTracks() {
+        let ms = this.audio.captureStream();
         return ms.getAudioTracks();
-    };
-    Object.defineProperty(DemolishedStreamingMusic.prototype, "textureSize", {
-        get: function () {
-            return 32;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedStreamingMusic.prototype.getFrequenceData = function () {
-        var bufferLength = this.audioAnalyser.frequencyBinCount;
-        var freqArray = new Uint8Array(bufferLength);
+    }
+    constructor() {
+        super();
+    }
+    get textureSize() {
+        return 32;
+    }
+    getFrequenceData() {
+        let bufferLength = this.audioAnalyser.frequencyBinCount;
+        let freqArray = new Uint8Array(bufferLength);
         this.audioAnalyser.getByteFrequencyData(freqArray);
         return freqArray;
-    };
-    DemolishedStreamingMusic.prototype.play = function () {
+    }
+    play() {
         this.audio.play();
-    };
-    DemolishedStreamingMusic.prototype.stop = function () {
+    }
+    stop() {
         this.audio.pause();
-    };
-    DemolishedStreamingMusic.prototype.mute = function (ismuted) {
+    }
+    mute(ismuted) {
         this.audio.muted = ismuted;
-    };
-    Object.defineProperty(DemolishedStreamingMusic.prototype, "duration", {
-        get: function () {
-            return Math.floor(this.audio.duration * 1000.);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(DemolishedStreamingMusic.prototype, "currentTime", {
-        get: function () {
-            return this.audio.currentTime;
-        },
-        set: function (time) {
-            this.audio.currentTime = time;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    DemolishedStreamingMusic.prototype.createAudio = function (audioSettings) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            demolishedLoader_1.default(audioSettings.audioFile).then(function (resp) {
-                return resp.arrayBuffer().then(function (buffer) {
-                    var audioCtx = new AudioContext();
-                    audioCtx.decodeAudioData(buffer, function (audioData) {
-                        _this.audioBuffer = audioData;
-                        var offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
+    }
+    get duration() {
+        return Math.floor(this.audio.duration * 1000.);
+    }
+    get currentTime() {
+        return this.audio.currentTime;
+    }
+    set currentTime(time) {
+        this.audio.currentTime = time;
+    }
+    createAudio(audioSettings) {
+        return new Promise((resolve, reject) => {
+            demolishedLoader_1.default(audioSettings.audioFile).then((resp) => {
+                return resp.arrayBuffer().then((buffer) => {
+                    let audioCtx = new AudioContext();
+                    audioCtx.decodeAudioData(buffer, (audioData) => {
+                        this.audioBuffer = audioData;
+                        let offlineCtx = new OfflineAudioContext(1, audioData.length, audioData.sampleRate);
                         var filteredSource = offlineCtx.createBufferSource();
                         filteredSource.buffer = audioData;
                         filteredSource.connect(offlineCtx.destination);
@@ -185,33 +142,32 @@ var DemolishedStreamingMusic = (function (_super) {
                         filteredSource.connect(filterOffline);
                         filterOffline.connect(offlineCtx.destination);
                         filteredSource.start(0);
-                        var source = audioCtx.createBufferSource();
+                        let source = audioCtx.createBufferSource();
                         source.buffer = audioData;
                         source.connect(audioCtx.destination);
-                        offlineCtx.startRendering().then(function (renderedBuffer) {
-                            var audioCtx = new AudioContext();
-                            var audioEl = new Audio();
+                        offlineCtx.startRendering().then((renderedBuffer) => {
+                            let audioCtx = new AudioContext();
+                            let audioEl = new Audio();
                             audioEl.src = audioSettings.audioFile;
-                            var onLoad = function () {
-                                var source = audioCtx.createMediaElementSource(audioEl);
-                                var analyser = audioCtx.createAnalyser();
+                            const onLoad = () => {
+                                let source = audioCtx.createMediaElementSource(audioEl);
+                                let analyser = audioCtx.createAnalyser();
                                 analyser.smoothingTimeConstant = audioSettings.audioAnalyzerSettings.smoothingTimeConstant;
                                 analyser.fftSize = audioSettings.audioAnalyzerSettings.fftSize;
-                                _this.audio = audioEl;
+                                this.audio = audioEl;
                                 source.connect(analyser);
                                 analyser.connect(audioCtx.destination);
-                                _this.audioAnalyser = analyser;
+                                this.audioAnalyser = analyser;
                                 resolve(true);
                             };
                             onLoad();
-                            var bufferSource = audioCtx.createBufferSource();
+                            let bufferSource = audioCtx.createBufferSource();
                             bufferSource.buffer = renderedBuffer;
                         });
                     });
                 });
             });
         });
-    };
-    return DemolishedStreamingMusic;
-}(DemolishedSoundBase));
+    }
+}
 exports.DemolishedStreamingMusic = DemolishedStreamingMusic;

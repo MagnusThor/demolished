@@ -1,31 +1,29 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var Utils = (function () {
-    function Utils() {
-    }
-    Utils.$ = function (query, parent) {
+class Utils {
+    static $(query, parent) {
         return parent ? parent.querySelector(query) : document.querySelector(query);
-    };
-    Utils.$$ = function (query, parent) {
+    }
+    static $$(query, parent) {
         var results = new Array();
-        var queryResult = parent ? parent.querySelectorAll(query) : document.querySelectorAll(query);
-        for (var i = 0; i < queryResult.length; i++)
+        let queryResult = parent ? parent.querySelectorAll(query) : document.querySelectorAll(query);
+        for (let i = 0; i < queryResult.length; i++)
             results.push(queryResult.item(i));
         return results;
-    };
-    Utils.el = function (p, textContent, attr) {
-        var node;
+    }
+    static el(p, textContent, attr) {
+        let node;
         typeof (p) === "string" ? node = document.createElement(p) : node = p;
         if (textContent)
             node.textContent = textContent;
         if (attr) {
-            Object.keys(attr).forEach(function (k) {
+            Object.keys(attr).forEach((k) => {
                 node.setAttribute(k, attr[k]);
             });
         }
         return node;
-    };
-    Utils.getExponentOfTwo = function (value, max) {
+    }
+    static getExponentOfTwo(value, max) {
         var count = 1;
         do {
             count *= 2;
@@ -33,8 +31,8 @@ var Utils = (function () {
         if (count > max)
             count = max;
         return count;
-    };
-    Utils.convertBuffer = function (buffer) {
+    }
+    static convertBuffer(buffer) {
         var data = new DataView(buffer);
         var tempArray = new Float32Array(1024 * 1024 * 4);
         var len = tempArray.length;
@@ -43,113 +41,117 @@ var Utils = (function () {
                 data.getFloat32(jj * Float32Array.BYTES_PER_ELEMENT, true);
         }
         return tempArray;
-    };
-    Utils.Audio = {
-        getPeaksAtThreshold: function (data, sampleRate, threshold) {
-            var peaksArray = new Array();
-            var length = data.length;
-            var skipRatio = 5;
-            for (var i = 0; i < length;) {
-                if (data[i] > threshold) {
-                    peaksArray.push(i);
-                    i += sampleRate / skipRatio;
-                }
-                i++;
+    }
+}
+Utils.Audio = {
+    getPeaksAtThreshold(data, sampleRate, threshold) {
+        let peaksArray = new Array();
+        let length = data.length;
+        let skipRatio = 5;
+        for (let i = 0; i < length;) {
+            if (data[i] > threshold) {
+                peaksArray.push(i);
+                i += sampleRate / skipRatio;
             }
-            return peaksArray;
+            i++;
         }
-    };
-    return Utils;
-}());
+        return peaksArray;
+    }
+};
 exports.Utils = Utils;
-var ShaderError = (function () {
-    function ShaderError(line, error) {
+class ShaderError {
+    constructor(line, error) {
         this.line = line;
         this.error = error;
     }
-    return ShaderError;
-}());
+}
 exports.ShaderError = ShaderError;
-var IncludeDefinition = (function () {
-    function IncludeDefinition(path) {
-        this.path = path;
+class GLSLInclude {
+    constructor() {
+        this.numofIncludes = 0;
+        this.offset = -1;
+        this.linesIncluded = 0;
     }
-    return IncludeDefinition;
-}());
-exports.IncludeDefinition = IncludeDefinition;
-var ImportsParser = (function () {
-    function ImportsParser() {
+    parseInclude(data) {
+        let regex = new RegExp('"(.*)"', 'g');
+        let matcher = regex.exec(data);
+        if (!matcher)
+            return "";
+        return matcher[1];
     }
-    ImportsParser.parseIncludes = function (data) {
-        var regex = new RegExp('#include\\s"(.*)"', 'g');
-        var matcher = regex.exec(data);
-        var result = new Array();
-        while (matcher != null) {
-            result.push(new IncludeDefinition(matcher[1]));
-            matcher = regex.exec(data);
-        }
-        return result;
-    };
-    return ImportsParser;
-}());
-exports.ImportsParser = ImportsParser;
-var ShaderCompiler = (function () {
-    function ShaderCompiler() {
+    parse(source, shared) {
+        let lines = source.split("\n");
+        let fullSource = "";
+        let count = 0;
+        lines.forEach((line, index) => {
+            const include = line.indexOf("#include ") > -1;
+            if (!include) {
+                this.offset = index;
+                fullSource += line + "\n";
+                this.numofIncludes++;
+            }
+            else {
+                try {
+                    const es = shared.get(this.parseInclude(line));
+                    if (!es)
+                        throw "Unable to fetch/resolve the included file - " + line;
+                    count += es.split("\n").length;
+                    fullSource += es;
+                }
+                catch (ex) {
+                    console.log(ex);
+                }
+            }
+        });
+        this.linesIncluded = count;
+        return fullSource;
+    }
+}
+exports.GLSLInclude = GLSLInclude;
+class ShaderCompiler {
+    static get vertexHeader() {
+        let header = "";
+        header += "#version 300 es\n" +
+            "#ifdef GL_ES\n" +
+            "precision highp float;\n" +
+            "precision highp int;\n" +
+            "precision mediump sampler3D;\n" +
+            "#endif\n";
+        return header;
+    }
+    static parseIncludes(source, shared) {
+        let p = new GLSLInclude();
+        source = p.parse(source, shared);
+        ShaderCompiler.offset = p.linesIncluded;
+        return source;
+    }
+    static get fragmentHeader() {
+        let header = "";
+        header += "#version 300 es\n" +
+            "#ifdef GL_ES\n" +
+            "precision highp float;\n" +
+            "precision highp int;\n" +
+            "precision mediump sampler3D;\n" +
+            "#endif\n";
+        return header;
+    }
+    constructor() {
         this.lastCompile = performance.now();
         this.isCompiling = false;
-        this.canvas = document.createElement("canvas");
-        this.gl = this.canvas.getContext("webgl");
+        const canvas = document.createElement("canvas");
+        this.gl = canvas.getContext("webgl");
     }
-    Object.defineProperty(ShaderCompiler, "vertexHeader", {
-        get: function () {
-            var header = "";
-            header += "#version 300 es\n" +
-                "#ifdef GL_ES\n" +
-                "precision highp float;\n" +
-                "precision highp int;\n" +
-                "precision mediump sampler3D;\n" +
-                "#endif\n";
-            return header;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    ShaderCompiler.parseIncludes = function (source, shared) {
-        var results = ImportsParser.parseIncludes(source);
-        var lines = 0;
-        results.map(function (x) {
-            var s = shared.get(x.path);
-            lines += s.split("\n").length;
-            source = source.replace('#include "' + x.path + '";', s);
-        });
-        ShaderCompiler.offset = lines + results.length;
-        return source;
-    };
-    Object.defineProperty(ShaderCompiler, "fragmentHeader", {
-        get: function () {
-            var header = "";
-            header += "#version 300 es\n" +
-                "#ifdef GL_ES\n" +
-                "precision highp float;\n" +
-                "precision highp int;\n" +
-                "precision mediump sampler3D;\n" +
-                "#endif\n";
-            return header;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    ShaderCompiler.prototype.onError = function (error) {
+    onError(error) {
         throw "Not implememnted";
-    };
-    ShaderCompiler.prototype.onSuccess = function (source, header) {
+    }
+    onSuccess(source) {
         throw "Not implemented";
-    };
-    ShaderCompiler.prototype.toErrorLines = function (error) {
-        var index = 0;
-        var indexEnd = 0;
-        var lineNum = 0;
-        var errorLines = new Array();
+    }
+    toErrorLines(error) {
+        let index = 0;
+        let indexEnd = 0;
+        let lineNum = 0;
+        let errorLines = new Array();
         while (index >= 0) {
             index = error.indexOf("ERROR: 0:", index);
             if (index < 0) {
@@ -163,23 +165,22 @@ var ShaderCompiler = (function () {
                 if ((!isNaN(lineNum)) && (lineNum > 0)) {
                     index = indexEnd + 1;
                     indexEnd = error.indexOf("ERROR: 0:", index);
-                    var lineError = (indexEnd > index) ? error.substring(index, indexEnd) : error.substring(index);
+                    let lineError = (indexEnd > index) ? error.substring(index, indexEnd) : error.substring(index);
                     errorLines.push(new ShaderError(lineNum, lineError));
                 }
             }
         }
         return errorLines;
-    };
-    ShaderCompiler.prototype.canCompile = function () {
-        var bounce = -(this.lastCompile - performance.now());
+    }
+    canCompile() {
+        let bounce = -(this.lastCompile - performance.now());
         return bounce > 500. && !this.isCompiling;
-    };
-    ShaderCompiler.prototype.compile = function (fragmentShader, fragmentHeader) {
-        if (!fragmentHeader)
-            fragmentHeader = ShaderCompiler.fragmentHeader;
+    }
+    compile(fragmentShader, shared) {
+        fragmentShader = ShaderCompiler.parseIncludes(fragmentShader, shared);
         this.isCompiling = true;
-        var gl = this.gl;
-        var compileResults = this.createShader(fragmentHeader + fragmentShader, gl.FRAGMENT_SHADER);
+        let gl = this.gl;
+        let compileResults = this.tryCreateShader(fragmentShader, gl.FRAGMENT_SHADER);
         if (compileResults.length > 0) {
             this.isCompiling = false;
             this.lastCompile = performance.now();
@@ -188,21 +189,21 @@ var ShaderCompiler = (function () {
         else {
             this.isCompiling = false;
             this.lastCompile = performance.now();
-            this.onSuccess(fragmentShader, fragmentHeader);
+            this.onSuccess(fragmentShader);
         }
-    };
-    ShaderCompiler.prototype.createShader = function (src, type) {
-        var gl = this.gl;
-        var shader = gl.createShader(type);
-        gl.shaderSource(shader, src);
+    }
+    tryCreateShader(src, type) {
+        let gl = this.gl;
+        let shader = gl.createShader(type);
+        let header = type == this.gl.FRAGMENT_SHADER ? ShaderCompiler.fragmentHeader : ShaderCompiler.vertexHeader;
+        gl.shaderSource(shader, header + src);
         gl.compileShader(shader);
-        var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
             return this.toErrorLines(gl.getShaderInfoLog(shader));
         }
         else
             return new Array();
-    };
-    return ShaderCompiler;
-}());
+    }
+}
 exports.ShaderCompiler = ShaderCompiler;

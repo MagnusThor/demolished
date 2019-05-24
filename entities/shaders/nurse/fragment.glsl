@@ -27,6 +27,7 @@ vec3 hash3( float n )
 {
     return fract(sin(vec3(n,n+1.0,n+2.0))*vec3(43758.5453123,22578.1459123,19642.3490423));
 }
+
 float fbm( vec2 p ) {
     float f = 0.0;
     f += 0.5000*noise( p ); p = m2*p*2.02;
@@ -110,7 +111,6 @@ vec3 castRay( vec3 ro, vec3 rd, float linesSpeed )
 
 
 vec3 clouds(vec2 st){
-	
 	
 	vec3 color = vec3(0);
 	
@@ -228,10 +228,8 @@ float linesSpeed =  smoothstep( 22.7, 22.71, datetime);
 	
 	ro *= 1.0 - linesSpeed*0.5*freqs[1];
     vec3 col = castRay( ro, rd, 1.0 + 20.0*linesSpeed );
-    col = col*col*2.4;
+    	 col = col*col*2.4;
 	
-    
-
     if(datetime < 10.5) 
         col += clouds(p);
     
@@ -249,7 +247,6 @@ float linesSpeed =  smoothstep( 22.7, 22.71, datetime);
     uv *=  0.8 ;
     uv.y = -0.1 - uv.y*1.2 + abs(uv.x)*(1.0-abs(uv.x)) ;
 	
-   
     float r = length(uv);
 	float d = 0.5;
     
@@ -257,9 +254,10 @@ float linesSpeed =  smoothstep( 22.7, 22.71, datetime);
 	s *= 1.0-0.4*r;
 	s = 0.3 + 0.7*s;
 	s *= 0.5+0.5*pow( 1.0-clamp(r/d, 0.0, 1.0 ), 0.1 );
+	
 	vec3 heart = vec3(1.0,0.5*r,0.3)*s;
     
-   col =  mix( col, heart, smoothstep( -0.01, 0.01, d-r) );
+    col =  mix( col, heart, smoothstep( -0.01, 0.01, d-r) );
 
     col *= 0.15+0.85*pow( 16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y), 0.15 );
     

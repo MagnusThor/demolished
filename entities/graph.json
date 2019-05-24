@@ -1,8 +1,9 @@
 {
-    "name": "default-demo",
+    "version": 0.7,
+    "name": "default-project",
     "duration" :6250200,
     "audioSettings": {
-        "audioFile": "assets/felt.mp3",
+        "audioFile": "assets/thechronoscode.mp3",
         "audioAnalyzerSettings": {
             "fftSize": 8192,
             "smoothingTimeConstant": 0.85,
@@ -21,17 +22,25 @@
             "entities/shared/combination.glsl"
         ]
     },
-    "timeline": [
-        {
-            "start": 0,
-            "stop": 5125100,
-            "entity": "kalispears",
-            "subeffects": []
-        }
-    
-    ],
     "effects": [
-        
+        {
+            "name": "hemi",
+            "textures":[],
+            "start":0,
+            "stop":500000,
+            "uniforms": {
+                    
+            }
+        },
+        {
+            "name": "nebula",
+            "textures":[],
+            "start":0,
+            "stop":500000,
+            "uniforms": {
+                    
+            }
+        },
         {
             "name": "kalispears",
               "textures": [
@@ -70,11 +79,10 @@
                     "height": 512,
                     "type":1
                 }
-               
-
             ],
-
-            "subeffets": []
+            "uniforms": {
+                    
+            }
         }
     ]
 }

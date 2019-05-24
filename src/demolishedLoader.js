@@ -1,17 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function loadResource(file) {
-    var promise = new Promise(function (resolve, reject) {
-        var wrapper = new XMLHttpRequestWrapper(file, resolve, reject);
+    let promise = new Promise((resolve, reject) => {
+        let wrapper = new XMLHttpRequestWrapper(file, resolve, reject);
         return wrapper;
     });
     return promise;
 }
 exports.default = loadResource;
-var XMLHttpRequestWrapper = (function () {
-    function XMLHttpRequestWrapper(file, resolve, reject) {
+class XMLHttpRequestWrapper {
+    constructor(file, resolve, reject) {
         this.file = file;
-        var xhr = new XMLHttpRequest();
+        let xhr = new XMLHttpRequest();
         xhr.open("GET", file);
         xhr.responseType = "blob";
         xhr.onloadend = function (evt) {
@@ -30,50 +30,44 @@ var XMLHttpRequestWrapper = (function () {
         xhr.send();
         this.xhr = xhr;
     }
-    return XMLHttpRequestWrapper;
-}());
-var ResponseWrapper = (function () {
-    function ResponseWrapper(blobData) {
+}
+class ResponseWrapper {
+    constructor(blobData) {
         this.blobData = blobData;
     }
-    ResponseWrapper.prototype.arrayBuffer = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function () {
+    arrayBuffer() {
+        return new Promise((resolve, reject) => {
+            let reader = new FileReader();
+            reader.onload = () => {
                 resolve(reader.result);
             };
-            reader.readAsArrayBuffer(_this.blobData);
+            reader.readAsArrayBuffer(this.blobData);
         });
-    };
-    ResponseWrapper.prototype.blob = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            resolve(_this.blobData);
+    }
+    blob() {
+        return new Promise((resolve, reject) => {
+            resolve(this.blobData);
         });
-    };
-    ResponseWrapper.prototype.text = function () {
-        var _this = this;
-        var promise = new Promise(function (resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function () {
+    }
+    text() {
+        let promise = new Promise((resolve, reject) => {
+            let reader = new FileReader();
+            reader.onload = () => {
                 resolve(reader.result);
             };
-            reader.readAsText(_this.blobData);
+            reader.readAsText(this.blobData);
         });
         return promise;
-    };
-    ResponseWrapper.prototype.json = function () {
-        var _this = this;
-        var promise = new Promise(function (resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function () {
+    }
+    json() {
+        let promise = new Promise((resolve, reject) => {
+            let reader = new FileReader();
+            reader.onload = () => {
                 resolve(JSON.parse(reader.result.toString()));
             };
-            reader.readAsText(_this.blobData);
+            reader.readAsText(this.blobData);
         });
         return promise;
-    };
-    return ResponseWrapper;
-}());
+    }
+}
 exports.ResponseWrapper = ResponseWrapper;

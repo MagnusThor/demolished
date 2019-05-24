@@ -1,31 +1,8 @@
-import { RenderTarget, AudioAnalyzerSettings, Uniforms, TimeFragment, Graph, Effect } from './demolishedModels'
+import { RenderTarget } from './demolishedModels'
+import { Uniforms } from "./Uniforms";
 import loadResource from './demolishedLoader'
 import { Demolished } from './demolished';
 import { ShaderCompiler } from './demolishedUtils';
-/*
-  "duration" :6250200,
-    "audioSettings": {
-        "audioFile": "assets/vol.mp3",
-        "audioAnalyzerSettings": {
-            "fftSize": 8192,
-            "smoothingTimeConstant": 0.85,
-            "minDecibels": -90,
-            "maxDecibels": -10
-        },
-        "duration": 6250200,
-        "bmp": 129
-    }
-*/export class AudioSettings {
-    audioFile: string;
-    duration: number;
-    bmp: number;
-    audioAnalyzerSettings: {
-        fftSize: number,
-        smoothingTimeConstant: number,
-        minDecibels: number,
-        maxDecibels: number
-    };
-}
 
 export class IEntityTexture {
     texture: WebGLTexture
@@ -38,25 +15,15 @@ export class IEntityTexture {
 
 export class EntityTexture implements IEntityTexture {
     texture: WebGLTexture;
-    assetType:number;
+    assetType: number;
     constructor(public data: any, public name: string, public width: number, public height: number) {
-        //       console.log("Createing a texture",assetType)
         this.assetType = 0;
     }
     update(gl): void {
-
     }
 }
 
-/**
- *
- *
- * @export
- * @class Pipleline
- */
-export class Pipleline {
 
-}
 export class EntityVideoTexture implements IEntityTexture {
     texture: WebGLTexture;
     assetType: number;
@@ -69,16 +36,12 @@ export class EntityVideoTexture implements IEntityTexture {
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
             srcFormat, srcType, this.data);
     }
-
     constructor(public data: any, public name: string, public width: number, public height: number) {
         this.assetType = 1;
     }
-
 }
-
-
 export interface IEntity {
-    render(engine: Demolished.Rendering);
+    render(engine: Demolished.Rendering):void;
     onError(err: any): void;
     swapBuffers(): void;
     glProgram: WebGLProgram;
@@ -88,13 +51,8 @@ export interface IEntity {
     positionAttribute: number;
     target: RenderTarget;
     backTarget: RenderTarget;
-    uniformsCache: Map<string, WebGLUniformLocation>;
-    //  subEffectId: number;
     frameId: number;
-    actions: Map<string, (ent: ShaderEntity, tm: number) => void>;
-    addAction(key: string, fn: (ent: ShaderEntity, tm: number) => void);
-    runAction(key: string, tm: number);
-    removeAction(key: string);
+    uniforms: Uniforms;
 }
 /**
  *  
@@ -103,57 +61,65 @@ export interface IEntity {
  * @class EntityBase
  */
 export class EntityBase {
+    uniforms: Uniforms;
     glProgram: WebGLProgram
-    uniformsCache: Map<string, WebGLUniformLocation>;
-    actions: Map<string, (ent: ShaderEntity, tm: number) => void>;
     constructor(public gl: WebGLRenderingContext) {
-        this.actions = new Map<string, (ent: ShaderEntity, tm: number) => void>();
     }
-    cacheUniformLocation(label: string) {
-        this.uniformsCache.set(label, this.gl.getUniformLocation(this.glProgram, label));
+    getUniformValues(): Array<any> {
+        throw "not implemented"
     }
 }
 /**
- * ShadShaderEntity represents an effects shader (fragment, vertex) and its base properties  
- * todo: Move more props to the EntityBase
- * implement multiple buffers buffers[]
  * @export
  * @class ShaderEntity
  * @extends {EntityBase}
  * @implements {IEntity}
  */
 export class ShaderEntity extends EntityBase implements IEntity {
+    
     vertexShader: string;
     fragmentShader: string
-    alpha: number;
+    
     mainBuffer: WebGLBuffer;
     buffers: Map<string, WebGLBuffer>;
-    vertexPosition: number;
-    positionAttribute: number;
     target: RenderTarget;
     backTarget: RenderTarget;
-    uniformsCache: Map<string, WebGLUniformLocation>;
-    subEffectId: number;
-    frameId: number;
+    
+    alpha: number;
+    frameId: number = 0;
+    vertexPosition: number;
+    positionAttribute: number = 0;
 
-    addBuffer(key: string): WebGLBuffer {
-        throw "Not yet implemented";
+    start:number;
+    stop:number;
+    
+    onShaderElapsed(): void {
+      
+     }
+
+    onShaderCreated(): void { }
+    onError(err: any): void { }
+    setTime(start:number,stop:number){
+        this.start = start;
+        this.stop  = stop;;
     }
-    render(engine: Demolished.Rendering) {
 
+    get isElapsed(){
+            return this.uniforms.timeTotal >= this.stop;
+    }
+
+    render(engine: Demolished.Rendering) {
         let gl = this.gl;
         let ent = this;
+        
+        this.uniforms.time = performance.now()/ 1000;  
+        
+        this.uniforms.resolution = [this.gl.canvas.width,this.gl.canvas.height];
+        this.uniforms.timeTotal = (performance.now() - engine.animationStartTime);
 
-        gl.uniform1f(ent.uniformsCache.get('time'), engine.uniforms.time / 1000.);
-        gl.uniform1f(ent.uniformsCache.get("timetotal"), engine.uniforms.timeTotal / 1000.);
-        gl.uniform4fv(ent.uniformsCache.get("datetime"), engine.uniforms.datetime);
-        gl.uniform1f(ent.uniformsCache.get("playbacktime"), engine.audio.currentTime)
-
-        gl.uniform1i(ent.uniformsCache.get("frameId"), engine.animationFrameCount);
-        gl.uniform1i(ent.uniformsCache.get("subEffectId"), ent.subEffectId);
-
-        gl.uniform2f(ent.uniformsCache.get("mouse"), engine.uniforms.mouseX, engine.uniforms.mouseY);
-        gl.uniform2f(ent.uniformsCache.get("resolution"), engine.uniforms.screenWidth, engine.uniforms.screenHeight);
+        this.uniforms.mouse = [0.5,0.5];
+        
+        if(this.isElapsed) this.onShaderElapsed();
 
         gl.bindBuffer(gl.ARRAY_BUFFER, ent.mainBuffer);
         gl.vertexAttribPointer(ent.positionAttribute, 2, gl.FLOAT, false, 0, 0);
@@ -171,7 +137,9 @@ export class ShaderEntity extends EntityBase implements IEntity {
         gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
 
         ent.textures.forEach((asset: EntityTexture, index: number) => {
+    
             engine.bindTexture(ent, asset, index);
+            
         });
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
@@ -180,67 +148,30 @@ export class ShaderEntity extends EntityBase implements IEntity {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+
         ent.swapBuffers();
-        // ent.runAction("$subeffects", engine.uniforms.time / 1000);
-    }
-
-    addAction(key: string, fn: (ent: ShaderEntity, tm: number) => void) {
-        this.actions.set(key, fn);
-    }
-    runAction(key: string, tm: number): void {
-        try {
-            this.actions.get(key)(this, tm);
-        } catch{
-            console.warn(this);
-        }
-
 
     }
-    removeAction(key: string): boolean {
-        return this.actions.delete(key);
-    }
-    // get vertexHeader(){
-    //     let header  = "";
-    //     header += "#version 300 es\n" +
-    //                         "#ifdef GL_ES\n"+
-    //                         "precision highp float;\n" +
-    //                         "precision highp int;\n"+
-    //                         "precision mediump sampler3D;\n"+
-    //                         "#endif\n";
-    //     return header;
-
-    // }
-    // get fragmentHeader(){
-    //     let header = "";
-    //     header += "#version 300 es\n"+
-    //                 "#ifdef GL_ES\n"+
-    //                 "precision highp float;\n"+
-    //                 "precision highp int;\n"+
-    //                 "precision mediump sampler3D;\n"+
-    //                 "#endif\n"
-    //         return header;
-    // }
 
     constructor(public gl: WebGLRenderingContext, public name: string, public w: number, public h: number,
-        public textures?: Array<EntityTexture>, public shared?: Map<string, string>
-    ) {
+        public textures?: Array<EntityTexture>, public shared?: Map<string, string>,
+        public engine?: Demolished.Rendering) {
         super(gl);
-        this.uniformsCache = new Map<string, WebGLUniformLocation>();
-
-
         this.loadShaders().then((numOfShaders: number) => {
             if (numOfShaders > -1) {
-                this.setupShader();
+                this.init();
                 this.target = this.createRenderTarget(this.w, this.h);
                 this.backTarget = this.createRenderTarget(this.w, this.h);
             }
         });
     }
     public reset() {
-        throw "not yet implemented";
+         this.uniforms.time = 0;
+         this.uniforms.timeTotal = 0;
     }
     private createRenderTarget(width: number, height: number): RenderTarget {
         let gl = this.gl;
+
         let target = new RenderTarget(gl.createFramebuffer(), gl.createRenderbuffer(), gl.createTexture());
 
         gl.bindTexture(gl.TEXTURE_2D, target.texture);
@@ -273,12 +204,17 @@ export class ShaderEntity extends EntityBase implements IEntity {
      * @memberof ShaderEntity
      */
     private loadShaders(): Promise<number> {
+
         let urls = new Array<string>();
+
         urls.push("entities/shaders/" + this.name + "/fragment.glsl");
         urls.push("entities/shaders/" + this.name + "/vertex.glsl");
 
-        return Promise.all(urls.map((url: string) =>
-            loadResource(url).then(resp => resp.text())
+        return Promise.all(urls.map(async (url: string) =>
+            {
+                const resp = await loadResource(url);
+            return resp.text();
+            }
         )).then(result => {
             this.fragmentShader = result[0];
             this.vertexShader = result[1];
@@ -290,17 +226,12 @@ export class ShaderEntity extends EntityBase implements IEntity {
     }
 
     public setFragment(fs: string) {
-
         this.fragmentShader = fs;
-        this.setupShader();
+        this.init();
     }
 
-    onSuccess(shader: WebGLShader) {
-    }
-    onError(err: any) {
-    }
-
-    private craeteTextureFromVideo(width: number, height: number, video: HTMLVideoElement) {
+  
+    public createTextureFromArray(data: Array<number>) {
         const gl = this.gl;
         const texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -309,6 +240,28 @@ export class ShaderEntity extends EntityBase implements IEntity {
         const border = 0;
         const srcFormat = gl.RGBA;
         const srcType = gl.UNSIGNED_BYTE;
+        const pixels = new Uint8Array(data);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+            1, 1, border, srcFormat, srcType,
+            pixels);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        return texture;
+
+
+    }
+    private createTextureFromVideo() {
+        const gl = this.gl;
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        const level = 0;
+        const internalFormat = gl.RGBA;
+        const border = 0;
+        const srcFormat = gl.RGBA;
+        const srcType = gl.UNSIGNED_BYTE;
+
         const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
             1, 1, border, srcFormat, srcType,
@@ -322,7 +275,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
 
     }
 
-    private createTextureFromImage(width: number, height: number, image: HTMLImageElement) {
+    private createTextureFromImage(image: HTMLImageElement) {
         let gl = this.gl;
         let texture = gl.createTexture()
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -334,48 +287,52 @@ export class ShaderEntity extends EntityBase implements IEntity {
         return texture;
     }
 
-    private setupShader() {
+    init() {
         let gl = this.gl;
         this.mainBuffer = gl.createBuffer();
         this.glProgram = gl.createProgram();
 
-        let vs: WebGLShader = this.createShader(gl, ShaderCompiler.vertexHeader +
-            ShaderCompiler.parseIncludes(this.vertexShader, this.shared), gl.VERTEX_SHADER);
-        let fs: WebGLShader = this.createShader(gl, ShaderCompiler.fragmentHeader +
 
-            ShaderCompiler.parseIncludes(this.fragmentShader, this.shared), gl.FRAGMENT_SHADER);
+        let vs: WebGLShader = this.createShader(gl,this.vertexShader, gl.VERTEX_SHADER);
+       
+        let fs: WebGLShader = this.createShader(gl,
+        ShaderCompiler.parseIncludes(this.fragmentShader, this.shared), gl.FRAGMENT_SHADER);
 
         gl.attachShader(this.glProgram, vs);
         gl.attachShader(this.glProgram, fs);
-
         gl.linkProgram(this.glProgram);
 
-        this.cacheUniformLocation('fft');
-        this.cacheUniformLocation("playbacktime");
-        this.cacheUniformLocation('time');
-        this.cacheUniformLocation("datetime");
-        this.cacheUniformLocation('frameId');
-        this.cacheUniformLocation("timetotal");
-        this.cacheUniformLocation('mouse');
-        this.cacheUniformLocation('resolution');
-        this.cacheUniformLocation("backbuffer");
 
-        this.subEffectId = 0;
-        this.frameId = 0;
-        this.positionAttribute = 0;
+        if ( !gl.getProgramParameter( this.glProgram, gl.LINK_STATUS) ) {
+            var info = gl.getProgramInfoLog(this.glProgram);
+            this.onError(info);
+          }
+
+        let proxy = new Uniforms(this.gl, this.glProgram);
+       
+        this.uniforms = proxy.createPipleline(); 
+
+        
+        this.uniforms.cacheUniformLocation('fft')
+        .cacheUniformLocation("backbuffer")
+        .activeUniforms.forEach( (u:any) =>{
+            this.uniforms.cacheUniformLocation(u.name);
+        });
+
+              
         gl.enableVertexAttribArray(this.positionAttribute);
 
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
         gl.enableVertexAttribArray(this.vertexPosition);
 
         this.textures.forEach((asset: EntityTexture) => {
-
             asset.assetType == 0 ?
-                asset.texture = this.createTextureFromImage(asset.width, asset.height, asset.data) :
-                asset.texture = this.craeteTextureFromVideo(asset.width, asset.height, asset.data);
-
+                asset.texture = this.createTextureFromImage(asset.data) :
+                asset.texture = this.createTextureFromVideo();
         });
+
         gl.useProgram(this.glProgram);
+       
     }
     swapBuffers() {
         let tmp = this.target;
@@ -383,14 +340,16 @@ export class ShaderEntity extends EntityBase implements IEntity {
         this.backTarget = tmp;
     }
     private createShader(gl: WebGLRenderingContext, src: string, type: number): WebGLShader {
-        let shader: WebGLShader = gl.createShader(type);
-        gl.shaderSource(shader, src);
+        let shader: WebGLShader = gl.createShader(type);     
+        let header = type == this.gl.FRAGMENT_SHADER ? ShaderCompiler.fragmentHeader : ShaderCompiler.vertexHeader;
+        gl.shaderSource(shader, header + src);
         gl.compileShader(shader);
-        let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);        
         if (!success) {
-            this.onError(gl.getShaderInfoLog(shader));
+            let message = gl.getShaderInfoLog(shader);          
+            this.onError(message);
         } else {
-            this.onSuccess(shader);
+            this.onShaderCreated();
         }
         return shader;
     }

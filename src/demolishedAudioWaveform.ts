@@ -50,7 +50,7 @@ export class AudioWaveform {
     }
     updateAudioPosition() {
         const { currentTime, duration } = this.audio;
-        const physicalPosition = (currentTime * 1000) / duration * this.width;
+        const physicalPosition = (currentTime) / duration * this.width;
         if (physicalPosition) {
             this.progress.setAttribute('width', physicalPosition);
             this.remaining.setAttribute('x', physicalPosition);

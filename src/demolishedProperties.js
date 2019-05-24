@@ -1,20 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
-var DemolishedPropertyHandler = (function () {
-    function DemolishedPropertyHandler() {
+class DemolishedPropertyHandler {
+    constructor() {
     }
-    DemolishedPropertyHandler.prototype.set = function (target, key, value, receiver) {
-        var old = Reflect.get(target, key, receiver);
+    set(target, key, value, receiver) {
+        let old = Reflect.get(target, key, receiver);
         return Reflect.set(target, key, value, receiver);
-    };
-    DemolishedPropertyHandler.prototype.get = function (target, key, receiver) {
+    }
+    get(target, key, receiver) {
         return Reflect.get(target, key, receiver);
-    };
-    DemolishedPropertyHandler.prototype.observe = function () {
-    };
-    return DemolishedPropertyHandler;
-}());
+    }
+    observe() {
+    }
+}
 exports.DemolishedPropertyHandler = DemolishedPropertyHandler;
 function Observe(isObserved) {
     return function (target, key) {
@@ -22,51 +21,46 @@ function Observe(isObserved) {
     };
 }
 exports.Observe = Observe;
-var DemoishedProperty = (function () {
-    function DemoishedProperty(target) {
+class DemoishedProperty {
+    constructor(target) {
         this.target = target;
         this.handler = new DemolishedPropertyHandler();
     }
-    DemoishedProperty.prototype.getObserver = function () {
+    getObserver() {
         return new Proxy(this.target, this.handler);
-    };
-    return DemoishedProperty;
-}());
-exports.DemoishedProperty = DemoishedProperty;
-var DemolishedDialogBuilder = (function () {
-    function DemolishedDialogBuilder() {
     }
-    DemolishedDialogBuilder.render = function (observer, parent) {
-        var _this = this;
-        var keys = Object.keys(observer);
-        keys.forEach(function (key) {
-            var prop = observer[key];
-            var isObserved = Reflect.getMetadata("isObserved", observer, key);
+}
+exports.DemoishedProperty = DemoishedProperty;
+class DemolishedDialogBuilder {
+    static render(observer, parent) {
+        let keys = Object.keys(observer);
+        keys.forEach((key) => {
+            let prop = observer[key];
+            let isObserved = Reflect.getMetadata("isObserved", observer, key);
             if (isObserved) {
                 if (typeof (prop) == "number" || typeof (prop) == "string") {
-                    var field = document.createElement("div");
-                    var label = document.createElement("label");
+                    let field = document.createElement("div");
+                    let label = document.createElement("label");
                     label.textContent = key;
                     field.appendChild(label);
-                    var input = document.createElement("input");
+                    let input = document.createElement("input");
                     input.type = "text";
                     input.id = key;
                     input.value = prop.toString();
-                    input.addEventListener("change", function (evt) {
+                    input.addEventListener("change", (evt) => {
                         observer[key] = evt.target["value"];
                     });
-                    input.addEventListener("click", function (evt) {
+                    input.addEventListener("click", (evt) => {
                         evt.target["value"] = observer[key];
                     });
                     field.appendChild(input);
                     parent.appendChild(field);
                 }
                 else if (typeof (prop) == "object") {
-                    _this.render(observer[key], parent);
+                    this.render(observer[key], parent);
                 }
             }
         });
-    };
-    return DemolishedDialogBuilder;
-}());
+    }
+}
 exports.DemolishedDialogBuilder = DemolishedDialogBuilder;

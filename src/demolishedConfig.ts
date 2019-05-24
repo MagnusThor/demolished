@@ -9,7 +9,6 @@ export class DemolishedConfig{
 
         constructor(){
                 this.configuration = new Map<string,any>();
-
         }
 
         load<T>(key:string):T{

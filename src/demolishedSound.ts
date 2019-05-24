@@ -48,8 +48,12 @@ export class DemolishedSoundPeaks{
 export class DemolishedSoundBase {
     audioAnalyser: AnalyserNode
     audio: any;
-   audioBuffer:AudioBuffer;
-
+    audioBuffer:AudioBuffer;
+    getAudioEl(): HTMLAudioElement {
+        return this.audio as HTMLAudioElement
+    
+    }
+  
     constructor() { }
     
    
@@ -72,6 +76,7 @@ export interface IDemolisedAudioContext {
     duration: number;
     getTracks():MediaStreamTrack
     audioBuffer:AudioBuffer
+    getAudioEl():HTMLAudioElement
 }
 declare var SIDBackendAdapter: any;
 
@@ -141,6 +146,7 @@ export class DemolishedSIDMusic extends DemolishedSoundBase implements IDemolise
  */
 export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDemolisedAudioContext {
     
+
     getTracks():MediaStreamTrack{
         let ms = this.audio.captureStream();
         return ms.getAudioTracks();

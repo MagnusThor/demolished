@@ -10,7 +10,6 @@
  * @returns {Promise<any>} 
  */
 export default 
-      // fetch(..) 
       function loadResource(file:string):Promise<any>{
         let promise = new Promise((resolve, reject) =>{
             let wrapper = new XMLHttpRequestWrapper(file,resolve,reject);

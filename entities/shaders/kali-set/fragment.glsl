@@ -10,6 +10,7 @@ out vec4 fragColor;
 vec3 mcol,ro;
 float dL=100.0;
 float mxscl, ltpos;
+
 float DE(vec3 z0)
 {
 	vec4 z = vec4(z0,1.0);
@@ -23,9 +24,6 @@ float DE(vec3 z0)
 	}
 	return d;
 }
-
-
-
 float rndStart(vec2 co){return 0.1+0.9*fract(sin(dot(co,vec2(123.42,117.853)))*412.453);}
 
 mat3 lookat(vec3 fw,vec3 up){
@@ -46,10 +44,9 @@ void main(){
 	//ro=eye;rd=normalize(dir);
 	vec3 LDir=	;//direction to light
 	vec3 bcol=vec3(0.0);
-	//march
-	
-	
+	//march	
 	float t=DE(ro)*rndStart(gl_FragCoord.xy),d,od=1.0;
+
 	vec4 col=vec4(0.0);//color accumulator
 	for(int i=0;i<99;i++){
 		d=DE(ro+rd*t);
@@ -58,6 +55,7 @@ void main(){
 			vec3 scol=mcol;
 			float d2=DE(ro+rd*t+LDir*px);
 			float shad=abs(d2/d),shad2=max(0.0,1.0-d/od);
+			
 			scol=scol*shad+vec3(0.2,0.0,-0.2)*(shad-0.5)+vec3(0.1,0.15,0.2)*shad2;
 			scol*=3.0*max(0.2,shad2);
 			scol/=(1.0+t)*(0.2+10.0*dL*dL);
@@ -72,11 +70,5 @@ void main(){
 		if(t>20.0)break;
 	}
 	col.rgb+=bcol*(1.0-clamp(col.w,0.0,1.0));
-
 	fragColor=vec4(col.rgb,1.0);
-} 
-
-
-
-
-
+}

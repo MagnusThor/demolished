@@ -6,6 +6,7 @@ uniform sampler2D iChannel1;
 uniform sampler2D iChannel2;
 uniform sampler2D iChannel3;
 uniform sampler2D iChannel4;
+uniform sampler2D fft;
 
 
 out vec4 fragColor;

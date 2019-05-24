@@ -51,7 +51,7 @@ export class Utils {
         }
         return node;
     }
-  
+
     static getExponentOfTwo(value: number, max: number): number {
         var count = 1;
         do {
@@ -81,30 +81,50 @@ export class ShaderError {
         this.error = error;
     }
 }
-
-export class IncludeDefinition {
-    constructor(path: string) {
-        this.path = path;
-    }
-    path: string;
-}
-
-export class ImportsParser {
-    static parseIncludes(data: string): Array<IncludeDefinition> {
-        let regex = new RegExp('#include\\s"(.*)"', 'g');
+export class GLSLInclude {
+    parseInclude(data: string): string {
+        let regex = new RegExp('"(.*)"', 'g');
         let matcher = regex.exec(data);
-        let result = new Array<IncludeDefinition>();
-        while (matcher != null) {
-            result.push(new IncludeDefinition(matcher[1]));
-            matcher = regex.exec(data);
-        }
-        return result;
+        if (!matcher) return "";
+        return matcher[1];
+    }
+    numofIncludes: number = 0;
+    offset: number = -1;
+    linesIncluded: number = 0;
+
+    parse(source: string, shared: Map<string, string>): string {
+        let lines = source.split("\n")
+        let fullSource: string = "";
+        let count: number = 0;
+        lines.forEach((line: string, index: number) => {
+            const include = line.indexOf("#include ") > -1;
+            if (!include) {
+                this.offset = index;
+                fullSource += line + "\n";
+                this.numofIncludes++;
+            }
+            else {
+                try {
+                    const es = shared.get(this.parseInclude(line));
+                    if (!es) throw "Unable to fetch/resolve the included file - " + line;
+                    count += es.split("\n").length;
+                    fullSource += es;
+                } catch (ex) {
+                    console.log(ex);
+                }
+            }
+        });
+        this.linesIncluded = count;
+        return fullSource;
     }
 }
+
 
 export class ShaderCompiler {
 
-     static offset:number;
+    static offset: number;
+
+    // static includeParser:GLSLInclude;
 
     static get vertexHeader() {
         let header = "";
@@ -115,20 +135,12 @@ export class ShaderCompiler {
             "precision mediump sampler3D;\n" +
             "#endif\n";
         return header;
-
     }
 
-
-
-     static parseIncludes(source: string, shared: Map<string, string>): string {
-        let results = ImportsParser.parseIncludes(source);
-        let lines = 0;
-        results.map(x => {
-            let s = shared.get(x.path);
-            lines += s.split("\n").length;
-            source = source.replace('#include "' + x.path + '";', s);
-        });
-        ShaderCompiler.offset = lines+results.length;
+    static parseIncludes(source: string, shared: Map<string, string>): string {
+        let p = new GLSLInclude();
+        source = p.parse(source, shared);
+        ShaderCompiler.offset = p.linesIncluded;
         return source;
     }
 
@@ -143,21 +155,20 @@ export class ShaderCompiler {
         return header;
     }
     private gl: WebGLRenderingContext;
-    private canvas: HTMLCanvasElement;
     public isCompiling: boolean;
     public lastCompile: number;
     constructor() {
         this.lastCompile = performance.now();
         this.isCompiling = false;
-        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.gl = this.canvas.getContext("webgl");
+        const canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.gl = canvas.getContext("webgl");
     }
 
     onError(error: Array<ShaderError>) {
         throw "Not implememnted";
     }
 
-    onSuccess(source: string, header: string) {
+    onSuccess(source: string) {
         throw "Not implemented";
     }
 
@@ -173,7 +184,7 @@ export class ShaderCompiler {
             indexEnd = error.indexOf(':', index);
             if (indexEnd > index) {
                 lineNum = parseInt(error.substring(index, indexEnd));
-                lineNum -= (ShaderCompiler.offset-2);
+                lineNum -= (ShaderCompiler.offset - 2);
                 if ((!isNaN(lineNum)) && (lineNum > 0)) {
                     index = indexEnd + 1;
                     indexEnd = error.indexOf("ERROR: 0:", index);
@@ -184,28 +195,17 @@ export class ShaderCompiler {
         }
         return errorLines;
     }
-
     public canCompile(): boolean {
         let bounce = -(this.lastCompile - performance.now());
         return bounce > 500. && !this.isCompiling;
     }
+    public compile(fragmentShader: string, shared: Map<string, string>) {
 
-
-    /**
-     * Compiles the fragment/vertex edited by the user , uses the imports, headers etc
-     *  passes back the assembled result.
-     * @param {string} fragmentShader
-     * @param {string} [fragmentHeader]
-     * @memberof ShaderCompiler
-     */
-    public compile(fragmentShader: string, fragmentHeader?: string) {
-
-        if (!fragmentHeader) fragmentHeader = ShaderCompiler.fragmentHeader;
+        fragmentShader = ShaderCompiler.parseIncludes(fragmentShader, shared)
 
         this.isCompiling = true;
         let gl = this.gl;
-
-        let compileResults = this.createShader(fragmentHeader + fragmentShader, gl.FRAGMENT_SHADER)
+        let compileResults = this.tryCreateShader(fragmentShader, gl.FRAGMENT_SHADER)
 
         if (compileResults.length > 0) {
             this.isCompiling = false;
@@ -215,15 +215,24 @@ export class ShaderCompiler {
 
             this.isCompiling = false;
             this.lastCompile = performance.now();
-            this.onSuccess(fragmentShader, fragmentHeader);
+            this.onSuccess(fragmentShader);
         }
     }
-
-    private createShader(src: string, type: number): Array<ShaderError> {
+    /**
+     *
+     *
+     * @param {string} src
+     * @param {number} type
+     * @returns {Array<ShaderError>}
+     * @memberof ShaderCompiler
+     */
+    tryCreateShader(src: string, type: number): Array<ShaderError> {
         let gl = this.gl;
-        let shader = gl.createShader(type);
-        gl.shaderSource(shader, src);
+        let shader: WebGLShader = gl.createShader(type);
+        let header = type == this.gl.FRAGMENT_SHADER ? ShaderCompiler.fragmentHeader : ShaderCompiler.vertexHeader;
+        gl.shaderSource(shader, header + src);
         gl.compileShader(shader);
+    
         let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
             return this.toErrorLines(gl.getShaderInfoLog(shader));
