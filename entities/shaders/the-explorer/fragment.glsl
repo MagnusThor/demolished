@@ -136,12 +136,12 @@ float map(vec3 p, int vol)
     	d=p.y-0.01*noise(50.*p)+0.4*noise(2.*p+0.2*time)+0.09*noise(7.*p);
     }
    
-// scene: room with stone
-	if (scene==3)
-    {
-		d = p.y-log(1.*pow(length(p.xz),1.)+0.2);
+// scene: room with stone	d = p.y-log(1.*pow(length(p.xz),1.)+0.2);
 		d = min(d,length(p)-0.4-0.04*noise(p*70.)-0.5*noise(p*4.+time)-0.02*noise(p*114.+time));
 		d +=0.05*noise(p*10.)-0.009*noise(p*-40.)+noise(p*2.);;
+	if (scene==3)
+    {
+	
 	}    
     
 // scene: kleinian fractal

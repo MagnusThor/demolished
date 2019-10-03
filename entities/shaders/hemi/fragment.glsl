@@ -35,8 +35,7 @@ float hash(float p){
     return fract((p3.x + p3.y) * p3.z);
 }
 
-vec3 randomSphereDir(vec2 rnd)
-{
+vec3 randomSphereDir(vec2 rnd){
 	float s = rnd.x*PI*2.;
 	float t = rnd.y*2.-1.;
 	return vec3(sin(s), cos(s), t) / sqrt(1.0 + t * t);
@@ -46,8 +45,7 @@ vec3 randomHemisphereDir(vec3 dir, float i){
 	return v * sign(dot(v, dir));
 }
 
-float ambientOcclusion( in vec3 p, in vec3 n, in float maxDist, in float falloff )
-{
+float ambientOcclusion( in vec3 p, in vec3 n, in float maxDist, in float falloff ){
 	const int nbIte = 32;
     const float nbIteInv = 1./float(nbIte);
     const float rad = 1.-1.*nbIteInv; //Hemispherical factor (self occlusion correction)
@@ -130,7 +128,6 @@ void main( void ) {
 	
 	//classic raymarching by distance field
 	
-    
    
     
     vec3 p = raymarche(ro, rd, vec2(1., 30.) );
@@ -151,8 +148,7 @@ void main( void ) {
 
 
     
-float map( in vec3 p )
-{
+float map( in vec3 p ){
 	float d = -box(p-vec3(0.,10.,0.),vec3(10.));
 	d = min(d, box(rotate(vec3(0.,1.,0.), 1.)*(p-vec3(4.,5.,6.)), vec3(3.,5.,3.)) );
 	d = min(d, box(rotate(vec3(0.,1.,0.),-1.)*(p-vec3(-4.,2.,0.)), vec3(2.)) );
@@ -162,8 +158,7 @@ float map( in vec3 p )
 }
 
 
-vec3 raymarche( in vec3 ro, in vec3 rd, in vec2 nfplane )
-{
+vec3 raymarche( in vec3 ro, in vec3 rd, in vec2 nfplane ){
 	vec3 p = ro+rd*nfplane.x;
 	float t = 0.;
 	for(int i=0; i<64; i++)
@@ -172,14 +167,12 @@ vec3 raymarche( in vec3 ro, in vec3 rd, in vec2 nfplane )
         t += d;
         p += rd*d;
 		if( d < 0.001 || t > nfplane.y )
-            break;
-            
-	}
-	
+            break;            
+	}	
 	return p;
 }
-vec3 normal( in vec3 p )
-{
+
+vec3 normal( in vec3 p ){
 	vec3 eps = vec3(0.001, 0.0, 0.0);
 	return normalize( vec3(
 		map(p+eps.xyy)-map(p-eps.xyy),
@@ -188,8 +181,7 @@ vec3 normal( in vec3 p )
 	) );
 }
 
-float box( in vec3 p, in vec3 data )
-{
+float box( in vec3 p, in vec3 data ){
     return max(max(abs(p.x)-data.x,abs(p.y)-data.y),abs(p.z)-data.z);
 }
 
@@ -201,8 +193,7 @@ mat3 lookat( in vec3 fw, in vec3 up )
 	return mat3( rt, cross(rt, fw), fw );
 }
 
-mat3 rotate( in vec3 v, in float angle)
-{
+mat3 rotate( in vec3 v, in float angle){
 	float c = cos(angle);
 	float s = sin(angle);
 	

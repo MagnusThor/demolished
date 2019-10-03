@@ -148,6 +148,7 @@ class DemolishedStreamingMusic extends DemolishedSoundBase {
                         offlineCtx.startRendering().then((renderedBuffer) => {
                             let audioCtx = new AudioContext();
                             let audioEl = new Audio();
+                            audioEl.loop = true;
                             audioEl.src = audioSettings.audioFile;
                             const onLoad = () => {
                                 let source = audioCtx.createMediaElementSource(audioEl);

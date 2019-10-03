@@ -67,11 +67,9 @@ export class DemolishedSonant extends DemolishedSoundBase implements IDemolisedA
     set currentTime(time: number) {
         this.audio.currentTime = time;
     }
-
     getTracks():MediaStreamTrack{
         throw "not yet implemented";
     }
-
     getFrequenceData(): Uint8Array {
         let bufferLength = this.audioAnalyser.frequencyBinCount;
         let freqArray = new Uint8Array(bufferLength);

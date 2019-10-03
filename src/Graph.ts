@@ -1,4 +1,5 @@
-import { EntityTexture, EntityVideoTexture } from './demolishedEntity';
+import { EntityVideoTexture } from "./EntityVideoTexture";
+import { EntityTexture } from "./EntityTexture";
 import loadResource from './demolishedLoader';
 import { Demolished } from './demolished';
 import { Effect, IGraph, AudioSettings } from './demolishedModels';
@@ -53,7 +54,7 @@ export class Graph {
                         graph.effects.forEach((effect: Effect) => {
                             Promise.all(effect.textures.map(async (texture: any) => {
                                 if (texture.type == 0) {
-                                    const txt = await new Promise((resolve, reject) => {
+                                    const txt = await new Promise<HTMLImageElement>((resolve, reject) => {
                                         let image = new Image();
                                         image.src = texture.src;
                                         image.onload = () => {
@@ -64,7 +65,7 @@ export class Graph {
                                     return new EntityTexture(txt, texture.uniform, texture.width, texture.height);
                                 }
                                 else {
-                                    const vid = await new Promise((resolve, reject) => {
+                                    const vid = await new Promise<HTMLVideoElement>((resolve, reject) => {
                                         let video = document.createElement('video');
                                         video.src = texture.src;
                                         video.muted = true;

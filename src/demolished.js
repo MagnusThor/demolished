@@ -66,7 +66,7 @@ var Demolished;
         nextEntity() {
             if (!this.isPlaybackMode) {
                 return this.entitiesCache.find((a) => {
-                    return a.name === "hemi";
+                    return a.name === "stub";
                 });
             }
             else {
@@ -112,7 +112,10 @@ var Demolished;
             return this.shaderEntity.uniforms.time;
         }
         resume(time) {
-            this.start(time);
+            this.audio.play();
+            this.animationOffsetTime = time;
+            this.animationStartTime = performance.now();
+            this.animate(time);
         }
         updateTextureData(texture, size, bytes) {
             let gl = this.gl;
@@ -137,8 +140,9 @@ var Demolished;
                     this.renderEntities(this.shaderEntity, animationTime) : this.start(0);
             }
             this.onFrame({
-                id: this.animationFrameId,
-                c: this.animationFrameCount,
+                fi: this.animationFrameId,
+                fc: this.animationFrameCount,
+                ts: time
             });
         }
         surfaceCorners(sw, sh) {
@@ -161,13 +165,12 @@ var Demolished;
         resizeCanvas(parent, resolution) {
             if (resolution)
                 this.resolution = resolution;
-            let width = parent.clientWidth / this.resolution;
-            let height = parent.clientHeight / this.resolution;
-            this.canvas.width = width;
-            this.canvas.height = height;
+            let d = { w: parent.clientWidth / this.resolution, h: parent.clientHeight / this.resolution };
+            this.canvas.width = d.w;
+            this.canvas.height = d.h;
             this.canvas.style.width = parent.clientWidth + 'px';
             this.canvas.style.height = parent.clientHeight + 'px';
-            this.surfaceCorners(width, height);
+            this.surfaceCorners(d.w, d.h);
             this.setViewPort(this.canvas.width, this.canvas.height);
         }
         renderEntities(ent, ts) {

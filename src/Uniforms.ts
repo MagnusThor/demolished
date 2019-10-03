@@ -1,5 +1,5 @@
 import { PiplelineHandler } from "./Pipleline";
-import { IEntityTexture } from "./demolishedEntity";
+import { IEntityTexture } from "./IEntityTexture";
 
 /*
 export const _GLType = {

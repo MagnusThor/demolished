@@ -8,7 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const demolishedEntity_1 = require("./demolishedEntity");
+const EntityVideoTexture_1 = require("./EntityVideoTexture");
+const EntityTexture_1 = require("./EntityTexture");
 const demolishedLoader_1 = require("./demolishedLoader");
 class Graph {
     static loadShared(files) {
@@ -52,7 +53,7 @@ class Graph {
                                         };
                                         image.onerror = (err) => reject(err);
                                     });
-                                    return new demolishedEntity_1.EntityTexture(txt, texture.uniform, texture.width, texture.height);
+                                    return new EntityTexture_1.EntityTexture(txt, texture.uniform, texture.width, texture.height);
                                 }
                                 else {
                                     const vid = yield new Promise((resolve, reject) => {
@@ -66,7 +67,7 @@ class Graph {
                                         });
                                         video.onerror = (err) => reject(err);
                                     });
-                                    return new demolishedEntity_1.EntityVideoTexture(vid, texture.uniform, texture.width, texture.height);
+                                    return new EntityVideoTexture_1.EntityVideoTexture(vid, texture.uniform, texture.width, texture.height);
                                 }
                             }))).then((textures) => {
                                 engine.addEntity(effect.name, textures).setTime(effect.start, effect.stop);

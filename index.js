@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const demolished_1 = require("./src/demolished");
 const CodeMirror = require("codemirror");
@@ -28,11 +36,10 @@ const demolishedTimeline_1 = require("./src/demolishedTimeline");
 const demolishedAudioWaveform_1 = require("./src/demolishedAudioWaveform");
 const SpectrumAnalyzer_1 = require("./SpectrumAnalyzer");
 const DemolishedStates_1 = require("./src/DemolishedStates");
+const demolishedLoader_1 = require("./src/demolishedLoader");
 class DemolishedEd {
     constructor() {
         this.isFullscreen = false;
-        var graph = new LGraph();
-        var canvas = new LGraphCanvas("#lgraph", graph);
         this.states = new DemolishedStates_1.DemolishedStates();
         this.editors = new Array();
         let Render2D = new demolished2D_1.Demolished2D(demolishedUtils_1.Utils.$("#canvas-spectrum"));
@@ -42,6 +49,7 @@ class DemolishedEd {
         this.shaderCompiler = new demolishedUtils_1.ShaderCompiler();
         this.music = new demolishedSound_1.DemolishedStreamingMusic();
         this.engine = new demolished_1.Demolished.Rendering(demolishedUtils_1.Utils.$("#webgl"), demolishedUtils_1.Utils.$("#shader-view"), "entities/graph.json", this.music);
+        this.timeEl = demolishedUtils_1.Utils.$(".time");
         let playback = demolishedUtils_1.Utils.$("#toogle-playback");
         let sound = demolishedUtils_1.Utils.$("#toggle-sound");
         let fullscreen = demolishedUtils_1.Utils.$("#btn-fullscreen");
@@ -97,7 +105,7 @@ class DemolishedEd {
         shaderWin.addEventListener("dragend", (evt) => {
             let win = evt.target;
             win.style.left = (evt.clientX).toString() + "px";
-            win.style.top = evt.clientY.toString() + "px";
+            win.style.top = (evt.clientY).toString() + "px";
         });
         resetTimers.addEventListener("click", () => {
             this.engine.resetClock(0);
@@ -138,36 +146,18 @@ class DemolishedEd {
         this.engine.onFrame = (frame) => {
             this.spectrum.frequencData = this.music.getFrequenceData();
             this.timeLime.updateAudioPosition();
+            this.timeEl.textContent = this.engine.audio.currentTime.toFixed(3).toString();
         };
         this.engine.onReady = () => {
             this.timeLime = new demolishedAudioWaveform_1.AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl());
             this.demoTimeline = new demolishedTimeline_1.Timeline("#current-time", this.engine.graph.duration);
-            let randomPos = () => {
-                return Math.floor((Math.random() * 400) + 1);
-            };
-            let shaderNode = (shader) => {
-                const ndShader = LiteGraph.createNode("basic/const");
-                ndShader.title = shader.name;
-                ndShader.pos = [randomPos(), randomPos()];
-                ndShader.setValue(0.0);
-                graph.add(ndShader);
-                shader.textures.forEach((texture) => {
-                    const ndTexture = LiteGraph.createNode("basic/watch");
-                    ndTexture.title = texture.name;
-                    ndTexture.pos = [randomPos(), randomPos()];
-                    graph.add(ndTexture);
-                    ndShader.connect(0, ndTexture, 0);
-                });
-            };
             this.engine.entitiesCache.forEach((shader) => {
-                shaderNode(shader);
                 const listEl = demolishedUtils_1.Utils.el("li", shader.name);
                 listEl.addEventListener("click", () => {
                     this.setActiveShader(shader);
                 });
                 demolishedUtils_1.Utils.$("#shader-list ul").appendChild(listEl);
             });
-            graph.start();
             this.onReady();
             window.setTimeout(() => {
                 this.engine.start(0);
@@ -193,11 +183,13 @@ class DemolishedEd {
                 indentUnit: 4,
                 lineWrapping: true,
                 autofocus: false,
-                autorefresh: true
+                autorefresh: true,
+                extraKeys: {
+                    "Ctrl-S": function (instance) { alert(instance.getValue()); }
+                }
             });
             this.helpers = new demoishedEditorHelper_1.DemoishedEditorHelper(fragmentEditor);
             this.shaderCompiler.onError = (shaderErrors) => {
-                console.log("onerror", shaderErrors);
                 shaderErrors.forEach((err) => {
                     let errNode = demolishedUtils_1.Utils.el("abbr");
                     errNode.classList.add("error-info");
@@ -245,7 +237,8 @@ class DemolishedEd {
                 console.log("vertext changed, set and compile vertex", source);
             });
             this.editors.push(vertexEditor, fragmentEditor);
-            this.setActiveShader(this.engine.shaderEntity);
+            this.editors[1].getDoc().setValue(this.engine.shaderEntity.fragmentShader);
+            this.editors[0].getDoc().setValue(this.engine.shaderEntity.vertexShader);
             this.states.add("fragmentChange").listen("fragmentChange", (a, b) => {
                 let el = demolishedUtils_1.Utils.$("#frag i");
                 a ? el.classList.add("hide") : el.classList.remove("hide");
@@ -271,12 +264,29 @@ class DemolishedEd {
     segmentChange(...args) {
         console.log("...", args);
     }
+    loadShader(name) {
+        demolishedUtils_1.Utils.$("div.partial-loader").classList.toggle("hide");
+        let urls = new Array();
+        urls.push("entities/shaders/" + name + "/fragment.glsl");
+        urls.push("entities/shaders/" + name + "/vertex.glsl");
+        return Promise.all(urls.map((url) => __awaiter(this, void 0, void 0, function* () {
+            const resp = yield demolishedLoader_1.default(url);
+            return resp.text();
+        }))).then(result => {
+            demolishedUtils_1.Utils.$("div.partial-loader").classList.toggle("hide");
+            return result;
+        }).catch((reason) => {
+            return new Array();
+        });
+    }
     setActiveShader(shader) {
-        let fragmentShaderSource = shader.fragmentShader;
-        let vertexShaderSource = shader.vertexShader;
-        this.engine.shaderEntity = shader;
-        this.editors[1].getDoc().setValue(fragmentShaderSource);
-        this.editors[0].getDoc().setValue(vertexShaderSource);
+        this.loadShader(shader.name).then((d) => {
+            let fragmentShaderSource = d[0];
+            let vertexShaderSource = d[1];
+            this.engine.shaderEntity = shader;
+            this.editors[1].getDoc().setValue(fragmentShaderSource);
+            this.editors[0].getDoc().setValue(vertexShaderSource);
+        });
     }
 }
 exports.DemolishedEd = DemolishedEd;

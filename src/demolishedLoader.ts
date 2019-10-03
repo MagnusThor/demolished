@@ -19,10 +19,13 @@ export default
      }
 class XMLHttpRequestWrapper{    
     private xhr:XMLHttpRequest;
+ 
     constructor(private file,resolve,reject){
+
         let xhr = new XMLHttpRequest(); 
             xhr.open("GET", file); 
             xhr.responseType = "blob";
+         
             xhr.onloadend =function(evt:any){
                 try{
                      if(xhr.status == 404) throw "failed to loadResource " +file

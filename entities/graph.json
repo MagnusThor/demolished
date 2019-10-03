@@ -1,7 +1,7 @@
 {
     "version": 0.7,
     "name": "default-project",
-    "duration" :6250200,
+    "duration": 6250200,
     "audioSettings": {
         "audioFile": "assets/thechronoscode.mp3",
         "audioAnalyzerSettings": {
@@ -24,65 +24,75 @@
     },
     "effects": [
         {
-            "name": "hemi",
-            "textures":[],
-            "start":0,
-            "stop":500000,
-            "uniforms": {
-                    
-            }
+            "name": "stub",
+            "textures": [],
+            "start": 0,
+            "stop": 5.2,
+            "uniforms": {}
+        },
+        {
+            "name":"pk",
+            "textures": [],
+            "start": 0,
+            "stop": 5.2,
+            "uniforms": {}
         },
         {
             "name": "nebula",
-            "textures":[],
-            "start":0,
-            "stop":500000,
-            "uniforms": {
-                    
-            }
+            "textures": [],
+            "start": 5.2,
+            "stop": 6.0,
+            "uniforms": {}
         },
         {
             "name": "kalispears",
-              "textures": [
+            "start": 6.0,
+            "stop": 6.2,
+            "textures": [
                 {
                     "src": "assets/channel0.jpg",
                     "uniform": "iChannel0",
                     "width": 256,
                     "height": 256,
-                    "type":0
+                    "type": 0
                 },
                 {
                     "src": "assets/channel1.jpg",
                     "uniform": "iChannel1",
                     "width": 1024,
                     "height": 1024,
-                    "type":0
+                    "type": 0
                 },
                 {
                     "src": "assets/channel2.jpg",
                     "uniform": "iChannel2",
                     "width": 512,
                     "height": 512,
-                    "type":0
+                    "type": 0
                 },
                 {
                     "src": "assets/channel3.jpg",
                     "uniform": "iChannel3",
                     "width": 1024,
                     "height": 1024,
-                    "type":0
+                    "type": 0
                 },
                 {
                     "src": "assets/spears.webm",
                     "uniform": "iChannel4",
                     "width": 512,
                     "height": 512,
-                    "type":1
+                    "type": 1
                 }
             ],
-            "uniforms": {
-                    
-            }
+            "uniforms": {}
+        },
+        {
+            "name": "hemi",
+            "textures": [],
+            "start": 0,
+            "stop": 5.2,
+            "uniforms": {}
         }
     ]
 }

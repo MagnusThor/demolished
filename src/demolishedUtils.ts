@@ -124,8 +124,7 @@ export class ShaderCompiler {
 
     static offset: number;
 
-    // static includeParser:GLSLInclude;
-
+    
     static get vertexHeader() {
         let header = "";
         header += "#version 300 es\n" +

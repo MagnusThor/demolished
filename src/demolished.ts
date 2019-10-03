@@ -1,4 +1,7 @@
-import { ShaderEntity, EntityTexture, IEntity, IEntityTexture } from './demolishedEntity';
+import { ShaderEntity } from './demolishedEntity';
+import { IEntityTexture } from "./IEntityTexture";
+import { IEntity } from "./IEntity";
+import { EntityTexture } from "./EntityTexture";
 import { IGraph } from './demolishedModels';
 import { Graph } from "./Graph";
 import { IDemolisedAudioContext } from "./demolishedSound";
@@ -13,7 +16,6 @@ export namespace Demolished {
         onStart(): void { }
         onStop(): void { }
         onReady(): void { }
-
         gl: WebGLRenderingContext | any;
         webGLbuffer: WebGLBuffer
         animationFrameCount: number;
@@ -112,7 +114,7 @@ export namespace Demolished {
         public nextEntity():ShaderEntity{
             if(!this.isPlaybackMode){
             return this.entitiesCache.find( (a:ShaderEntity) => {
-                    return  a.name === "hemi";
+                    return  a.name === "stub";
             });
             }else{
                 throw "Playmode not implemented"
@@ -166,18 +168,23 @@ export namespace Demolished {
             return this.shaderEntity.uniforms.time;           
         }
         resume(time: number) {
-            this.start(time);
+
+            this.audio.play();
+            this.animationOffsetTime = time;
+            this.animationStartTime = performance.now();
+            this.animate(time);
         }
         updateTextureData(texture: WebGLTexture, size: number, bytes: Uint8Array): void {
             let gl = this.gl;
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
+                
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
 
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
         /**
          *  animation loop
@@ -187,6 +194,7 @@ export namespace Demolished {
          */
         private animate(time: number) {
         
+
             let animationTime = time - this.animationStartTime;
 
             this.animationFrameId = requestAnimationFrame((_time: number) => this.animate(_time));
@@ -207,8 +215,9 @@ export namespace Demolished {
             }
 
             this.onFrame({
-                id: this.animationFrameId,
-                c: this.animationFrameCount,
+                fi: this.animationFrameId,
+                fc: this.animationFrameCount,
+                ts: time
             });
         }
 
@@ -226,35 +235,30 @@ export namespace Demolished {
                 ]), this.gl.STATIC_DRAW);
             }
         }
-
         setViewPort(width: number, height: number) {
             this.gl.viewport(0, 0, width, height);
         }
-
-
         resizeCanvas(parent: Element, resolution?: number) {
 
             if (resolution) this.resolution = resolution;
-            
-            let width = parent.clientWidth / this.resolution;
-            let height = parent.clientHeight / this.resolution;
+                let d = { w:parent.clientWidth / this.resolution, h: parent.clientHeight / this.resolution};
 
-            this.canvas.width = width;
-            this.canvas.height = height;
+            this.canvas.width = d.w;
+            this.canvas.height = d.h;
 
             this.canvas.style.width = parent.clientWidth + 'px';
             this.canvas.style.height = parent.clientHeight + 'px';
             
-            this.surfaceCorners(width,height);
+            this.surfaceCorners(d.w,d.h);
 
             this.setViewPort(this.canvas.width, this.canvas.height);
 
         }
         renderEntities(ent: IEntity, ts: number) {        
-           this.shaderEntity.uniforms.time = ts;
+            this.shaderEntity.uniforms.time = ts;
             this.shaderEntity.uniforms.timeTotal = (performance.now() - this.animationStartTime);
             this.gl.useProgram(ent.glProgram);
-            ent.render(this);
+                ent.render(this);
             this.animationFrameCount++;
         }
         addTexture(ent: IEntity, entityTexture: EntityTexture) {

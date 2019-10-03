@@ -219,6 +219,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
                             let audioCtx = new AudioContext();
 
                             let audioEl = new Audio();
+                            audioEl.loop = true;
                           //  audioEl.preload = "auto";
                             audioEl.src = audioSettings.audioFile;
                             // audioEl.crossOrigin = "anonymous"
@@ -234,6 +235,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
                                 //  analyser.minDecibels = audioSettings.audioAnalyzerSettings.minDecibels;
                     
                                 this.audio = audioEl;
+                                
                                 source.connect(analyser);
                                 analyser.connect(audioCtx.destination);
                                 this.audioAnalyser = analyser;
