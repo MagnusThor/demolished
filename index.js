@@ -114,11 +114,12 @@ class DemolishedEd {
             demolishedUtils_1.Utils.$(".immediate").classList.toggle("hide");
         });
         fullscreen.addEventListener("click", () => {
-            let view = demolishedUtils_1.Utils.$("#webgl");
+            let view = demolishedUtils_1.Utils.$("#shader-win");
             view.requestFullscreen();
+            this.engine.resizeCanvas(view);
         });
         shaderResolution.addEventListener("change", () => {
-            this.engine.resizeCanvas(demolishedUtils_1.Utils.$("#shader-view"), parseInt(shaderResolution.value));
+            this.engine.resizeCanvas(demolishedUtils_1.Utils.$("#webgl"), parseInt(shaderResolution.value));
         });
         document.addEventListener("fullscreenchange", (e) => {
             let target = e.target;
@@ -280,12 +281,10 @@ class DemolishedEd {
         });
     }
     setActiveShader(shader) {
-        this.loadShader(shader.name).then((d) => {
-            let fragmentShaderSource = d[0];
-            let vertexShaderSource = d[1];
+        this.loadShader(shader.name).then((source) => {
             this.engine.shaderEntity = shader;
-            this.editors[1].getDoc().setValue(fragmentShaderSource);
-            this.editors[0].getDoc().setValue(vertexShaderSource);
+            this.editors[1].getDoc().setValue(source[0]);
+            this.editors[0].getDoc().setValue(source[1]);
         });
     }
 }

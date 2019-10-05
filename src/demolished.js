@@ -191,6 +191,10 @@ var Demolished;
             if (entityTexture.assetType == 1)
                 entityTexture.update(this.gl);
         }
+        getTextures() {
+            let result = new Array();
+            return result;
+        }
     }
     Demolished.Rendering = Rendering;
 })(Demolished = exports.Demolished || (exports.Demolished = {}));

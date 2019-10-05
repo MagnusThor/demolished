@@ -91,34 +91,22 @@ export class DemolishedEd {
     }
 
     setActiveShader(shader: ShaderEntity) {
-        this.loadShader(shader.name).then((d: any) => {
-
-            let fragmentShaderSource = d[0]; //shader.fragmentShader;
-            let vertexShaderSource = d[1];//shader.vertexShader;
-
-            this.engine.shaderEntity = shader;
-
-
-            this.editors[1].getDoc().setValue(fragmentShaderSource);
-            this.editors[0].getDoc().setValue(vertexShaderSource);
-
+        this.loadShader(shader.name).then((source: any) => {
+            this.engine.shaderEntity = shader; // set the pre-compiled shader
+            this.editors[1].getDoc().setValue(source[0]);
+            this.editors[0].getDoc().setValue( source[1]);
         });
-
-
-
     }
-
 
     constructor() {
 
-
         this.states = new DemolishedStates();
-
         this.editors = new Array<CodeMirror>();
 
         let Render2D = new Demolished2D(Utils.$("#canvas-spectrum") as HTMLCanvasElement);
 
         this.spectrum = new SpectrumAnalyzer(Render2D.ctx);
+
         Render2D.addEntity(this.spectrum);
         Render2D.start(0);
 
@@ -170,9 +158,7 @@ export class DemolishedEd {
 
 
         Utils.$$("*[data-close]").forEach((n: Element) => {
-
             n.addEventListener("click", () => n.parentElement.classList.toggle("hide"));
-
         });
 
         Utils.$("#show-shaders").addEventListener("click", (evt) => {
@@ -204,28 +190,26 @@ export class DemolishedEd {
 
             });
         });
-
         shaderWin.addEventListener("dragend", (evt: DragEvent) => {
             let win = evt.target as HTMLElement;
             win.style.left = (evt.clientX).toString()  + "px";
             win.style.top = (evt.clientY).toString() + "px";
         });
-
         resetTimers.addEventListener("click", () => {
             this.engine.resetClock(0);
-
         });
 
         Utils.$("#btn-showconsole").addEventListener("click", () => {
             Utils.$(".immediate").classList.toggle("hide");
         });
         fullscreen.addEventListener("click", () => {
-            let view = Utils.$("#webgl");
+            let view = Utils.$("#shader-win");
             view.requestFullscreen();
-
+            this.engine.resizeCanvas(view);
         });
         shaderResolution.addEventListener("change", () => {
-            this.engine.resizeCanvas(Utils.$("#shader-view"),
+
+            this.engine.resizeCanvas(Utils.$("#webgl"),
                 parseInt(shaderResolution.value));
         });
 
@@ -271,6 +255,7 @@ export class DemolishedEd {
         this.engine.onReady = () => {
 
 
+            
 
 
             this.timeLime = new AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl())

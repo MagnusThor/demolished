@@ -273,6 +273,11 @@ export namespace Demolished {
             entityTexture.update(this.gl);
 
         }
+        getTextures():Array<IEntityTexture>{
+            let result = new Array<IEntityTexture>();
+            // filter and return a list of texture from each ShaderEntity
+            return result;
+        }
 
     }
 }

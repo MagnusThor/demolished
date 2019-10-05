@@ -15,14 +15,13 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "copy-webpack-plugin": "^5.0.3",
-    "express": "^4.16.4",
-    "webpack": "^4.31.0",
-    "webpack-cli": "^3.3.2",
-    "webpack-dev-server": "^3.3.1"
+    "copy-webpack-plugin": "^5.0.4",
+    "webpack": "^4.41.0",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.8.2"
   },
   "dependencies": {
-    "codemirror": "^5.46.0",
+    "codemirror": "^5.49.0",
     "demolishedtexture": "^1.0.1",
     "litegraph.js": "^0.7.0",
     "reflect-metadata": "^0.1.13"

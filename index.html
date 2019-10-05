@@ -37,7 +37,7 @@
 	</nav>
 
 	<div class="dlg-uniforms dialog hide">
-			<span data-close="dlg-uniforms" class="right"><i class="far fa-times-circle"></i></span>
+		<span data-close="dlg-uniforms" class="right"><i class="far fa-times-circle"></i></span>
 	</div>
 
 	<div id="spectrum-analyzer">
@@ -63,7 +63,7 @@
 	<div class="wrapper">
 		<div class="tabs">
 			<div class="menu">
-					
+
 				<i class="fa fa-bars fa-2x" id="show-shaders"></i>
 				<div id="shader-list" class="hide dialog">
 					<span data-close="shader-list" class="right"><i class="far fa-times-circle"></i></span>
@@ -75,14 +75,16 @@
 				<i class="fa fa-circle hide"></i>
 				Fragment shader</div>
 			<div class="tab-caption" data-target="tab-vertex">
-					<i class="fa fa-circle hide"></i>Vertex shader</div>
-					<div class="tab-caption" data-target="tab-graph">
-						<i class="fa fa-circle hide"></i>Graph</div>
+				<i class="fa fa-circle hide"></i>Vertex shader</div>
+			<div class="tab-caption" data-target="tab-graph">
+				<i class="fa fa-circle hide"></i>Graph</div>
 
-						<div class="tab-caption" data-target="tab-globals">
-							<i class="fa fa-circle hide"></i>Globals</div>
+			<div class="tab-caption" data-target="tab-globals">
+				<i class="fa fa-circle hide"></i>Globals</div>
 
-						
+			<div class="tab-caption" data-target="tab-textures">
+				<i class="fa fa-circle hide"></i>Textures</div>
+
 			<div class="tab" id="tab-fragment">
 				<form id="editor-fragment">
 					<textarea id="fragment" col="10" rows="10">
@@ -90,18 +92,23 @@
 				</form>
 			</div>
 			<div class="tab hide" id="tab-vertex">
-					<form id="editor-vertex">
-				<textarea id="vertex" col="10" rows="10">
+				<form id="editor-vertex">
+					<textarea id="vertex" col="10" rows="10">
 				</textarea>
 				</form>
-				
+
 
 			</div>
 			<div class="tab hide" id="tab-graph">
-				<canvas id='lgraph' width='1024' height='720' style='border: 1px solid;margin-left: auto;margin-right: auto;display: block;width: 1024px;margin-top: 50px;'></canvas>
+				<canvas id='lgraph' width='1024' height='720'
+					style='border: 1px solid;margin-left: auto;margin-right: auto;display: block;width: 1024px;margin-top: 50px;'></canvas>
 			</div>
 			<div class="tab hide" id="tab-globals">
-				</div>
+			</div>
+			<div class="tab hide" id="tab-textures">
+				TBD : Show textures
+			</div>
+
 		</div>
 	</div>
 	<div id="shader-win" draggable="true">
@@ -130,19 +137,20 @@
 
 	</div>
 	<div class="tools" id="current-time">
-		<svg id="audio-waves" preserveAspectRatio="none" width="2000" height="100"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+		<svg id="audio-waves" preserveAspectRatio="none" width="2000" height="100" xmlns="http://www.w3.org/2000/svg"
+			xmlns:xlink="http://www.w3.org/1999/xlink">
 			<linearGradient id="Gradient" x1="0" x2="0" y1="0" y2="1">
-			  <stop offset="0%" stop-color="white" />
-			  <stop offset="90%" stop-color="white" stop-opacity="0.75" />
-			  <stop offset="100%" stop-color="white" stop-opacity="0" />
+				<stop offset="0%" stop-color="white" />
+				<stop offset="90%" stop-color="white" stop-opacity="0.75" />
+				<stop offset="100%" stop-color="white" stop-opacity="0" />
 			</linearGradient>
 			<mask id="Mask">
-			  <path fill="url(#Gradient)" />
+				<path fill="url(#Gradient)" />
 			</mask>
-			<rect id="progress" mask="url(#Mask)" x="0" y="0" width="0" height="100" fill="rgb(255, 106, 106)"  />
-			<rect id="remaining" mask="url(#Mask)" x="0" y="0" width="0" height="100" fill="rgb(170, 56, 56)"  />
-		  </svg>
-		  
+			<rect id="progress" mask="url(#Mask)" x="0" y="0" width="0" height="100" fill="rgb(255, 106, 106)" />
+			<rect id="remaining" mask="url(#Mask)" x="0" y="0" width="0" height="100" fill="rgb(170, 56, 56)" />
+		</svg>
+
 	</div>
 	<!--  enable if SID music is used
 	<script src="libs/scriptProcessor.js"></script>
