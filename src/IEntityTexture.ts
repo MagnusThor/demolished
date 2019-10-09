@@ -3,6 +3,8 @@ export class IEntityTexture {
     name: string;
     width: number;
     height: number;
-    assetType: number;
+    type: number;
     update: any;
+    src:string;
+    data: any;
 }

@@ -13,13 +13,41 @@
         "duration": 6250200,
         "bmp": 129
     },
-    "textures":[
+    "textures": [
         {
-            "src": "assets/foo.jpg",
-            "uniform": "bar",
+            "src": "assets/channel0.jpg",
+            "name": "iChannel0",
             "width": 256,
             "height": 256,
             "type": 0
+        },
+        {
+            "src": "assets/channel1.jpg",
+            "name": "iChannel1",
+            "width": 1024,
+            "height": 1024,
+            "type": 0
+        },
+        {
+            "src": "assets/channel2.jpg",
+            "name": "iChannel2",
+            "width": 512,
+            "height": 512,
+            "type": 0
+        },
+        {
+            "src": "assets/channel3.jpg",
+            "name": "iChannel3",
+            "width": 1024,
+            "height": 1024,
+            "type": 0
+        },
+        {
+            "src": "assets/spears.webm",
+            "name": "iChannel4",
+            "width": 512,
+            "height": 512,
+            "type": 1
         }
     ],
     "shared": {
@@ -40,7 +68,7 @@
             "uniforms": {}
         },
         {
-            "name":"pseudo knightyan",
+            "name": "pseudo knightyan",
             "textures": [],
             "start": 0,
             "stop": 5.2,
@@ -59,39 +87,28 @@
             "stop": 6.2,
             "textures": [
                 {
-                    "src": "assets/channel0.jpg",
-                    "uniform": "iChannel0",
-                    "width": 256,
-                    "height": 256,
-                    "type": 0
+                    "name":"iChannel0",
+                    "uniform":"iChannel0"
                 },
                 {
-                    "src": "assets/channel1.jpg",
-                    "uniform": "iChannel1",
-                    "width": 1024,
-                    "height": 1024,
-                    "type": 0
+                    "name":"iChannel1",
+                    "uniform":"iChannel1"
                 },
                 {
-                    "src": "assets/channel2.jpg",
-                    "uniform": "iChannel2",
-                    "width": 512,
-                    "height": 512,
-                    "type": 0
+                    "name":"iChannel2",
+                    "uniform":"iChannel2"
                 },
                 {
-                    "src": "assets/channel3.jpg",
-                    "uniform": "iChannel3",
-                    "width": 1024,
-                    "height": 1024,
-                    "type": 0
+                    "name":"iChannel2",
+                    "uniform":"iChannel2"
                 },
                 {
-                    "src": "assets/spears.webm",
-                    "uniform": "iChannel4",
-                    "width": 512,
-                    "height": 512,
-                    "type": 1
+                    "name":"iChannel3",
+                    "uniform":"iChannel3"
+                },
+                {
+                    "name":"iChannel4",
+                    "uniform":"iChannel4"
                 }
             ],
             "uniforms": {}

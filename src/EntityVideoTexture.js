@@ -6,7 +6,7 @@ class EntityVideoTexture {
         this.name = name;
         this.width = width;
         this.height = height;
-        this.assetType = 1;
+        this.type = 1;
     }
     update(gl) {
         const level = 0;

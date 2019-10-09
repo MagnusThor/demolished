@@ -6,7 +6,7 @@ class EntityTexture {
         this.name = name;
         this.width = width;
         this.height = height;
-        this.assetType = 0;
+        this.type = 0;
     }
     update(gl) {
     }

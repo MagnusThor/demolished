@@ -149,6 +149,15 @@ body {
 		color:#000;
 	}
 
+	.loader > button{
+		position:relative;
+		top: calc(50% - 10px);
+		color:#000;
+		padding: 10px;
+		border: 0;
+		
+	}
+
 	.partial-loader{
 		color: #fff;
 		position: absolute;

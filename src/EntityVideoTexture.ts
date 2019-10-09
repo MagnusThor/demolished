@@ -1,7 +1,8 @@
 import { IEntityTexture } from "./IEntityTexture";
 export class EntityVideoTexture implements IEntityTexture {
+    src: string;
     texture: WebGLTexture;
-    assetType: number;
+    type: number;
     update(gl) {
         const level = 0;
         const internalFormat = gl.RGBA;
@@ -11,6 +12,6 @@ export class EntityVideoTexture implements IEntityTexture {
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, this.data);
     }
     constructor(public data: any, public name: string, public width: number, public height: number) {
-        this.assetType = 1;
+        this.type = 1;
     }
 }

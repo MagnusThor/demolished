@@ -53,7 +53,14 @@ export class DemolishedEd {
     states: DemolishedStates;
 
     onReady(): void {
-        Utils.$(".loader").classList.add("hide");
+        Utils.$("#startEdit").classList.remove("hide");
+        Utils.$(".loader i").classList.add("hide");
+        Utils.$(".loader > button").addEventListener("click", () => {
+                Utils.$(".loader").classList.add("hide");
+                this.engine.start(0);
+        });
+
+  
     }
     static showJSON(data: any, t: HTMLElement | Element) {
         t.textContent = JSON.stringify(data);
@@ -78,8 +85,8 @@ export class DemolishedEd {
         urls.push("entities/shaders/" + name + "/vertex.glsl");
 
         return Promise.all(urls.map(async (url: string) => {
-            
-            const resp = await loadResource(url);        
+
+            const resp = await loadResource(url);
             return resp.text();
         }
         )).then(result => {
@@ -94,7 +101,7 @@ export class DemolishedEd {
         this.loadShader(shader.name).then((source: any) => {
             this.engine.shaderEntity = shader; // set the pre-compiled shader
             this.editors[1].getDoc().setValue(source[0]);
-            this.editors[0].getDoc().setValue( source[1]);
+            this.editors[0].getDoc().setValue(source[1]);
         });
     }
 
@@ -134,7 +141,7 @@ export class DemolishedEd {
         record.addEventListener("click", () => {
 
             if (!this.recorder) {
-                this.engine.resetClock(0);
+                this.engine.resetClock();
                 immediate.classList.remove("hide");
                 let videoTrack = this.engine.canvas["captureStream"](60);
                 let audioTracks = this.engine.audio.getTracks();
@@ -192,11 +199,11 @@ export class DemolishedEd {
         });
         shaderWin.addEventListener("dragend", (evt: DragEvent) => {
             let win = evt.target as HTMLElement;
-            win.style.left = (evt.clientX).toString()  + "px";
+            win.style.left = (evt.clientX).toString() + "px";
             win.style.top = (evt.clientY).toString() + "px";
         });
         resetTimers.addEventListener("click", () => {
-            this.engine.resetClock(0);
+            this.engine.resetClock();
         });
 
         Utils.$("#btn-showconsole").addEventListener("click", () => {
@@ -239,13 +246,12 @@ export class DemolishedEd {
             this.engine.mute();
         });
 
-        this.engine.onFrame = (frame) => {
+        this.engine.onFrame = () => {
             this.spectrum.frequencData = this.music.getFrequenceData();
             this.timeLime.updateAudioPosition();
 
             //todo: use frame_data instead of audio..
             this.timeEl.textContent = this.engine.audio.currentTime.toFixed(3).toString();
-
 
         };
 
@@ -255,7 +261,7 @@ export class DemolishedEd {
         this.engine.onReady = () => {
 
 
-            
+
 
 
             this.timeLime = new AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl())
@@ -274,14 +280,11 @@ export class DemolishedEd {
 
             this.onReady();
 
-            window.setTimeout(() => {
-                this.engine.start(0);
-                console.log("starting after 2000ms")
-            }, 2000);
+          
 
         }
-        this.engine.onNext = (f: any) => {
-            console.log("onNext->", f)
+        this.engine.onNext = () => {
+            console.log("onNext->")
         };
 
         this.engine.onStop = () => {
@@ -307,15 +310,15 @@ export class DemolishedEd {
                     autofocus: false,
                     autorefresh: true,
                     extraKeys: {
-                        "Ctrl-S": function(instance) { alert(instance.getValue()); }
-                      }
+                        "Ctrl-S": function (instance) { alert(instance.getValue()); }
+                    }
                 }
             );
 
             this.helpers = new DemoishedEditorHelper(fragmentEditor);
 
             this.shaderCompiler.onError = (shaderErrors: Array<ShaderError>) => {
-          
+
                 shaderErrors.forEach((err: ShaderError) => {
                     let errNode = Utils.el("abbr");
                     errNode.classList.add("error-info");
@@ -378,13 +381,13 @@ export class DemolishedEd {
 
             this.editors.push(vertexEditor, fragmentEditor);
 
-           // this.setActiveShader(this.engine.shaderEntity);
+            // this.setActiveShader(this.engine.shaderEntity);
 
-          // this.engine.shaderEntity = shader;
+            // this.engine.shaderEntity = shader;
 
 
-           this.editors[1].getDoc().setValue(this.engine.shaderEntity.fragmentShader);
-           this.editors[0].getDoc().setValue(this.engine.shaderEntity.vertexShader)
+            this.editors[1].getDoc().setValue(this.engine.shaderEntity.fragmentShader);
+            this.editors[0].getDoc().setValue(this.engine.shaderEntity.vertexShader)
 
 
 

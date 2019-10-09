@@ -60,7 +60,7 @@ class DemolishedEd {
         let record = demolishedUtils_1.Utils.$("#btn-record");
         record.addEventListener("click", () => {
             if (!this.recorder) {
-                this.engine.resetClock(0);
+                this.engine.resetClock();
                 immediate.classList.remove("hide");
                 let videoTrack = this.engine.canvas["captureStream"](60);
                 let audioTracks = this.engine.audio.getTracks();
@@ -108,7 +108,7 @@ class DemolishedEd {
             win.style.top = (evt.clientY).toString() + "px";
         });
         resetTimers.addEventListener("click", () => {
-            this.engine.resetClock(0);
+            this.engine.resetClock();
         });
         demolishedUtils_1.Utils.$("#btn-showconsole").addEventListener("click", () => {
             demolishedUtils_1.Utils.$(".immediate").classList.toggle("hide");
@@ -144,7 +144,7 @@ class DemolishedEd {
             sound.classList.toggle("fa-volume-off");
             this.engine.mute();
         });
-        this.engine.onFrame = (frame) => {
+        this.engine.onFrame = () => {
             this.spectrum.frequencData = this.music.getFrequenceData();
             this.timeLime.updateAudioPosition();
             this.timeEl.textContent = this.engine.audio.currentTime.toFixed(3).toString();
@@ -160,13 +160,9 @@ class DemolishedEd {
                 demolishedUtils_1.Utils.$("#shader-list ul").appendChild(listEl);
             });
             this.onReady();
-            window.setTimeout(() => {
-                this.engine.start(0);
-                console.log("starting after 2000ms");
-            }, 2000);
         };
-        this.engine.onNext = (f) => {
-            console.log("onNext->", f);
+        this.engine.onNext = () => {
+            console.log("onNext->");
         };
         this.engine.onStop = () => {
         };
@@ -257,7 +253,12 @@ class DemolishedEd {
         return new DemolishedEd();
     }
     onReady() {
-        demolishedUtils_1.Utils.$(".loader").classList.add("hide");
+        demolishedUtils_1.Utils.$("#startEdit").classList.remove("hide");
+        demolishedUtils_1.Utils.$(".loader i").classList.add("hide");
+        demolishedUtils_1.Utils.$(".loader > button").addEventListener("click", () => {
+            demolishedUtils_1.Utils.$(".loader").classList.add("hide");
+            this.engine.start(0);
+        });
     }
     static showJSON(data, t) {
         t.textContent = JSON.stringify(data);

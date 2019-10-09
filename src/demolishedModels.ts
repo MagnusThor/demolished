@@ -1,5 +1,7 @@
 ;
 import { ShaderEntity } from './demolishedEntity'
+import { TextureBinding } from "./TextureBinding";
+import { IEntityTexture } from './IEntityTexture';
 
 export class RenderTarget {
     constructor(public frameBuffer: WebGLFramebuffer, public renderBuffer: WebGLFramebuffer,
@@ -12,6 +14,8 @@ export interface IGraph {
     timeline: Array<ShaderEntity>;
     shared: any,
     duration: number
+    textures: Array<IEntityTexture>
+    type:number;
 }
 /**
  * 
@@ -44,7 +48,7 @@ export class Effect {
     start:number;
     stop:number;
     constructor(start:number,stop:number) {
-        this.textures = new Array<any>();
+        this.textures = new Array<TextureBinding>();
         this.type = 0;
         this.start = start;
         this.stop = stop;

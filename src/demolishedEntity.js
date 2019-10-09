@@ -12,39 +12,6 @@ const demolishedModels_1 = require("./demolishedModels");
 const Uniforms_1 = require("./Uniforms");
 const demolishedLoader_1 = require("./demolishedLoader");
 const demolishedUtils_1 = require("./demolishedUtils");
-class IEntityTexture {
-}
-exports.IEntityTexture = IEntityTexture;
-class EntityTexture {
-    constructor(data, name, width, height) {
-        this.data = data;
-        this.name = name;
-        this.width = width;
-        this.height = height;
-        this.assetType = 0;
-    }
-    update(gl) {
-    }
-}
-exports.EntityTexture = EntityTexture;
-class EntityVideoTexture {
-    constructor(data, name, width, height) {
-        this.data = data;
-        this.name = name;
-        this.width = width;
-        this.height = height;
-        this.assetType = 1;
-    }
-    update(gl) {
-        const level = 0;
-        const internalFormat = gl.RGBA;
-        const srcFormat = gl.RGBA;
-        const srcType = gl.UNSIGNED_BYTE;
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, this.data);
-    }
-}
-exports.EntityVideoTexture = EntityVideoTexture;
 class EntityBase {
     constructor(gl) {
         this.gl = gl;
@@ -105,8 +72,8 @@ class ShaderEntity extends EntityBase {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, engine.fftTexture);
         gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
-        ent.textures.forEach((asset, index) => {
-            engine.bindTexture(ent, asset, index);
+        ent.textures.forEach((binding, index) => {
+            engine.bindTexture(ent, binding, index);
         });
         gl.bindFramebuffer(gl.FRAMEBUFFER, ent.target.frameBuffer);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -159,22 +126,6 @@ class ShaderEntity extends EntityBase {
         this.fragmentShader = fs;
         this.init();
     }
-    createTextureFromArray(data) {
-        const gl = this.gl;
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        const level = 0;
-        const internalFormat = gl.RGBA;
-        const border = 0;
-        const srcFormat = gl.RGBA;
-        const srcType = gl.UNSIGNED_BYTE;
-        const pixels = new Uint8Array(data);
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, 1, 1, border, srcFormat, srcType, pixels);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        return texture;
-    }
     createTextureFromVideo() {
         const gl = this.gl;
         const texture = gl.createTexture();
@@ -225,8 +176,10 @@ class ShaderEntity extends EntityBase {
         gl.enableVertexAttribArray(this.positionAttribute);
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
         gl.enableVertexAttribArray(this.vertexPosition);
-        this.textures.forEach((asset) => {
-            asset.assetType == 0 ?
+        this.textures.forEach((binding) => {
+            console.log("binding", binding);
+            let asset = this.engine.textureCache.get(binding.name);
+            asset.type == 0 ?
                 asset.texture = this.createTextureFromImage(asset.data) :
                 asset.texture = this.createTextureFromVideo();
         });

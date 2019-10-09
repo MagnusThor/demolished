@@ -3,57 +3,24 @@ import { Uniforms } from "./Uniforms";
 import loadResource from './demolishedLoader'
 import { Demolished } from './demolished';
 import { ShaderCompiler } from './demolishedUtils';
+import { IEntityTexture } from './IEntityTexture';
+import { IEntity } from './IEntity';
+import { TextureBinding } from './TextureBinding';
 
-export class IEntityTexture {
-    texture: WebGLTexture
-    name: string;
-    width: number;
-    height: number
-    assetType: number
-    update: any;
-}
-
-export class EntityTexture implements IEntityTexture {
-    texture: WebGLTexture;
-    assetType: number;
-    constructor(public data: any, public name: string, public width: number, public height: number) {
-        this.assetType = 0;
-    }
-    update(gl): void {
-    }
-}
-
-
-export class EntityVideoTexture implements IEntityTexture {
-    texture: WebGLTexture;
-    assetType: number;
-    update(gl) {
-        const level = 0;
-        const internalFormat = gl.RGBA;
-        const srcFormat = gl.RGBA;
-        const srcType = gl.UNSIGNED_BYTE;
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-            srcFormat, srcType, this.data);
-    }
-    constructor(public data: any, public name: string, public width: number, public height: number) {
-        this.assetType = 1;
-    }
-}
-export interface IEntity {
-    render(engine: Demolished.Rendering):void;
-    onError(err: any): void;
-    swapBuffers(): void;
-    glProgram: WebGLProgram;
-    textures?: Array<IEntityTexture>;
-    mainBuffer: WebGLBuffer;
-    vertexPosition: number;
-    positionAttribute: number;
-    target: RenderTarget;
-    backTarget: RenderTarget;
-    frameId: number;
-    uniforms: Uniforms;
-}
+// export interface IEntity {
+//     render(engine: Demolished.Rendering):void;
+//     onError(err: any): void;
+//     swapBuffers(): void;
+//     glProgram: WebGLProgram;
+//     textures?: Array<TextureBinding>;
+//     mainBuffer: WebGLBuffer;
+//     vertexPosition: number;
+//     positionAttribute: number;
+//     target: RenderTarget;
+//     backTarget: RenderTarget;
+//     frameId: number;
+//     uniforms: Uniforms;
+// }
 /**
  *  
  * 
@@ -136,9 +103,8 @@ export class ShaderEntity extends EntityBase implements IEntity {
         gl.bindTexture(gl.TEXTURE_2D, engine.fftTexture);
         gl.uniform1i(gl.getUniformLocation(ent.glProgram, "fft"), 0);
 
-        ent.textures.forEach((asset: EntityTexture, index: number) => {
-    
-            engine.bindTexture(ent, asset, index);
+        ent.textures.forEach((binding: TextureBinding, index: number) => {   
+            engine.bindTexture(ent, binding, index);
             
         });
 
@@ -154,8 +120,9 @@ export class ShaderEntity extends EntityBase implements IEntity {
     }
 
     constructor(public gl: WebGLRenderingContext, public name: string, public w: number, public h: number,
-        public textures?: Array<EntityTexture>, public shared?: Map<string, string>,
+        public textures?: Array<TextureBinding>, public shared?: Map<string, string>,
         public engine?: Demolished.Rendering) {
+            
         super(gl);
         this.loadShaders().then((numOfShaders: number) => {
             if (numOfShaders > -1) {
@@ -231,27 +198,28 @@ export class ShaderEntity extends EntityBase implements IEntity {
     }
 
   
-    public createTextureFromArray(data: Array<number>) {
-        const gl = this.gl;
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        const level = 0;
-        const internalFormat = gl.RGBA;
-        const border = 0;
-        const srcFormat = gl.RGBA;
-        const srcType = gl.UNSIGNED_BYTE;
-        const pixels = new Uint8Array(data);
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-            1, 1, border, srcFormat, srcType,
-            pixels);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    // public createTextureFromArray(data: Array<number>) {
+    //     const gl = this.gl;
+    //     const texture = gl.createTexture();
+    //     gl.bindTexture(gl.TEXTURE_2D, texture);
+    //     const level = 0;
+    //     const internalFormat = gl.RGBA;
+    //     const border = 0;
+    //     const srcFormat = gl.RGBA;
+    //     const srcType = gl.UNSIGNED_BYTE;
+    //     const pixels = new Uint8Array(data);
+    //     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+    //         1, 1, border, srcFormat, srcType,
+    //         pixels);
+    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
-        return texture;
+    //     return texture;
 
 
-    }
+    // }
+
     private createTextureFromVideo() {
         const gl = this.gl;
         const texture = gl.createTexture();
@@ -275,7 +243,7 @@ export class ShaderEntity extends EntityBase implements IEntity {
 
     }
 
-    private createTextureFromImage(image: HTMLImageElement) {
+    private createTextureFromImage(image: any) {
         let gl = this.gl;
         let texture = gl.createTexture()
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -325,10 +293,14 @@ export class ShaderEntity extends EntityBase implements IEntity {
         this.vertexPosition = gl.getAttribLocation(this.glProgram, "pos");
         gl.enableVertexAttribArray(this.vertexPosition);
 
-        this.textures.forEach((asset: EntityTexture) => {
-            asset.assetType == 0 ?
-                asset.texture = this.createTextureFromImage(asset.data) :
-                asset.texture = this.createTextureFromVideo();
+        this.textures.forEach((binding: TextureBinding) => {
+            console.log("binding",binding);
+            let asset = this.engine.textureCache.get(binding.name) ;     
+           
+            asset.type == 0 ?
+                 asset.texture = this.createTextureFromImage(asset.data) :
+                 asset.texture = this.createTextureFromVideo();
+
         });
 
         gl.useProgram(this.glProgram);

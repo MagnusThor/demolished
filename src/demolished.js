@@ -2,13 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const demolishedEntity_1 = require("./demolishedEntity");
 const Graph_1 = require("./Graph");
+const TextureCache_1 = require("./TextureCache");
 var Demolished;
 (function (Demolished) {
     class Rendering {
-        constructor(canvas, parent, timelineFile, audio) {
+        constructor(canvas, parent, graphFile, audio) {
             this.canvas = canvas;
             this.parent = parent;
-            this.timelineFile = timelineFile;
+            this.graphFile = graphFile;
             this.audio = audio;
             this.width = 1;
             this.height = 1;
@@ -19,16 +20,20 @@ var Demolished;
             this.entitiesCache = new Array();
             this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
-            Graph_1.Graph.Load(this.timelineFile, this).then((g) => {
+            this.textureCache = new TextureCache_1.TextureCache();
+            Graph_1.Graph.Load(this.graphFile, this).then(() => {
                 this.resizeCanvas(this.parent);
                 this.onReady();
-            });
+            }).catch(reason => this.onError(reason));
         }
-        onFrame(a) { }
-        onNext(a) { }
+        onFrame() { }
+        onNext() { }
         onStart() { }
         onStop() { }
         onReady() { }
+        onError(message) {
+            console.error(message);
+        }
         getRendringContext() {
             let renderingContext;
             let contextAttributes = {
@@ -73,7 +78,7 @@ var Demolished;
                 throw "Playmode not implemented";
             }
         }
-        resetClock(time) {
+        resetClock() {
             this.shaderEntity.uniforms.time = 0;
             this.shaderEntity.uniforms.timeTotal = 0;
             this.audio.currentTime = 0;
@@ -122,7 +127,7 @@ var Demolished;
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.EXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
@@ -139,11 +144,7 @@ var Demolished;
                 this.shaderEntity ?
                     this.renderEntities(this.shaderEntity, animationTime) : this.start(0);
             }
-            this.onFrame({
-                fi: this.animationFrameId,
-                fc: this.animationFrameCount,
-                ts: time
-            });
+            this.onFrame();
         }
         surfaceCorners(sw, sh) {
             if (this.gl) {
@@ -180,15 +181,13 @@ var Demolished;
             ent.render(this);
             this.animationFrameCount++;
         }
-        addTexture(ent, entityTexture) {
-            ent.textures.push(entityTexture);
-        }
-        bindTexture(ent, entityTexture, c) {
+        bindTexture(ent, textureBinding, c) {
+            let entityTexture = this.textureCache.get(textureBinding.name);
             let gl = this.gl;
             gl.activeTexture(gl.TEXTURE0 + (1 + c));
             gl.bindTexture(gl.TEXTURE_2D, entityTexture.texture);
-            gl.uniform1i(gl.getUniformLocation(ent.glProgram, entityTexture.name), 1 + c);
-            if (entityTexture.assetType == 1)
+            gl.uniform1i(gl.getUniformLocation(ent.glProgram, textureBinding.uniform), 1 + c);
+            if (entityTexture.type == 1)
                 entityTexture.update(this.gl);
         }
         getTextures() {
