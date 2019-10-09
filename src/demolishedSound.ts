@@ -187,6 +187,7 @@ export class DemolishedStreamingMusic extends DemolishedSoundBase implements IDe
 
     createAudio(audioSettings: any): Promise<boolean> {
         return new Promise((resolve, reject) => {
+            
             loadResource(audioSettings.audioFile).then((resp: Response) => {
                 return resp.arrayBuffer().then((buffer: ArrayBuffer) => {
                     let audioCtx = new AudioContext();
