@@ -21,16 +21,16 @@ var Demolished;
             this.fftTexture = this.gl.createTexture();
             this.webGLbuffer = this.gl.createBuffer();
             this.textureCache = new TextureCache_1.TextureCache();
-            Graph_1.Graph.Load(this.graphFile, this).then(() => {
+            Graph_1.Graph.Load(this.graphFile, this).then((g) => {
                 this.resizeCanvas(this.parent);
-                this.onReady();
+                this.onReady(g);
             }).catch(reason => this.onError(reason));
         }
         onFrame() { }
         onNext() { }
         onStart() { }
         onStop() { }
-        onReady() { }
+        onReady(g) { }
         onError(message) {
             console.error(message);
         }

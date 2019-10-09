@@ -85,8 +85,8 @@ export class Graph {
         return new Promise<Graph>((resolve, reject) => {
             Graph.loadGraph(file).then((graph: IGraph) => {
                 engine.graph = graph;
-                let audioSettings: AudioSettings = graph.audioSettings;
-                console.log("audioSettings",audioSettings);
+               // let audioSettings: AudioSettings = graph.audioSettings;
+                //console.log("audioSettings",audioSettings);
                 return this.loadShared(graph.shared.glsl).then((sh: Map<string, string>) => {
                     engine.shared = sh;
                     console.log("sharedSource",this.shared);
@@ -101,10 +101,15 @@ export class Graph {
                             engine.addEntity(effect.name, effect.textures).setTime(effect.start, effect.stop);
                         });
                     }).then(() => {
-                        engine.audio.createAudio(audioSettings).then((state: boolean) => {
-                        console.log("audio Created",engine.audio); 
-                        resolve();
-                        });
+
+                            resolve(graph);
+
+                        // due to the fact that audio cant be auto started , needs a UI interaction.
+
+                        // engine.audio.createAudio(audioSettings).then((state: boolean) => {
+                        // console.log("audio Created",engine.audio); 
+                        // resolve();
+                        // });
                     });
                 });
             }).catch( reason => reject(reason));

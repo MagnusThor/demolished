@@ -36,6 +36,8 @@ import { DemolishedStates } from './src/DemolishedStates';
 import { ShaderEntity } from './src/demolishedEntity';
 import { IEntityTexture } from "./src/IEntityTexture";
 import loadResource from './src/demolishedLoader';
+import { AudioSettings, IGraph } from './src/demolishedModels';
+import { Graph } from './src/Graph';
 
 export class DemolishedEd {
     timeEl: Element;
@@ -52,16 +54,25 @@ export class DemolishedEd {
 
     states: DemolishedStates;
 
-    onReady(): void {
+    onReady(graph:IGraph): void {
         Utils.$("#startEdit").classList.remove("hide");
         Utils.$(".loader i").classList.add("hide");
-        Utils.$(".loader > button").addEventListener("click", () => {
-                Utils.$(".loader").classList.add("hide");
-                this.engine.start(0);
-        });
+        let btnStart = Utils.$(".loader > button");
 
-  
+        btnStart.addEventListener("click", () => {
+        btnStart.textContent = "decoding,get yourself ready...";
+            this.engine.audio.createAudio(graph.audioSettings).then((state: boolean) => {
+                console.log("Audio Created", this.engine.audio);
+                Utils.$(".loader").classList.add("hide");
+                this.timeLime = new AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl())
+                this.engine.start(0);
+                
+            });
+
+
+        });
     }
+
     static showJSON(data: any, t: HTMLElement | Element) {
         t.textContent = JSON.stringify(data);
     }
@@ -258,13 +269,8 @@ export class DemolishedEd {
 
 
 
-        this.engine.onReady = () => {
+        this.engine.onReady = (g:IGraph) => {
 
-
-
-
-
-            this.timeLime = new AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl())
             this.demoTimeline = new Timeline("#current-time", this.engine.graph.duration);
 
             this.engine.entitiesCache.forEach((shader: ShaderEntity) => {
@@ -278,9 +284,9 @@ export class DemolishedEd {
             // 
 
 
-            this.onReady();
+            this.onReady(g);
 
-          
+
 
         }
         this.engine.onNext = () => {

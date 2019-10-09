@@ -17,7 +17,7 @@ export namespace Demolished {
         onNext(): void { }
         onStart(): void { }
         onStop(): void { }
-        onReady(): void { }
+        onReady(g:IGraph): void { }
         onError(message: string) {
             console.error(message);
         }
@@ -45,7 +45,6 @@ export namespace Demolished {
         textureCache: TextureCache;
 
         isPlaybackMode: boolean
-
 
         config: DemolishedConfig;
 
@@ -97,9 +96,9 @@ export namespace Demolished {
             this.textureCache = new TextureCache();
 
             // load shaders, sound, shared and textures from graph.
-            Graph.Load(this.graphFile, this).then(() => {
+            Graph.Load(this.graphFile, this).then((g:IGraph) => {
                 this.resizeCanvas(this.parent);
-                this.onReady();
+                this.onReady(g);
             }).catch(reason => this.onError(reason));
 
         }
@@ -130,14 +129,11 @@ export namespace Demolished {
                 throw "Playmode not implemented"
             }
         }
-
         resetClock() {
-
             this.shaderEntity.uniforms.time = 0;
             this.shaderEntity.uniforms.timeTotal = 0;
             this.audio.currentTime = 0;
         }
-
         start(time: number) {
 
             this.animationFrameCount = 0;

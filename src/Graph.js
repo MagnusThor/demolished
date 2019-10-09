@@ -73,8 +73,6 @@ class Graph {
         return new Promise((resolve, reject) => {
             Graph.loadGraph(file).then((graph) => {
                 engine.graph = graph;
-                let audioSettings = graph.audioSettings;
-                console.log("audioSettings", audioSettings);
                 return this.loadShared(graph.shared.glsl).then((sh) => {
                     engine.shared = sh;
                     console.log("sharedSource", this.shared);
@@ -89,10 +87,7 @@ class Graph {
                             engine.addEntity(effect.name, effect.textures).setTime(effect.start, effect.stop);
                         });
                     }).then(() => {
-                        engine.audio.createAudio(audioSettings).then((state) => {
-                            console.log("audio Created", engine.audio);
-                            resolve();
-                        });
+                        resolve(graph);
                     });
                 });
             }).catch(reason => reject(reason));

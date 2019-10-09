@@ -149,8 +149,7 @@ class DemolishedEd {
             this.timeLime.updateAudioPosition();
             this.timeEl.textContent = this.engine.audio.currentTime.toFixed(3).toString();
         };
-        this.engine.onReady = () => {
-            this.timeLime = new demolishedAudioWaveform_1.AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl());
+        this.engine.onReady = (g) => {
             this.demoTimeline = new demolishedTimeline_1.Timeline("#current-time", this.engine.graph.duration);
             this.engine.entitiesCache.forEach((shader) => {
                 const listEl = demolishedUtils_1.Utils.el("li", shader.name);
@@ -159,7 +158,7 @@ class DemolishedEd {
                 });
                 demolishedUtils_1.Utils.$("#shader-list ul").appendChild(listEl);
             });
-            this.onReady();
+            this.onReady(g);
         };
         this.engine.onNext = () => {
             console.log("onNext->");
@@ -252,12 +251,18 @@ class DemolishedEd {
     static getIntance() {
         return new DemolishedEd();
     }
-    onReady() {
+    onReady(graph) {
         demolishedUtils_1.Utils.$("#startEdit").classList.remove("hide");
         demolishedUtils_1.Utils.$(".loader i").classList.add("hide");
-        demolishedUtils_1.Utils.$(".loader > button").addEventListener("click", () => {
-            demolishedUtils_1.Utils.$(".loader").classList.add("hide");
-            this.engine.start(0);
+        let btnStart = demolishedUtils_1.Utils.$(".loader > button");
+        btnStart.addEventListener("click", () => {
+            btnStart.textContent = "decoding,get yourself ready...";
+            this.engine.audio.createAudio(graph.audioSettings).then((state) => {
+                console.log("Audio Created", this.engine.audio);
+                demolishedUtils_1.Utils.$(".loader").classList.add("hide");
+                this.timeLime = new demolishedAudioWaveform_1.AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl());
+                this.engine.start(0);
+            });
         });
     }
     static showJSON(data, t) {
