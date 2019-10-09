@@ -132,7 +132,7 @@ var Demolished;
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
         animate(time) {
-            let animationTime = time - this.animationStartTime;
+            let timeStamp = time - this.animationStartTime;
             this.animationFrameId = requestAnimationFrame((_time) => this.animate(_time));
             if (this.audio) {
                 this.updateTextureData(this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());
@@ -142,7 +142,7 @@ var Demolished;
             }
             if (this.shaderEntity) {
                 this.shaderEntity ?
-                    this.renderEntities(this.shaderEntity, animationTime) : this.start(0);
+                    this.renderEntities(this.shaderEntity, timeStamp) : this.start(0);
             }
             this.onFrame();
         }

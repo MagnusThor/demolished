@@ -17,7 +17,7 @@ export namespace Demolished {
         onNext(): void { }
         onStart(): void { }
         onStop(): void { }
-        onReady(g:IGraph): void { }
+        onReady(g: IGraph): void { }
         onError(message: string) {
             console.error(message);
         }
@@ -96,7 +96,7 @@ export namespace Demolished {
             this.textureCache = new TextureCache();
 
             // load shaders, sound, shared and textures from graph.
-            Graph.Load(this.graphFile, this).then((g:IGraph) => {
+            Graph.Load(this.graphFile, this).then((g: IGraph) => {
                 this.resizeCanvas(this.parent);
                 this.onReady(g);
             }).catch(reason => this.onError(reason));
@@ -192,34 +192,21 @@ export namespace Demolished {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         }
-        /**
-         *  animation loop
-         * @private
-         * @param {number} time 
-         * @memberof Rendering
-         */
+
         private animate(time: number) {
-
-
-            let animationTime = time - this.animationStartTime;
-
+            let timeStamp = time - this.animationStartTime;
             this.animationFrameId = requestAnimationFrame((_time: number) => this.animate(_time));
             if (this.audio) {
                 this.updateTextureData(
                     this.fftTexture, this.audio.textureSize, this.audio.getFrequenceData());
-            }
-            else {
+            }else {
                 this.updateTextureData(
                     this.fftTexture, this.audio.textureSize, new Uint8Array(1024));
             }
-
             if (this.shaderEntity) {
-
                 this.shaderEntity ?
-                    this.renderEntities(this.shaderEntity, animationTime) : this.start(0)
-
+                    this.renderEntities(this.shaderEntity, timeStamp) : this.start(0);
             }
-
             this.onFrame();
         }
 

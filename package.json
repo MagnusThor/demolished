@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "codemirror": "^5.49.0",
+    "demolishedcompressor": "^1.0.3",
     "demolishedtexture": "^1.0.1",
     "litegraph.js": "^0.7.0",
     "reflect-metadata": "^0.1.13"

@@ -64,27 +64,34 @@
             "name": "stub",
             "textures": [],
             "start": 0,
-            "stop": 5.2,
+            "stop": 0.0,
+            "uniforms": {}
+        },
+        {
+            "name": "Gerstner",
+            "textures": [],
+            "start": 0,
+            "stop": 0.0,
             "uniforms": {}
         },
         {
             "name": "pseudo knightyan",
             "textures": [],
             "start": 0,
-            "stop": 5.2,
+            "stop": 0.0,
             "uniforms": {}
         },
         {
             "name": "nebula",
             "textures": [],
             "start": 5.2,
-            "stop": 6.0,
+            "stop": 0.0,
             "uniforms": {}
         },
         {
             "name": "kalispears",
-            "start": 6.0,
-            "stop": 6.2,
+            "start": 0.0,
+            "stop": 0.0,
             "textures": [
                 {
                     "name":"iChannel0",
@@ -117,7 +124,7 @@
             "name": "hemi",
             "textures": [],
             "start": 0,
-            "stop": 5.2,
+            "stop": 0.0,
             "uniforms": {}
         }
     ]

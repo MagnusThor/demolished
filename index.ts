@@ -58,18 +58,14 @@ export class DemolishedEd {
         Utils.$("#startEdit").classList.remove("hide");
         Utils.$(".loader i").classList.add("hide");
         let btnStart = Utils.$(".loader > button");
-
         btnStart.addEventListener("click", () => {
         btnStart.textContent = "decoding,get yourself ready...";
             this.engine.audio.createAudio(graph.audioSettings).then((state: boolean) => {
                 console.log("Audio Created", this.engine.audio);
                 Utils.$(".loader").classList.add("hide");
                 this.timeLime = new AudioWaveform(this.engine.audio.audioBuffer, this.engine.audio.getAudioEl())
-                this.engine.start(0);
-                
+                this.engine.start(0);                
             });
-
-
         });
     }
 
