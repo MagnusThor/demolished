@@ -29,7 +29,7 @@ import { DemolishedStreamingMusic } from "./src/demolishedSound";
 import { DemoishedEditorHelper } from './src/ui/editor/demoishedEditorHelper';
 import { Demolished2D } from './src/demolished2D';
 import { DemolishedRecorder } from './src/demolishedRecoder';
-import { Timeline } from './src/demolishedTimeline';
+// import { Timeline } from './src/demolishedTimeline';
 import { AudioWaveform } from './src/demolishedAudioWaveform';
 import { SpectrumAnalyzer } from './SpectrumAnalyzer';
 import { DemolishedStates } from './src/DemolishedStates';
@@ -45,7 +45,7 @@ export class DemolishedEd {
     static getIntance() {
         return new DemolishedEd();
     }
-    demoTimeline: Timeline; // todo: would be DemolishedTimeLine?
+  //  demoTimeline: Timeline; // todo: would be DemolishedTimeLine?
     engine: Demolished.Rendering;
     music: DemolishedStreamingMusic;
     helpers: DemoishedEditorHelper;
@@ -267,7 +267,7 @@ export class DemolishedEd {
 
         this.engine.onReady = (g:IGraph) => {
 
-            this.demoTimeline = new Timeline("#current-time", this.engine.graph.duration);
+        //    this.demoTimeline = new Timeline("#current-time", this.engine.graph.duration);
 
             this.engine.entitiesCache.forEach((shader: ShaderEntity) => {
                 const listEl = Utils.el("li", shader.name);
@@ -277,8 +277,19 @@ export class DemolishedEd {
                 Utils.$("#shader-list ul").appendChild(listEl);
             });
 
-            // 
 
+
+            
+
+            this.engine.getTextures().forEach ( (tex:IEntityTexture) => {
+
+                let container = Utils.el("div");
+                container.classList.add("texture");
+                container.appendChild(tex.data);
+                Utils.$(".textures").appendChild(container)
+
+
+            });
 
             this.onReady(g);
 
